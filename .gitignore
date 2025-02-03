@@ -1,16 +1,5 @@
 # Bazel
 bazel-*
 MODULE.bazel.lock
-requirements_lock.txt
 
 .ruff_cache
-
-# Rust
-rust-project.json
-target
-
-# Python creates local caches
-__pycache__
-
-# Generated documentation from venv and esbonio
-/_build

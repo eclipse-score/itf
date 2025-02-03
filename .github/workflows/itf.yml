@@ -1,0 +1,20 @@
+name: ITF CI
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+jobs:
+  code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.8.0
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.13.0
+      - name: Run build
+        run: |
+          bazel build //...
+      - name: Run test
+        run: |
+          bazel test //...
