@@ -1,0 +1,125 @@
+# Workflow configuration for ITF
+# This workflow builds the code when triggered manually or by specific pull request events.
+
+name: ITF CI - code
+# Triggers the workflow on manual dispatch and on specific pull request events (opened, reopened, synchronize).
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  merge_group:
+    types: [checks_requested]
+# Defines custom environment variables for the workflow.
+# - REGISTRY: Domain for the container registry.
+# - IMAGE_NAME: Name of the Docker image to build.
+# - OWNER: Owner of the repository.
+# - ENV_VARS: Environment variables set on Docker
+# - VOL_BIDS: Mount points to be set on docker image.
+# - OUTPUT_CACHE: Path to the Bazel output cache.
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: "docker/dependix-build"
+  OWNER: dependix
+  ENV_VARS: |
+    - "USER_NAME=$USER"
+    - "USER_UID=$(id -u)"
+    - "USER_GID=$(id -g)"
+    - "DOCKER_GID=$(getent group docker | cut -d: -f3)"
+  VOL_BIDS: |
+    - "${{ github.workspace }}:/workspace"
+    - "/var/run/docker.sock:/var/run/docker.sock"
+  OUTPUT_USER_CACHE: "/output_user_cache"
+  WORKDIR: "."
+jobs:
+  code-build-module-itf-changes:
+    runs-on: ubuntu-latest
+    # To save resources on GitHub account, only PRs in Open state will run checks on CI.
+    if: ${{ github.event.pull_request.draft == false }}
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            run:
+              - ".github/**"
+              - "./**"
+  code-build-module-itf:
+    needs: code-build-module-itf-changes
+    if: needs.code-build-module-itf-changes.outputs.run == 'true'
+    # Defines the type of runner the job will run on. For ITF we selected Ubuntu runner hosted by GitHub.
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      # Sets up Docker Buildx.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      # Uses the `docker/login-action` action to log in to the Container registry using the account and password.
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Pulls the Dependix Docker image from the GitHub Container Register using credentials obtained in the past step.
+      - name: Pull Docker image from GHCR
+        run: docker pull ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:latest
+      # Creates Bazel disk cache which will be used between docker runs.
+      - name: Create cache folder for bazel targets
+        run: |
+          sudo mkdir -p ${{ env.OUTPUT_USER_CACHE }}
+          sudo chmod -R 777 ${{ env.OUTPUT_USER_CACHE}}
+      # Execute Docker Run action which will execute linters and formatters
+      # - name: Execute Dependix docker run action to run formatters
+      #   uses: ./.github/actions/docker-run-bazel
+      #   with:
+      #     image: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:latest
+      #     command: "test"
+      #     output_user_cache: ${{ env.OUTPUT_USER_CACHE }}
+      #     environment_variables: ${{ env.ENV_VARS }}
+      #     volume_bindings: ${{ env.VOL_BIDS }}
+      #     workdir: ${{ env.WORKDIR }}
+      #     targets: |
+      #       - "//:format.check"
+      # Execute Docker Run action which will execute linters
+      # - name: Execute Dependix docker run action to run linters
+      #   uses: ./.github/actions/docker-run-bazel
+      #   with:
+      #     image: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:latest
+      #     command: "lint"
+      #     output_user_cache: ${{ env.OUTPUT_USER_CACHE }}
+      #     environment_variables: ${{ env.ENV_VARS }}
+      #     volume_bindings: ${{ env.VOL_BIDS }}
+      #     workdir: ${{ env.WORKDIR }}
+      #     targets: |
+      #       - "//..."
+      #     options: |
+      #       - "--aspect:interactive=False"
+      # Execute Docker Run action which will start Bazel build process on all targets.
+      # - name: Execute Dependix docker run action to build targets
+      #   uses: ./.github/actions/docker-run-bazel
+      #   with:
+      #     image: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:latest
+      #     command: "build"
+      #     output_user_cache: ${{ env.OUTPUT_USER_CACHE }}
+      #     environment_variables: ${{ env.ENV_VARS }}
+      #     volume_bindings: ${{ env.VOL_BIDS }}
+      #     workdir: ${{ env.WORKDIR }}
+      #     targets: |
+      #       - "//..."
+      # Execute Docker Run action which will start Bazel test process on all targets.
+      - name: Execute Dependix docker run action to test provided targets
+        uses: ./.github/actions/docker-run-bazel
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:latest
+          command: "test"
+          output_user_cache: ${{ env.OUTPUT_USER_CACHE }}
+          environment_variables: ${{ env.ENV_VARS }}
+          volume_bindings: ${{ env.VOL_BIDS }}
+          workdir: ${{ env.WORKDIR }}
+          targets: |
+            - "//..."
