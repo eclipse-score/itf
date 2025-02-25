@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 module(
-    name = "dependix_itf",
+    name = "score_itf",
     version = "0.1",
     compatibility_level = 0,
 )
