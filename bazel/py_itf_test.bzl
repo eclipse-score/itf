@@ -16,8 +16,8 @@ load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_test")
 
 def py_itf_test(name, srcs, args = [], data = [], plugins = [], **kwargs):
-    pytest_bootstrap = Label("@dependix_itf//:main.py")
-    pytest_ini = Label("@dependix_itf//:pytest.ini")
+    pytest_bootstrap = Label("@score_itf//:main.py")
+    pytest_ini = Label("@score_itf//:pytest.ini")
 
     plugins = ["-p %s" % plugin for plugin in plugins]
 
@@ -38,7 +38,7 @@ def py_itf_test(name, srcs, args = [], data = [], plugins = [], **kwargs):
         deps = [
             requirement("docker"),
             requirement("pytest"),
-            "@dependix_itf//:itf",
+            "@score_itf//:itf",
         ],
         data = [
             pytest_ini,
