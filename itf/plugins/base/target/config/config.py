@@ -36,7 +36,6 @@ def load_configuration(config_file: str):
     with open(config_file, "r") as file:
         config = json.load(file)
     for ecu_name, ecu_config in config.items():
-
         performance_processor = None
         if "performance_processor" in ecu_config:
             perf_config = ecu_config.get("performance_processor")

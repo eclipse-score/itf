@@ -17,13 +17,13 @@ from itf.plugins.base.target.config.safety_processor import SafetyProcessor
 
 
 class Ecu:
-
     # pylint: disable=dangerous-default-value
     def __init__(
-        self, name: str,
+        self,
+        name: str,
         sut: PerformanceProcessor,
         sc: SafetyProcessor,
-        others: List[BaseProcessor] = []
+        others: List[BaseProcessor] = [],
     ):
         """Initialize the Ecu class.
 
