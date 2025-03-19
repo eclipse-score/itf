@@ -10,12 +10,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-name: ITF Examples CI
+name: ITF Examples
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
 jobs:
-  code:
+  itf-examples-build-all:
     runs-on: ubuntu-latest
     defaults:
       run:
