@@ -10,12 +10,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-name: ITF CI
+name: ITF
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
 jobs:
-  code:
+  itf-build-all:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
