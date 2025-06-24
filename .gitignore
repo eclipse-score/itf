@@ -3,3 +3,5 @@ bazel-*
 MODULE.bazel.lock
 
 .ruff_cache
+
+bazel-*
