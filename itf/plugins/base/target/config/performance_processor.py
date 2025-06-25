@@ -14,7 +14,6 @@ from itf.plugins.base.target.config.base_processor import BaseProcessor
 
 
 class PerformanceProcessor(BaseProcessor):
-
     # pylint: disable=dangerous-default-value
     def __init__(
         self,

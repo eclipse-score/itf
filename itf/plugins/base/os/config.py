@@ -14,7 +14,6 @@
 from itf.plugins.xtf_common.bunch import Bunch
 
 
-
 DIAGNOSTICS_COMMON = {
     "df_h": {
         "description": "Disk usage",
@@ -27,7 +26,7 @@ DIAGNOSTICS_COMMON = {
     "netstat_r": {
         "description": "Networking status - routing",
         "command": "netstat -r",
-    }
+    },
 }
 
 
@@ -64,7 +63,7 @@ DIAGNOSTICS_LINUX = {
         "description": "Systemd startup time plot",
         "command": "systemd-analyze plot",
         "extension": "svg",
-    }
+    },
 }
 DIAGNOSTICS_LINUX.update(DIAGNOSTICS_COMMON)
 
@@ -81,7 +80,7 @@ DIAGNOSTICS_QNX = {
     "netstat": {
         "description": "Networking status - active Unix domain, IPv4 and IPv6 sockets",
         "command": "netstat",
-    }
+    },
 }
 DIAGNOSTICS_QNX.update(DIAGNOSTICS_COMMON)
 

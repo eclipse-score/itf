@@ -12,6 +12,7 @@
 # *******************************************************************************
 CONSOLE_WIDTH = 80
 
+
 def padder(string, length=CONSOLE_WIDTH):
     str_len = len(string)
     left = round((length - 2 - str_len) / 2)
