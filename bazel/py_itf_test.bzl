@@ -38,6 +38,7 @@ def py_itf_test(name, srcs, args = [], data = [], plugins = [], **kwargs):
         deps = [
             requirement("docker"),
             requirement("pytest"),
+            requirement("paramiko"),
             "@score_itf//:itf",
         ],
         data = [
