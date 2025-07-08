@@ -11,11 +11,16 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 import logging
+import socket
 import pytest
 
 from itf.plugins.base.constants import TEST_CONFIG_KEY, TARGET_CONFIG_KEY
 from itf.plugins.base.target.config import load_configuration, target_ecu_argparse
 from itf.plugins.base.os.operating_system import OperatingSystem
+from itf.plugins.base.target.qemu_target import qemu_target
+from itf.plugins.base.target.qvp_target import qvp_target
+from itf.plugins.base.target.hw_target import hw_target
+from itf.plugins.base.test.utils import pre_tests_phase, post_tests_phase
 from itf.plugins.utils import padder
 from itf.plugins.xtf_common.bunch import Bunch
 
@@ -70,6 +75,38 @@ def test_config_fixture(request):
 def target_config_fixture(request):
     target_config = request.session.stash[TARGET_CONFIG_KEY]
     yield target_config
+
+
+@pytest.fixture(scope="session")
+def target_fixture(target_config_fixture, test_config_fixture, request):
+    logger.info("Starting target_fixture in base_plugin.py ...")
+    logger.info(f"Starting tests on host: {socket.gethostname()}")
+
+    if test_config_fixture.qemu:
+        with qemu_target(test_config_fixture) as qemu:
+            try:
+                pre_tests_phase(qemu, target_config_fixture.ip_address, test_config_fixture, request)
+                yield qemu
+            finally:
+                post_tests_phase(qemu, test_config_fixture)
+
+    elif test_config_fixture.qvp:
+        with qvp_target(test_config_fixture) as qvp:
+            try:
+                pre_tests_phase(qvp, target_config_fixture.ip_address, test_config_fixture, request)
+                yield qvp
+            finally:
+                post_tests_phase(qvp, test_config_fixture)
+
+    elif test_config_fixture.hw:
+        with hw_target(test_config_fixture) as hardware:
+            try:
+                pre_tests_phase(hardware, target_config_fixture.ip_address, test_config_fixture, request)
+                yield hardware
+            finally:
+                post_tests_phase(hardware, test_config_fixture)
+    else:
+        raise RuntimeError("QEMU, QVP or HW not specified to use")
 
 
 def __make_test_config(config):
