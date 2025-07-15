@@ -27,10 +27,13 @@ exports_files([
 py_library(
     name = "itf",
     srcs = [
-        "itf/plugins/docker.py",
+        "//itf/plugins:docker",
     ],
     imports = ["."],
     visibility = ["//visibility:public"],
+    deps = [
+        "//itf/plugins/dlt",
+    ],
 )
 
 test_suite(

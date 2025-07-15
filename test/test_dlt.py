@@ -10,32 +10,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("//:defs.bzl", "py_itf_test")
+from itf.plugins.dlt.dlt_receive import DltReceive, Protocol
+import time
 
-py_itf_test(
-    name = "test_rules_are_working_correctly",
-    srcs = [
-        "conftest.py",
-        "test_rules_are_working_correctly.py",
-    ],
-)
 
-py_itf_test(
-    name = "test_docker",
-    srcs = [
-        "test_docker.py",
-    ],
-    args = [
-        "--docker-image=ubuntu:24.04",
-    ],
-    plugins = [
-        "itf.plugins.docker",
-    ],
-)
-
-py_itf_test(
-    name = "test_dlt",
-    srcs = [
-        "test_dlt.py",
-    ],
-)
+def test_dlt():
+    with DltReceive(
+        target_ip="127.0.0.1",
+        protocol=Protocol.UDP,
+        binary_path="./itf/plugins/dlt/dlt-receive",
+        drconfig={
+            "vlan_addr": "127.0.0.1",
+            "mcast_addrs": [
+                "239.255.42.99",
+                "231.255.42.99",
+                "234.255.42.99",
+                "237.255.42.99",
+            ],
+        },
+    ):
+        time.sleep(5)
+        pass
