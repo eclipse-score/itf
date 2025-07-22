@@ -22,7 +22,7 @@ from itf.plugins.base.target.qvp_target import qvp_target
 from itf.plugins.base.target.hw_target import hw_target
 from itf.plugins.base.test.utils import pre_tests_phase, post_tests_phase
 from itf.plugins.utils import padder
-from itf.plugins.xtf_common.bunch import Bunch
+from itf.plugins.utils.bunch import Bunch
 
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ def target_fixture(target_config_fixture, test_config_fixture, request):
     logger.info(f"Starting tests on host: {socket.gethostname()}")
 
     if test_config_fixture.qemu:
-        with qemu_target(test_config_fixture) as qemu:
+        with qemu_target(target_config_fixture, test_config_fixture) as qemu:
             try:
                 pre_tests_phase(qemu, target_config_fixture.ip_address, test_config_fixture, request)
                 yield qemu
@@ -91,7 +91,7 @@ def target_fixture(target_config_fixture, test_config_fixture, request):
                 post_tests_phase(qemu, test_config_fixture)
 
     elif test_config_fixture.qvp:
-        with qvp_target(test_config_fixture) as qvp:
+        with qvp_target(target_config_fixture, test_config_fixture) as qvp:
             try:
                 pre_tests_phase(qvp, target_config_fixture.ip_address, test_config_fixture, request)
                 yield qvp
@@ -99,7 +99,7 @@ def target_fixture(target_config_fixture, test_config_fixture, request):
                 post_tests_phase(qvp, test_config_fixture)
 
     elif test_config_fixture.hw:
-        with hw_target(test_config_fixture) as hardware:
+        with hw_target(target_config_fixture, test_config_fixture) as hardware:
             try:
                 pre_tests_phase(hardware, target_config_fixture.ip_address, test_config_fixture, request)
                 yield hardware

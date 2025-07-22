@@ -64,3 +64,29 @@ git_override(
     commit = "b5dfbc12754d6698c36d0aaad46183e730dac85c",
     remote = "https://github.com/ltekieli/rules_lint.git",
 )
+
+################################################################################
+#
+# Load DLT dependencies
+#
+################################################################################
+git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "dlt_daemon",
+    branch = "master",
+    build_file = "//deps:dlt_daemon.BUILD",
+    remote = "https://github.com/draganbjedov/dlt-daemon.git",
+)
+
+PYTHON_DLT_VERSION = "2.18.10.1"
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "python_dlt",
+    build_file = "//deps:python_dlt.BUILD",
+    sha256 = "cae256ac791d06c4e6e4665dc938e497a7de5784bf6a1244667572953990f324",
+    strip_prefix = "python-dlt-%s" % PYTHON_DLT_VERSION,
+    url = "https://github.com/bmwcarit/python-dlt/archive/refs/tags/v%s.tar.gz" % PYTHON_DLT_VERSION,
+)

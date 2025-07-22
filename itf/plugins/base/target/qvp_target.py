@@ -17,6 +17,8 @@ from itf.plugins.base.os.operating_system import OperatingSystem
 from itf.plugins.base.target.base_target import Target
 from itf.plugins.base.target.config.ecu import Ecu
 from itf.plugins.base.target.processors.qvp_processor import TargetProcessorQVP
+from itf.plugins.dlt.dlt_receive import DltReceive, Protocol
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +36,18 @@ class TargetQvp(Target):
 
 
 @contextmanager
-def qvp_target(test_config):
+def qvp_target(target_config, test_config):
     """Context manager for QVP target setup.
 
     Currently, only ITF tests against an already running QQVP instance is supported.
     """
     with nullcontext() as qvp_process:
-        target = TargetQvp(test_config.ecu, test_config.os)
-        target.register_processors(qvp_process)
-        yield target
-        target.teardown()
+        with DltReceive(
+            target_ip=target_config.ip_address,
+            protocol=Protocol.UDP,
+            binary_path="./itf/plugins/dlt/dlt-receive",
+        ):
+            target = TargetQvp(test_config.ecu, test_config.os)
+            target.register_processors(qvp_process)
+            yield target
+            target.teardown()

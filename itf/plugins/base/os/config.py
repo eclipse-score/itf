@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 # pylint: disable=invalid-name
-from itf.plugins.xtf_common.bunch import Bunch
+from itf.plugins.utils.bunch import Bunch
 
 
 DIAGNOSTICS_COMMON = {

@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 import pytest
-from itf.plugins.xtf_common.bunch import Bunch
+from itf.plugins.utils.bunch import Bunch
 
 TEST_CONFIG_KEY = pytest.StashKey[Bunch]()
 TARGET_CONFIG_KEY = pytest.StashKey[Bunch]()

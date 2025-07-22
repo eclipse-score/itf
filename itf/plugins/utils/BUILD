@@ -10,32 +10,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("//:defs.bzl", "py_itf_test")
-
-py_itf_test(
-    name = "test_rules_are_working_correctly",
+py_library(
+    name = "utils",
     srcs = [
-        "conftest.py",
-        "test_rules_are_working_correctly.py",
+        "__init__.py",
+        "bazel.py",
+        "bunch.py",
+        "utils.py",
     ],
-)
-
-py_itf_test(
-    name = "test_docker",
-    srcs = [
-        "test_docker.py",
-    ],
-    args = [
-        "--docker-image=ubuntu:24.04",
-    ],
-    plugins = [
-        "itf.plugins.docker",
-    ],
-)
-
-py_itf_test(
-    name = "test_dlt",
-    srcs = [
-        "test_dlt.py",
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//itf/plugins/utils/process",
     ],
 )
