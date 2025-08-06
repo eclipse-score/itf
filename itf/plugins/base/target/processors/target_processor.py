@@ -83,10 +83,11 @@ class TargetProcessor:
     def uses_doip(self):
         return self.__config.use_doip
 
-    def ssh(self, timeout=15, n_retries=5, retry_interval=1, pkey_path="", password="", ext_ip=False):
+    def ssh(self, timeout=15, port=22, n_retries=5, retry_interval=1, pkey_path="", password="", ext_ip=False):
         ssh_ip = self.ext_ip_address if ext_ip else self.ip_address
         return Ssh(
             target_ip=ssh_ip,
+            port=port,
             timeout=timeout,
             n_retries=n_retries,
             retry_interval=retry_interval,
