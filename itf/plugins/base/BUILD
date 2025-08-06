@@ -10,45 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_python//python:defs.bzl", "py_library")
-load("@rules_python//python:pip.bzl", "compile_pip_requirements")
-
-compile_pip_requirements(
-    name = "requirements",
-    src = "requirements.in",
-    requirements_txt = "requirements_lock.txt",
-)
-
-exports_files([
-    "main.py",
-    "pytest.ini",
-])
-
 py_library(
-    name = "itf",
+    name = "base",
     srcs = [
-        "//itf/plugins:docker",
+        "__init__.py",
+        "base_plugin.py",
+        "constants.py",
     ],
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
-        "//itf/plugins/base",
-        "//itf/plugins/com",
-        "//itf/plugins/dlt",
+        "//itf/plugins/base/os",
+        "//itf/plugins/base/target",
+        "//itf/plugins/base/test",
         "//itf/plugins/utils",
     ],
 )
-
-test_suite(
-    name = "format.check",
-    tests = ["//tools/format:format.check"],
-)
-
-alias(
-    name = "format.fix",
-    actual = "//tools/format:format.fix",
-)
-
-exports_files([
-    ".ruff.toml",
-])
