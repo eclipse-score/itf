@@ -24,18 +24,20 @@ class Ssh:
     def __init__(
         self,
         target_ip,
+        port=22,
         timeout=15,
         n_retries=5,
         retry_interval=1,
-        pkey_path="platform/aas/tools/itf/itf/ssh_keys/id_mPAD",
-        password="",
+        pkey_path=None,
+        password=None,
     ):
         self._target_ip = target_ip
+        self._port = port
         self._timeout = timeout
         self._retries = n_retries
         self._retry_interval = retry_interval
         self._ssh = None
-        self._pkey = paramiko.ECDSAKey.from_private_key_file(pkey_path)
+        self._pkey = paramiko.ECDSAKey.from_private_key_file(pkey_path) if pkey_path else None
         self._password = password
 
     def __enter__(self):
@@ -45,7 +47,8 @@ class Ssh:
         for _ in range(self._retries):
             try:
                 self._ssh.connect(
-                    self._target_ip,
+                    hostname=self._target_ip,
+                    port=self._port,
                     timeout=self._timeout,
                     username="root",
                     password=self._password,
@@ -240,8 +243,7 @@ def execute_command_output(ssh_connection, cmd, timeout=30, max_exec_time=180, l
 
 
 def execute_command(ssh_connection, cmd, timeout=30, max_exec_time=180, logger_in=None, verbose=True):
-    logger.debug(f"Executing command.")
-    logger.debug(f"cmd: {cmd}")
+    logger.debug(f"Executing command: {cmd}")
     logger.debug(f"timeout: {timeout}; max_exec_time: {max_exec_time}; logger_in: {logger_in}; verbose: {verbose};")
     exit_code, stdout_lines, stderr_lines = execute_command_output(
         ssh_connection, cmd, timeout, max_exec_time, logger_in, verbose
