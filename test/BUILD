@@ -39,3 +39,37 @@ py_itf_test(
         "test_dlt.py",
     ],
 )
+
+py_itf_test(
+    name = "test_ssh_bridge_network",
+    srcs = [
+        "test_ssh_bridge_network.py",
+    ],
+    args = [
+        "--target_config=config/target_config.json",
+        "--ecu=s_core_ecu_qemu_bridge_network",
+        "--os=qnx",
+        "--qemu",
+    ],
+    plugins = [
+        "itf.plugins.base.base_plugin",
+    ],
+    tags = ["manual"],
+)
+
+py_itf_test(
+    name = "test_ssh_port_forwarding",
+    srcs = [
+        "test_ssh_port_forwarding.py",
+    ],
+    args = [
+        "--target_config=config/target_config.json",
+        "--ecu=s_core_ecu_qemu_port_forwarding",
+        "--os=qnx",
+        "--qemu",
+    ],
+    plugins = [
+        "itf.plugins.base.base_plugin",
+    ],
+    tags = ["manual"],
+)
