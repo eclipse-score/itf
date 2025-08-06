@@ -29,6 +29,9 @@ py_library(
     srcs = [
         "//itf/plugins:docker",
     ],
+    data = [
+        "//config",
+    ],
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
