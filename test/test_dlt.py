@@ -19,9 +19,9 @@ def test_dlt():
         target_ip="127.0.0.1",
         protocol=Protocol.UDP,
         binary_path="./itf/plugins/dlt/dlt-receive",
-        drconfig={
-            "vlan_addr": "127.0.0.1",
-            "mcast_addrs": [
+        data_router_config={
+            "vlan_address": "127.0.0.1",
+            "multicast_addresses": [
                 "239.255.42.99",
                 "231.255.42.99",
                 "234.255.42.99",

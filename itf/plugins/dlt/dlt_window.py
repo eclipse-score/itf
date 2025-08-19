@@ -48,7 +48,7 @@ class DltWindow(ProcessWrapper):
         sctf: bool = False,
         clear_dlt: bool = True,
         dlt_filter: str = None,
-        drconfig: dict = None,
+        data_router_config: dict = None,
         binary_path: str = None,
     ):
         """Initialize DltWindow with target IP, protocol, and optional parameters.
@@ -61,7 +61,8 @@ class DltWindow(ProcessWrapper):
         :param bool sctf: If True, uses SCTF configuration.
         :param bool clear_dlt: If True, clears the DLT file at initialization.
         :param str dlt_filter: Filter string for DLT messages.
-        :param dict drconfig: Configuration for the data router with keys "vlan_addr" and "mcast_addrs".
+        :param dict data_router_config: Configuration for the data router
+         with keys "vlan_address" and "multicast_addresses".
         :param str binary_path: Path to the dlt-receive binary.
         """
         self._target_ip = target_ip
@@ -69,7 +70,7 @@ class DltWindow(ProcessWrapper):
         self._dlt_file = f"{dlt_file or '/tmp/dlt_window.dlt'}"
         self._captured_logs = []
 
-        self._protocol_opts = DltReceive.protocol_arguments(self._target_ip, self._protocol, sctf, drconfig)
+        self._protocol_opts = DltReceive.protocol_arguments(self._target_ip, self._protocol, sctf, data_router_config)
 
         self._dlt_content = None
         self._queried_counter = 0

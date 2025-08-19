@@ -14,6 +14,7 @@ from enum import Enum
 from itf.plugins.base.os.config import global_os_config as os_config
 
 
+# pylint: disable=no-member
 class OperatingSystem(Enum):
     LINUX = os_config.os.linux
     QNX = os_config.os.qnx

@@ -8,7 +8,11 @@
             "diagnostic_address": "0x91",
             "serial_device": "",
             "network_interfaces": [],
-            "ecu_name": "s_core_ecu_qemu_bridge_network_pp"
+            "ecu_name": "s_core_ecu_qemu_bridge_network_pp",
+            "data_router_config": {
+                "vlan_address": "127.0.0.1",
+                "multicast_addresses": []
+            }
         },
         "safety_processor": {
             "name": "S_CORE_ECU_QEMU_BRIDGE_NETWORK_SC",
@@ -29,7 +33,11 @@
             "diagnostic_address": "0x91",
             "serial_device": "",
             "network_interfaces": [],
-            "ecu_name": "s_core_ecu_qemu_port_forwarding_pp"
+            "ecu_name": "s_core_ecu_qemu_port_forwarding_pp",
+            "data_router_config": {
+                "vlan_address": "127.0.0.1",
+                "multicast_addresses": []
+            }
         },
         "safety_processor": {
             "name": "CORE_ECU_QEMU_PORT_FORWARDING_SC",

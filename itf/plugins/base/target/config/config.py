@@ -48,6 +48,7 @@ def load_configuration(config_file: str):
                 serial_device=perf_config["serial_device"],
                 network_interfaces=perf_config["network_interfaces"],
                 ecu_name=perf_config["ecu_name"],
+                data_router_config=perf_config["data_router_config"],
                 params=perf_config.get("params", {}),
             )
             PERFORMANCE_PROCESSORS[perf_config["name"]] = performance_processor
