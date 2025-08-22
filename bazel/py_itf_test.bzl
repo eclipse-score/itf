@@ -39,6 +39,7 @@ def py_itf_test(name, srcs, args = [], data = [], plugins = [], **kwargs):
             requirement("docker"),
             requirement("pytest"),
             requirement("paramiko"),
+            requirement("typing-extensions"),
             "@score_itf//:itf",
         ],
         data = [
