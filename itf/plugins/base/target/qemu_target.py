@@ -41,11 +41,8 @@ def qemu_target(target_config, test_config):
         with DltReceive(
             target_ip=target_config.ip_address,
             protocol=Protocol.UDP,
+            data_router_config=target_config.data_router_config,
             binary_path="./itf/plugins/dlt/dlt-receive",
-            drconfig={  # TODO make this configurable
-                "vlan_addr": "127.0.0.1",
-                "mcast_addrs": [],
-            },
         ):
             target = TargetQemu(test_config.ecu, test_config.os)
             target.register_processors(qemu_process)

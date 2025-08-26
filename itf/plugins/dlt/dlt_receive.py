@@ -43,7 +43,7 @@ class DltReceive(ProcessWrapper):
         print_to_stdout: bool = False,
         logger_name: str = None,
         sctf: bool = False,
-        drconfig: dict = None,
+        data_router_config: dict = None,
         binary_path: str = None,
     ):
         """Initialize DltReceive instance.
@@ -55,15 +55,18 @@ class DltReceive(ProcessWrapper):
         :param bool print_to_stdout: If True, DLT logs will be printed to stdout.
         :param str logger_name: Optional name for the logger. If not provided, defaults to the basename of the binary path.
         :param bool sctf: If True, uses SCTF-specific configurations.
-        :param dict drconfig: Configuration for the data router with keys "vlan_addr" and "mcast_addrs".
+        :param dict data_router_config: Configuration for the data router
+         with keys "vlan_address" and "multicast_addresses".
         :param str binary_path: Path to the DLT receive binary.
         """
         self._target_ip = target_ip
         self._protocol = protocol
         self._dlt_file_name = file_name or f"{get_output_dir()}/dlt_receive.dlt"
 
-        self._drconfig = drconfig
-        self._protocol_opts = DltReceive.protocol_arguments(self._target_ip, self._protocol, sctf, self._drconfig)
+        self._data_router_config = data_router_config
+        self._protocol_opts = DltReceive.protocol_arguments(
+            self._target_ip, self._protocol, sctf, self._data_router_config
+        )
 
         dlt_receive_args = ["-o", self._dlt_file_name] if enable_file_output else []
         dlt_receive_args += self._protocol_opts
@@ -84,15 +87,15 @@ class DltReceive(ProcessWrapper):
             os.remove(target_file)
 
     @staticmethod
-    def protocol_arguments(target_ip, protocol, sctf, drconfig):
+    def protocol_arguments(target_ip, protocol, sctf, data_router_config):
         dlt_port = "3490"
         proto_specific_opts = []
 
         if protocol == Protocol.TCP:
             proto_specific_opts = ["--tcp", target_ip]
         elif protocol == Protocol.UDP:
-            net_if = target_ip if sctf else drconfig["vlan_addr"]
-            mcasts = drconfig["mcast_addrs"]
+            net_if = target_ip if sctf else data_router_config["vlan_address"]
+            mcasts = data_router_config["multicast_addresses"]
             mcast_ip = [val for pair in zip(["--mcast-ip"] * len(mcasts), mcasts) for val in pair]
             proto_specific_opts = ["--udp"] + mcast_ip + ["--net-if", net_if, "--port", dlt_port]
         else:

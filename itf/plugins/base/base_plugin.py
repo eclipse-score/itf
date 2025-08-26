@@ -32,7 +32,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--target_config",
         action="store",
-        default="",
+        default="config/target_config.json",
         help="Path to json file with target configurations.",
     )
     parser.addoption(

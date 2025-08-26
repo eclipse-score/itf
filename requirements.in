@@ -3,3 +3,4 @@
 docker==7.1.0
 pytest==8.4.1
 paramiko==3.5.1
+typing-extensions==4.14.1

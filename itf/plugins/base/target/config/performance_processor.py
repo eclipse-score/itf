@@ -14,7 +14,7 @@ from itf.plugins.base.target.config.base_processor import BaseProcessor
 
 
 class PerformanceProcessor(BaseProcessor):
-    # pylint: disable=dangerous-default-value
+    # pylint: disable=dangerous-default-value, too-many-arguments
     def __init__(
         self,
         name: str,
@@ -25,6 +25,7 @@ class PerformanceProcessor(BaseProcessor):
         serial_device: str = None,
         network_interfaces: list = [],
         ecu_name: str = None,
+        data_router_config: dict = None,
         params: dict = None,
     ):
         """Initialize the PerformanceProcessor class.
@@ -37,6 +38,8 @@ class PerformanceProcessor(BaseProcessor):
         :param str serial_device: The serial device for the processor.
         :param list network_interfaces: The network interfaces for the processor.
         :param str ecu_name: The ECU name for the processor.
+        :param dict data_router_configs: Configuration for the data router
+         with keys "vlan_address" and "multicast_addresses".
         :param dict params: Additional parameters for the processor.
         """
         super().__init__(
@@ -50,6 +53,7 @@ class PerformanceProcessor(BaseProcessor):
         self.__ext_ip_address = ext_ip_address
         self.__network_interfaces = network_interfaces
         self.__ecu_name = ecu_name
+        self.__data_router_config = data_router_config
 
     @property
     def ext_ip_address(self):
@@ -62,6 +66,10 @@ class PerformanceProcessor(BaseProcessor):
     @property
     def network_interfaces(self):
         return self.__network_interfaces
+
+    @property
+    def data_router_config(self):
+        return self.__data_router_config
 
     def update(self, processor):
         """Update the current processor with another processor's parameters.
