@@ -10,6 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@rules_python//python:defs.bzl", "py_library")
+
 py_library(
     name = "python_dlt",
     srcs = glob(["dlt/**/*.py"]),
