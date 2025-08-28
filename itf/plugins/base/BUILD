@@ -24,7 +24,7 @@ py_library(
     deps = [
         "//itf/plugins/base/os",
         "//itf/plugins/base/target",
-        "//itf/plugins/base/test",
+        "//itf/plugins/base/utils",
         "//itf/plugins/utils",
     ],
 )

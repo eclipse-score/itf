@@ -13,11 +13,14 @@
 load("@rules_python//python:defs.bzl", "py_library")
 
 py_library(
-    name = "test",
+    name = "utils",
     srcs = [
         "__init__.py",
-        "utils.py",
+        "exec_utils.py",
     ],
     imports = ["."],
     visibility = ["//visibility:public"],
+    deps = [
+        "//itf/plugins/com",
+    ],
 )

@@ -20,7 +20,7 @@ from itf.plugins.base.os.operating_system import OperatingSystem
 from itf.plugins.base.target.qemu_target import qemu_target
 from itf.plugins.base.target.qvp_target import qvp_target
 from itf.plugins.base.target.hw_target import hw_target
-from itf.plugins.base.test.utils import pre_tests_phase, post_tests_phase
+from itf.plugins.base.utils.exec_utils import pre_tests_phase, post_tests_phase
 from itf.plugins.utils import padder
 from itf.plugins.utils.bunch import Bunch
 
