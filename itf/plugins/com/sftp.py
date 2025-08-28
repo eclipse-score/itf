@@ -22,13 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 class Sftp:
-    def __init__(self, ssh, target_ip):
+    def __init__(self, ssh, target_ip, port=22):
         if not ssh:
             self._new_ssh = True
         else:
             self._new_ssh = False
-
-        self._ssh = ssh or Ssh(target_ip)
+        self._ssh = ssh or Ssh(target_ip=target_ip, port=port)
         self._sftp = None
 
     def __enter__(self):

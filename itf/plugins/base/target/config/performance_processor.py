@@ -19,6 +19,7 @@ class PerformanceProcessor(BaseProcessor):
         self,
         name: str,
         ip_address: str = None,
+        ssh_port: int = 22,
         ext_ip_address: str = None,
         diagnostic_ip_address: str = None,
         diagnostic_address: int = 0,
@@ -32,6 +33,7 @@ class PerformanceProcessor(BaseProcessor):
 
         :param str name: The name of the processor.
         :param str ip_address: The IP address of the processor.
+        :param int ssh_port: The SSH port for the processor.
         :param str ext_ip_address: The external IP address of the processor.
         :param str diagnostic_ip_address: The internal IP address for diagnostics.
         :param int diagnostic_address: The diagnostic address of the processor.
@@ -45,6 +47,7 @@ class PerformanceProcessor(BaseProcessor):
         super().__init__(
             name=name,
             ip_address=ip_address,
+            ssh_port=ssh_port,
             diagnostic_ip_address=diagnostic_ip_address,
             diagnostic_address=diagnostic_address,
             serial_device=serial_device,
@@ -80,6 +83,7 @@ class PerformanceProcessor(BaseProcessor):
         self.__ext_ip_address = processor.ext_ip_address
         self.__network_interfaces = processor.network_interfaces
         self.__ecu_name = processor.ecu_name
+        self.__data_router_config = processor.data_router_config
 
     def __eq__(self, other):
         if isinstance(other, PerformanceProcessor):

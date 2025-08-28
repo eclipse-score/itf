@@ -42,6 +42,7 @@ def load_configuration(config_file: str):
             performance_processor = PerformanceProcessor(
                 name=perf_config["name"],
                 ip_address=perf_config["ip_address"],
+                ssh_port=perf_config["ssh_port"],
                 ext_ip_address=perf_config["ext_ip_address"],
                 diagnostic_ip_address=perf_config["diagnostic_ip_address"],
                 diagnostic_address=int(perf_config["diagnostic_address"], 16),

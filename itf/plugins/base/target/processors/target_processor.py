@@ -72,6 +72,10 @@ class TargetProcessor:
     def ip_address(self):
         return self.__ip_address
 
+    @property
+    def ssh_port(self):
+        return self.__config.ssh_port
+
     @ip_address.setter
     def ip_address(self, value):
         self.__ip_address = value
@@ -83,11 +87,12 @@ class TargetProcessor:
     def uses_doip(self):
         return self.__config.use_doip
 
-    def ssh(self, timeout=15, port=22, n_retries=5, retry_interval=1, pkey_path="", password="", ext_ip=False):
+    def ssh(self, timeout=15, port=None, n_retries=5, retry_interval=1, pkey_path="", password="", ext_ip=False):
         ssh_ip = self.ext_ip_address if ext_ip else self.ip_address
+        ssh_port = port if port else self.ssh_port
         return Ssh(
             target_ip=ssh_ip,
-            port=port,
+            port=ssh_port,
             timeout=timeout,
             n_retries=n_retries,
             retry_interval=retry_interval,
@@ -95,9 +100,10 @@ class TargetProcessor:
             password=password,
         )
 
-    def sftp(self, ssh_connection=None, ext_ip=False):
+    def sftp(self, ssh_connection=None, ext_ip=False, port=None):
         ssh_ip = self.ext_ip_address if ext_ip else self.ip_address
-        return Sftp(ssh_connection, ssh_ip)
+        ssh_port = port if port else self.ssh_port
+        return Sftp(ssh_connection, ssh_ip, ssh_port)
 
     def ping(self, timeout, ext_ip=False, wait_ms_precision=None):
         return ping(
