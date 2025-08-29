@@ -52,6 +52,8 @@ def pytest_addoption(parser):
         help="Operating System to run",
     )
     parser.addoption("--qemu", action="store_true", help="Run tests with QEMU image")
+    parser.addoption("--qemu_image", action="store", help="Path to a QEMU image")
+
     parser.addoption("--qvp", action="store_true", help="Run tests with QVP")
     parser.addoption("--hw", action="store_true", help="Run tests against connected HW")
 
@@ -115,6 +117,7 @@ def __make_test_config(config):
         ecu=target_ecu_argparse(config.getoption("ecu")),
         os=config.getoption("os"),
         qemu=config.getoption("qemu"),
+        qemu_image=config.getoption("qemu_image"),
         qvp=config.getoption("qvp"),
         hw=config.getoption("hw"),
     )
@@ -122,4 +125,6 @@ def __make_test_config(config):
 
 def __make_target_config(test_config):
     target_config = test_config.ecu.sut
+    if test_config.qemu_image:
+        target_config.qemu_image_path = test_config.qemu_image
     return target_config

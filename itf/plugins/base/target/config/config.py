@@ -50,6 +50,8 @@ def load_configuration(config_file: str):
                 network_interfaces=perf_config["network_interfaces"],
                 ecu_name=perf_config["ecu_name"],
                 data_router_config=perf_config["data_router_config"],
+                qemu_num_cores=perf_config["qemu_num_cores"],
+                qemu_ram_size=perf_config["qemu_ram_size"],
                 params=perf_config.get("params", {}),
             )
             PERFORMANCE_PROCESSORS[perf_config["name"]] = performance_processor

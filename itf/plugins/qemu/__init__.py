@@ -10,24 +10,3 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_python//python:defs.bzl", "py_library")
-
-py_library(
-    name = "target",
-    srcs = [
-        "__init__.py",
-        "base_target.py",
-        "hw_target.py",
-        "qemu_target.py",
-        "qvp_target.py",
-    ],
-    imports = ["."],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//itf/plugins/base/os",
-        "//itf/plugins/base/target/config",
-        "//itf/plugins/base/target/processors",
-        "//itf/plugins/dlt",
-        "//itf/plugins/qemu",
-    ],
-)

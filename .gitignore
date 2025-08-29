@@ -5,3 +5,11 @@ MODULE.bazel.lock
 .ruff_cache
 
 bazel-*
+
+# VS Code
+.vscode
+
+# Python cache/venv folders
+*__pycache__*
+.venv/
+*.egg-info/

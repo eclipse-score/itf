@@ -40,6 +40,7 @@ def py_itf_test(name, srcs, args = [], data = [], plugins = [], **kwargs):
             requirement("pytest"),
             requirement("paramiko"),
             requirement("typing-extensions"),
+            requirement("netifaces"),
             "@score_itf//:itf",
         ],
         data = [
