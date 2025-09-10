@@ -23,14 +23,27 @@ logger = logging.getLogger(__name__)
 class Ssh:
     def __init__(
         self,
-        target_ip,
-        port=22,
-        timeout=15,
-        n_retries=5,
-        retry_interval=1,
-        pkey_path=None,
-        password=None,
+        target_ip: str,
+        port: int = 22,
+        timeout: int = 15,
+        n_retries: int = 5,
+        retry_interval: int = 1,
+        pkey_path: str = None,
+        username: str = "root",
+        password: str = "",
     ):
+        """
+        Initializes the Ssh class with connection parameters.
+
+        :param str target_ip: The IP address of the target SSH server.
+        :param int port: The port number of the target SSH server. Default is 22.
+        :param int timeout: The timeout duration (in seconds) for the SSH connection. Default is 15 seconds.
+        :param int n_retries: The number of retries to attempt for the SSH connection. Default is 5 retries.
+        :param int retry_interval: The interval (in seconds) between retries. Default is 1 second.
+        :param str pkey_path: The file path to the private key for authentication. Default is None.
+        :param str username: The username for SSH authentication. Default is "root".
+        :param str password: The password for SSH authentication. Default is an empty string.
+        """
         self._target_ip = target_ip
         self._port = port
         self._timeout = timeout
@@ -38,6 +51,7 @@ class Ssh:
         self._retry_interval = retry_interval
         self._ssh = None
         self._pkey = paramiko.ECDSAKey.from_private_key_file(pkey_path) if pkey_path else None
+        self._username = username
         self._password = password
 
     def __enter__(self):
@@ -50,7 +64,7 @@ class Ssh:
                     hostname=self._target_ip,
                     port=self._port,
                     timeout=self._timeout,
-                    username="root",
+                    username=self._username,
                     password=self._password,
                     pkey=self._pkey,
                     banner_timeout=200,
