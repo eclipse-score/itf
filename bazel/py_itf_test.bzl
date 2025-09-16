@@ -29,6 +29,14 @@ def py_itf_test(name, srcs, args = [], data = [], plugins = [], **kwargs):
     """
     pytest_bootstrap = Label("@score_itf//:main.py")
     pytest_ini = Label("@score_itf//:pytest.ini")
+    dlt_receive = Label("@score_itf//itf/plugins/dlt:dlt-receive_as_host")
+    dlt_library = Label("@score_itf//itf/plugins/dlt:libdlt_as_host.so")
+
+    data_as_exec = [pytest_ini] + srcs
+
+    if "itf.plugins.base.base_plugin" in plugins:
+        data_as_exec += [dlt_receive, dlt_library]
+        args.append("--dlt_receive_path=$(location %s)" % dlt_receive)
 
     plugins = ["-p %s" % plugin for plugin in plugins]
 
@@ -52,7 +60,7 @@ def py_itf_test(name, srcs, args = [], data = [], plugins = [], **kwargs):
     test_as_exec(
         name = name,
         executable = "_" + name,
-        data_as_exec = [pytest_ini] + srcs,
+        data_as_exec = data_as_exec,
         data = data,
         args = args +
                ["-c $(location %s)" % pytest_ini] +

@@ -32,6 +32,11 @@ def pytest_addoption(parser):
         required=False,
         help="Docker image bootstrap command, that will be executed before referencing the container.",
     )
+    parser.addoption(
+        "--dlt_receive_path",
+        action="store",
+        help="Path to dlt-receive binary",
+    )
 
 
 @pytest.fixture()

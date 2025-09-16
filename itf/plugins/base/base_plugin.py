@@ -35,6 +35,12 @@ def pytest_addoption(parser):
         default="config/target_config.json",
         help="Path to json file with target configurations.",
     )
+    # Internally provided in py_itf_test macro
+    parser.addoption(
+        "--dlt_receive_path",
+        action="store",
+        help="Path to dlt-receive binary",
+    )
     parser.addoption(
         "--ecu",
         action="store",
@@ -120,6 +126,7 @@ def __make_test_config(config):
         qemu_image=config.getoption("qemu_image"),
         qvp=config.getoption("qvp"),
         hw=config.getoption("hw"),
+        dlt_receive_path=config.getoption("dlt_receive_path"),
     )
 
 

@@ -45,7 +45,7 @@ def qemu_target(target_config, test_config):
             target_ip=target_config.ip_address,
             protocol=Protocol.UDP,
             data_router_config=target_config.data_router_config,
-            binary_path="./itf/plugins/dlt/dlt-receive",
+            binary_path=test_config.dlt_receive_path,
         ):
             target = TargetQemu(test_config.ecu, test_config.os)
             target.register_processors(qemu_process)
