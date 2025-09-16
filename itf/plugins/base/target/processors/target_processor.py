@@ -87,7 +87,30 @@ class TargetProcessor:
     def uses_doip(self):
         return self.__config.use_doip
 
-    def ssh(self, timeout=15, port=None, n_retries=5, retry_interval=1, pkey_path="", password="", ext_ip=False):
+    def ssh(
+        self,
+        timeout: int = 15,
+        port: int = None,
+        n_retries: int = 5,
+        retry_interval: int = 1,
+        pkey_path: str = "",
+        username: str = "root",
+        password: str = "",
+        ext_ip: bool = False,
+    ):
+        """Create SSH connection to target.
+
+        :param int timeout: Connection timeout in seconds. Default is 15 seconds.
+        :param int port: SSH port, if None use default port from config.
+        :param int n_retries: Number of retries to connect. Default is 5 retries.
+        :param int retry_interval: Interval between retries in seconds. Default is 1 second.
+        :param str pkey_path: Path to private key file. If empty, password authentication is used.
+        :param str username: SSH username. Default is 'root'.
+        :param str password: SSH password.
+        :param bool ext_ip: Use external IP address if True, otherwise use internal IP address.
+        :return: Ssh connection object.
+        :rtype: Ssh
+        """
         ssh_ip = self.ext_ip_address if ext_ip else self.ip_address
         ssh_port = port if port else self.ssh_port
         return Ssh(
@@ -97,6 +120,7 @@ class TargetProcessor:
             n_retries=n_retries,
             retry_interval=retry_interval,
             pkey_path=pkey_path,
+            username=username,
             password=password,
         )
 

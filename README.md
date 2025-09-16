@@ -56,7 +56,7 @@ Steps:
     ```
   * Run ITF test from `itf` folder:
     ```
-    $ bazel test //test:test_ssh_bridge_network --test_output=all
+    $ bazel test //test:test_ssh_bridge_network --test_output=streamed
     ```
   * Note: If it fails check IP Address of started Qemu with `ifconfig` and update IP addresses in `itf/config/target_config.json` for `S_CORE_ECU_QEMU_BRIDGE_NETWORK`
 * Run ssh test with qemu started with port forwarding
@@ -66,5 +66,5 @@ Steps:
     ```
   * Run ITF test from `itf` folder:
     ```
-    $ bazel test //test:test_ssh_port_forwarding --test_output=all
+    $ bazel test //test:test_ssh_port_forwarding --test_output=streamed
     ```

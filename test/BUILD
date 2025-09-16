@@ -43,7 +43,7 @@ py_itf_test(
 py_itf_test(
     name = "test_ssh_bridge_network",
     srcs = [
-        "test_ssh_bridge_network.py",
+        "test_ssh.py",
     ],
     args = [
         "--target_config=config/target_config.json",
@@ -60,7 +60,7 @@ py_itf_test(
 py_itf_test(
     name = "test_ssh_port_forwarding",
     srcs = [
-        "test_ssh_port_forwarding.py",
+        "test_ssh.py",
     ],
     args = [
         "--target_config=config/target_config.json",
