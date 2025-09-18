@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("//bazel/rules/as_host:rule.bzl", "as_host")
+load("@rules_python//python:defs.bzl", "py_library")
 
 as_host(
     name = "dlt-receive_as_host",
