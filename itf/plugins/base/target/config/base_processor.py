@@ -18,6 +18,7 @@ class BaseProcessor:
         self,
         name: str,
         ip_address: str = None,
+        ssh_port: int = 22,
         diagnostic_ip_address: str = None,
         diagnostic_address: int = None,
         serial_device: str = None,
@@ -28,6 +29,7 @@ class BaseProcessor:
 
         :param str name: The name of the processor.
         :param str ip_address: The IP address of the processor.
+        :param int ssh_port: The SSH port for the processor.
         :param str diagnostic_ip_address: The internal IP address for diagnostics.
         :param int diagnostic_address: The diagnostic address of the processor.
         :param str serial_device: The serial device for the processor.
@@ -36,6 +38,7 @@ class BaseProcessor:
         """
         self.__name = name
         self.__ip_address = ip_address
+        self.__ssh_port = ssh_port
         self.__diagnostic_ip_address = diagnostic_ip_address
         self.__diagnostic_address = diagnostic_address
         self.__serial_device = serial_device
@@ -51,6 +54,10 @@ class BaseProcessor:
     @property
     def ip_address(self):
         return self.__ip_address
+
+    @property
+    def ssh_port(self):
+        return self.__ssh_port
 
     @ip_address.setter
     def ip_address(self, value):
@@ -109,6 +116,7 @@ class BaseProcessor:
         :param BaseProcessor processor: The BaseProcessor instance to update from.
         """
         self.__ip_address = processor.ip_address
+        self.__ssh_port = processor.ssh_port
         self.__diagnostic_ip_address = processor.diagnostic_ip_address
         self.__diagnostic_address = processor.diagnostic_address
         self.__serial_device = processor.serial_device
@@ -121,7 +129,7 @@ class BaseProcessor:
                 self.__params = processor.params
 
     def __str__(self):
-        return f"{self.__name.upper()} ({json.dumps(self.__dict__, indent=4)})"
+        return self.__name.upper()
 
     def __repr__(self):
         return f"{self.__name.upper()} ({json.dumps(self.__dict__, indent=4)})"

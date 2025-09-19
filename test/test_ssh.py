@@ -13,6 +13,11 @@
 from itf.plugins.com.ssh import execute_command
 
 
-def test_ssh(target_fixture):
+def test_ssh_with_default_user(target_fixture):
     with target_fixture.sut.ssh() as ssh:
-        execute_command(ssh, "uname -a && ifconfig")
+        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+
+
+def test_ssh_with_qnx_user(target_fixture):
+    with target_fixture.sut.ssh(username="qnxuser") as ssh:
+        execute_command(ssh, "echo 'Username:' $USER && uname -a")
