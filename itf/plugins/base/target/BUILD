@@ -28,5 +28,6 @@ py_library(
         "//itf/plugins/base/target/config",
         "//itf/plugins/base/target/processors",
         "//itf/plugins/dlt",
+        "//itf/plugins/qemu",
     ],
 )

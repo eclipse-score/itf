@@ -58,7 +58,7 @@ Steps:
     ```
     $ bazel test //test:test_ssh_bridge_network --test_output=streamed
     ```
-  * Note: If it fails check IP Address of started Qemu with `ifconfig` and update IP addresses in `itf/config/target_config.json` for `S_CORE_ECU_QEMU_BRIDGE_NETWORK`
+  * Note: If it fails, check `IP address set to:` in logs of started Qemu and update IP addresses in `itf/config/target_config.json` for `S_CORE_ECU_QEMU_BRIDGE_NETWORK`
 * Run ssh test with qemu started with port forwarding
   * Start Qemu with bridge network from `reference_integration/qnx_qemu` folder:
     ```

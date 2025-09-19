@@ -27,6 +27,8 @@ class PerformanceProcessor(BaseProcessor):
         network_interfaces: list = [],
         ecu_name: str = None,
         data_router_config: dict = None,
+        qemu_num_cores: int = 2,
+        qemu_ram_size: str = "1G",
         params: dict = None,
     ):
         """Initialize the PerformanceProcessor class.
@@ -42,6 +44,8 @@ class PerformanceProcessor(BaseProcessor):
         :param str ecu_name: The ECU name for the processor.
         :param dict data_router_configs: Configuration for the data router
          with keys "vlan_address" and "multicast_addresses".
+        :param int qemu_num_cores: The number of CPU cores for QEMU.
+        :param str qemu_ram_size: The amount of RAM for QEMU.
         :param dict params: Additional parameters for the processor.
         """
         super().__init__(
@@ -57,6 +61,9 @@ class PerformanceProcessor(BaseProcessor):
         self.__network_interfaces = network_interfaces
         self.__ecu_name = ecu_name
         self.__data_router_config = data_router_config
+        self.__qemu_num_cores = qemu_num_cores
+        self.__qemu_ram_size = qemu_ram_size
+        self.__qemu_image_path = None
 
     @property
     def ext_ip_address(self):
@@ -74,6 +81,22 @@ class PerformanceProcessor(BaseProcessor):
     def data_router_config(self):
         return self.__data_router_config
 
+    @property
+    def qemu_num_cores(self):
+        return self.__qemu_num_cores
+
+    @property
+    def qemu_ram_size(self):
+        return self.__qemu_ram_size
+
+    @property
+    def qemu_image_path(self):
+        return self.__qemu_image_path
+
+    @qemu_image_path.setter
+    def qemu_image_path(self, value):
+        self.__qemu_image_path = value
+
     def update(self, processor):
         """Update the current processor with another processor's parameters.
 
@@ -84,6 +107,9 @@ class PerformanceProcessor(BaseProcessor):
         self.__network_interfaces = processor.network_interfaces
         self.__ecu_name = processor.ecu_name
         self.__data_router_config = processor.data_router_config
+        self.__qemu_num_cores = processor.num_cores
+        self.__qemu_ram_size = processor.ram_size
+        self.__qemu_image_path = processor.qemu_image_path
 
     def __eq__(self, other):
         if isinstance(other, PerformanceProcessor):

@@ -1,3 +1,8 @@
 common --registry=https://bcr.bazel.build
 
 test --test_output=errors
+
+
+build:qemu-integration --run_under=//scripts:run_under_qemu
+build:qemu-integration --test_arg="--qemu"
+build:qemu-integration --test_arg="--os=qnx"
