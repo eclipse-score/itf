@@ -33,7 +33,7 @@ class Ssh:
         password: str = "",
     ):
         """
-        Initializes the Ssh class with connection parameters.
+        Initialize SSH connection to the target.
 
         :param str target_ip: The IP address of the target SSH server.
         :param int port: The port number of the target SSH server. Default is 22.
@@ -58,6 +58,8 @@ class Ssh:
         self._ssh = paramiko.SSHClient()
         self._ssh.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
 
+        logger.info(f"Connecting to {self._target_ip} ...")
+
         for _ in range(self._retries):
             try:
                 self._ssh.connect(
@@ -70,17 +72,19 @@ class Ssh:
                     banner_timeout=200,
                     look_for_keys=False,
                 )
+                logger.info(f"SSH connection to {self._target_ip} established")
                 break
-            except Exception:
+            except Exception as ex:
+                logger.debug(f"SSH connection to {self._target_ip} failed with error: \n{ex}")
                 time.sleep(self._retry_interval)
         else:
-            raise Exception(f"ssh connection to {self._target_ip} failed")
+            raise Exception(f"SSH connection to {self._target_ip} failed")
 
         return self._ssh
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._ssh.close()
-        logger.info("Closed ssh connection.")
+        logger.info("Closed SSH connection.")
 
 
 def command_with_etc(command):
