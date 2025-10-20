@@ -17,22 +17,44 @@ from itf.plugins.com.ssh import Ssh, execute_command
 
 # Reduce the logging level of paramiko, from DEBUG to INFO
 logging.getLogger("paramiko").setLevel(logging.INFO)
-
 logger = logging.getLogger(__name__)
 
 
 class Sftp:
-    def __init__(self, ssh, target_ip, port=22):
+    def __init__(
+        self,
+        ssh: Ssh,
+        target_ip: str,
+        port: int = 22,
+        timeout: int = 15,
+        n_retries: int = 5,
+        retry_interval: int = 1,
+        pkey_path: str = None,
+        username: str = "root",
+        password: str = "",
+    ):
+        """
+        Initialize SFTP connection to target with given ssh connection or parameters to create new ssh connection.
+        :param Ssh ssh: Existing SSH connection
+        :param str target_ip: The IP address of the target SSH server.
+        :param int port: The port number of the target SSH server. Default is 22.
+        :param int timeout: The timeout duration (in seconds) for the SSH connection. Default is 15 seconds.
+        :param int n_retries: The number of retries to attempt for the SSH connection. Default is 5 retries.
+        :param int retry_interval: The interval (in seconds) between retries. Default is 1 second.
+        :param str pkey_path: The file path to the private key for authentication. Default is None.
+        :param str username: The username for SSH authentication. Default is "root".
+        :param str password: The password for SSH authentication. Default is an empty string.
+        """
         if not ssh:
             self._new_ssh = True
         else:
             self._new_ssh = False
-        self._ssh = ssh or Ssh(target_ip=target_ip, port=port)
+        self._ssh = ssh or Ssh(target_ip, port, timeout, n_retries, retry_interval, pkey_path, username, password)
         self._sftp = None
 
     def __enter__(self):
         """
-        Open sftp connection to target given an ssh connection
+        Open sftp connection to target given an SSH connection
         """
         if self._new_ssh:
             self._ssh = self._ssh.__enter__()
@@ -43,7 +65,7 @@ class Sftp:
         self._sftp.close()
         if self._new_ssh:
             self._ssh.close()
-            logger.info("Closed ssh connection.")
+            logger.info("Closed SSH connection.")
 
     def walk(self, remote_path):
         """
