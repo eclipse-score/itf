@@ -11,8 +11,10 @@
             "network_interfaces": [],
             "ecu_name": "s_core_ecu_qemu_bridge_network_pp",
             "data_router_config": {
-                "vlan_address": "127.0.0.1",
-                "multicast_addresses": []
+                "vlan_address": "192.168.122.1",
+                "multicast_addresses": [
+                    "239.255.42.99"
+                ]
             },
             "qemu_num_cores": 2,
             "qemu_ram_size": "1G"
