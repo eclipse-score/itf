@@ -17,7 +17,7 @@ from itf.core.base.target.base_target import Target
 from itf.core.base.target.config.ecu import Ecu
 from itf.core.base.target.processors.qemu_processor import TargetProcessorQemu
 from itf.core.dlt.dlt_receive import DltReceive, Protocol
-from itf.core.qemu.qemu_process import QemuProcess as Qemu
+from itf.core.qemu.qemu_process import QemuProcess
 
 
 class TargetQemu(Target):
@@ -38,12 +38,11 @@ def qemu_target(target_config, test_config):
 
     Currently, only ITF tests against an already running Qemu instance is supported.
     """
-    with Qemu(
-        target_config.qemu_image_path, None, target_config.qemu_ram_size, target_config.qemu_num_cores
-    ) if target_config.qemu_image_path else nullcontext() as qemu_process:
+    with QemuProcess(target_config) if target_config else nullcontext() as qemu_process:
 
         dlt = None
-        if target_config.data_router_config:
+
+        if target_config and target_config.data_router_config:
             dlt = DltReceive(
                 target_ip=target_config.ip_address,
                 protocol=Protocol.UDP,
@@ -53,5 +52,6 @@ def qemu_target(target_config, test_config):
 
         target = TargetQemu(test_config.ecu, test_config.os)
         target.register_processors(qemu_process)
+
         yield target
         target.teardown()

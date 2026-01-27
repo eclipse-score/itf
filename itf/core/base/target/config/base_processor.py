@@ -11,19 +11,20 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 import json
+from typing import Optional
 
 
 class BaseProcessor:
     def __init__(
         self,
         name: str,
-        ip_address: str = None,
+        ip_address: Optional[str] = None,
         ssh_port: int = 22,
-        diagnostic_ip_address: str = None,
-        diagnostic_address: int = None,
-        serial_device: str = None,
+        diagnostic_ip_address: Optional[str] = None,
+        diagnostic_address: Optional[int] = None,
+        serial_device: Optional[str] = None,
         use_doip: bool = False,
-        params: dict = None,
+        params: Optional[dict] = None,
     ):
         """Initialize the BaseProcessor class.
 
@@ -48,7 +49,7 @@ class BaseProcessor:
             self.__dict__.update(**params)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__name
 
     @property
