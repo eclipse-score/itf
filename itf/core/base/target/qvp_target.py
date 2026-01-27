@@ -42,13 +42,15 @@ def qvp_target(target_config, test_config):
     Currently, only ITF tests against an already running QQVP instance is supported.
     """
     with nullcontext() as qvp_process:
-        with DltReceive(
-            target_ip=target_config.ip_address,
-            protocol=Protocol.UDP,
-            data_router_config=target_config.data_router_config,
-            binary_path=test_config.dlt_receive_path,
-        ):
-            target = TargetQvp(test_config.ecu, test_config.os)
-            target.register_processors(qvp_process)
-            yield target
-            target.teardown()
+        dlt = None
+        if target_config.data_router_config:
+            dlt = DltReceive(
+                target_ip=target_config.ip_address,
+                protocol=Protocol.UDP,
+                data_router_config=target_config.data_router_config,
+                binary_path=test_config.dlt_receive_path,
+            )
+        target = TargetQvp(test_config.ecu, test_config.os)
+        target.register_processors(qvp_process)
+        yield target
+        target.teardown()

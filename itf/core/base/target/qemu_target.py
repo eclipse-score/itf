@@ -41,13 +41,17 @@ def qemu_target(target_config, test_config):
     with Qemu(
         target_config.qemu_image_path, None, target_config.qemu_ram_size, target_config.qemu_num_cores
     ) if target_config.qemu_image_path else nullcontext() as qemu_process:
-        with DltReceive(
-            target_ip=target_config.ip_address,
-            protocol=Protocol.UDP,
-            data_router_config=target_config.data_router_config,
-            binary_path=test_config.dlt_receive_path,
-        ):
-            target = TargetQemu(test_config.ecu, test_config.os)
-            target.register_processors(qemu_process)
-            yield target
-            target.teardown()
+
+        dlt = None
+        if target_config.data_router_config:
+            dlt = DltReceive(
+                target_ip=target_config.ip_address,
+                protocol=Protocol.UDP,
+                data_router_config=target_config.data_router_config,
+                binary_path=test_config.dlt_receive_path,
+            )
+
+        target = TargetQemu(test_config.ecu, test_config.os)
+        target.register_processors(qemu_process)
+        yield target
+        target.teardown()

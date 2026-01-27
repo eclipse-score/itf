@@ -29,13 +29,15 @@ def hw_target(target_config, test_config):
     diagnostic_ip = None
 
     with nullcontext():
-        with DltReceive(
-            target_ip=target_config.ip_address,
-            protocol=Protocol.UDP,
-            data_router_config=target_config.data_router_config,
-            binary_path=test_config.dlt_receive_path,
-        ):
-            target = Target(test_config.ecu, test_config.os, diagnostic_ip)
-            target.register_processors()
-            yield target
-            target.teardown()
+        dlt = None
+        if target_config.data_router_config:
+            dlt = DltReceive(
+                target_ip=target_config.ip_address,
+                protocol=Protocol.UDP,
+                data_router_config=target_config.data_router_config,
+                binary_path=test_config.dlt_receive_path,
+            )
+        target = Target(test_config.ecu, test_config.os, diagnostic_ip)
+        target.register_processors()
+        yield target
+        target.teardown()
