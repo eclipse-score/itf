@@ -43,6 +43,7 @@ def qvp_target(target_config, test_config):
     """
     with nullcontext() as qvp_process:
         dlt = None
+
         if target_config.data_router_config:
             dlt = DltReceive(
                 target_ip=target_config.ip_address,
@@ -50,7 +51,9 @@ def qvp_target(target_config, test_config):
                 data_router_config=target_config.data_router_config,
                 binary_path=test_config.dlt_receive_path,
             )
-        target = TargetQvp(test_config.ecu, test_config.os)
-        target.register_processors(qvp_process)
-        yield target
-        target.teardown()
+
+        with dlt if dlt else nullcontext():
+            target = TargetQvp(test_config.ecu, test_config.os)
+            target.register_processors(qvp_process)
+            yield target
+            target.teardown()

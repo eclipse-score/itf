@@ -39,19 +39,19 @@ def qemu_target(target_config, test_config):
     Currently, only ITF tests against an already running Qemu instance is supported.
     """
     with QemuProcess(target_config) if target_config else nullcontext() as qemu_process:
-
         dlt = None
 
-        if target_config and target_config.data_router_config:
+        if target_config.data_router_config:
             dlt = DltReceive(
-                target_ip=target_config.ip_address,
-                protocol=Protocol.UDP,
-                data_router_config=target_config.data_router_config,
-                binary_path=test_config.dlt_receive_path,
-            )
+                    target_ip=target_config.ip_address,
+                    protocol=Protocol.UDP,
+                    data_router_config=target_config.data_router_config,
+                    binary_path=test_config.dlt_receive_path,
+                    )
 
-        target = TargetQemu(test_config.ecu, test_config.os)
-        target.register_processors(qemu_process)
+        with dlt if dlt else nullcontext():
+            target = TargetQemu(test_config.ecu, test_config.os)
+            target.register_processors(qemu_process)
+            yield target
+            target.teardown()
 
-        yield target
-        target.teardown()
