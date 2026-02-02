@@ -10,14 +10,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from itf.core.com.ssh import execute_command
+from itf.core.base.os.operating_system import OperatingSystem
+from itf.core.base.target.config.base_processor import BaseProcessor
+from itf.core.base.target.processors.target_processor import TargetProcessor
 
 
-def test_ssh_with_default_user(target_fixture):
-    with target_fixture.sut.ssh() as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+class TargetProcessorQemu(TargetProcessor):
+    """Target Processor for QEMU."""
 
+    def __init__(self, processor: BaseProcessor, os: OperatingSystem, process):
+        self.__process = process
+        super().__init__(processor, os)
 
-def test_ssh_with_qnx_user(target_fixture):
-    with target_fixture.sut.ssh(username="qnxuser") as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+    def kill_process(self):
+        self.__process.stop()
+
+    def restart_process(self):
+        self.__process.restart()

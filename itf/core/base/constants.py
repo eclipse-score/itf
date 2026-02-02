@@ -10,24 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from itf.core.dlt.dlt_receive import DltReceive, Protocol
-import time
+import pytest
+from itf.core.utils.bunch import Bunch
 
-
-def test_dlt():
-    with DltReceive(
-        target_ip="127.0.0.1",
-        protocol=Protocol.UDP,
-        binary_path="./itf/core/dlt/dlt-receive",
-        data_router_config={
-            "vlan_address": "127.0.0.1",
-            "multicast_addresses": [
-                "239.255.42.99",
-                "231.255.42.99",
-                "234.255.42.99",
-                "237.255.42.99",
-            ],
-        },
-    ):
-        time.sleep(5)
-        pass
+TEST_CONFIG_KEY = pytest.StashKey[Bunch]()
+TARGET_CONFIG_KEY = pytest.StashKey[Bunch]()

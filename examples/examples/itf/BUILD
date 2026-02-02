@@ -1,4 +1,5 @@
 load("@score_itf//:defs.bzl", "py_itf_test")
+load("@score_itf//itf/plugins:plugins.bzl", "base", "docker")
 
 py_itf_test(
     name = "test_docker",
@@ -11,6 +12,42 @@ py_itf_test(
     ],
     data = ["//examples/docker:image_tarball"],
     plugins = [
-        "itf.plugins.docker",
+        docker,
+    ],
+)
+
+py_itf_test(
+    name = "test_ssh_bridge_network",
+    srcs = [
+        "test_ssh.py",
+    ],
+    args = [
+        "--target_config=$(location @score_itf//config)",
+        "--ecu=s_core_ecu_qemu_bridge_network",
+        "--qemu",
+    ],
+    data = [
+        "@score_itf//config",
+    ],
+    plugins = [
+        base,
+    ],
+)
+
+py_itf_test(
+    name = "test_ssh_port_forwarding",
+    srcs = [
+        "test_ssh.py",
+    ],
+    args = [
+        "--target_config=$(location @score_itf//config)",
+        "--ecu=s_core_ecu_qemu_port_forwarding",
+        "--qemu",
+    ],
+    data = [
+        "@score_itf//config",
+    ],
+    plugins = [
+        base,
     ],
 )

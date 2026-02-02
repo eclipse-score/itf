@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("//:defs.bzl", "py_itf_test")
+load("//itf/plugins:plugins.bzl", "base", "docker")
 
 py_itf_test(
     name = "test_rules_are_working_correctly",
@@ -29,7 +30,7 @@ py_itf_test(
         "--docker-image=ubuntu:24.04",
     ],
     plugins = [
-        "itf.plugins.docker",
+        docker,
     ],
 )
 
@@ -37,6 +38,9 @@ py_itf_test(
     name = "test_dlt",
     srcs = [
         "test_dlt.py",
+    ],
+    deps = [
+        "//itf/core/dlt",
     ],
 )
 
@@ -46,15 +50,16 @@ py_itf_test(
         "test_ssh.py",
     ],
     args = [
-        "--target_config=config/target_config.json",
+        "--target_config=$(location //config)",
         "--ecu=s_core_ecu_qemu_bridge_network",
-        "--os=qnx",
         "--qemu",
     ],
-    plugins = [
-        "itf.plugins.base.base_plugin",
+    data = [
+        "//config",
     ],
-    tags = ["manual"],
+    plugins = [
+        base,
+    ],
 )
 
 py_itf_test(
@@ -63,13 +68,14 @@ py_itf_test(
         "test_ssh.py",
     ],
     args = [
-        "--target_config=config/target_config.json",
+        "--target_config=$(location //config)",
         "--ecu=s_core_ecu_qemu_port_forwarding",
-        "--os=qnx",
         "--qemu",
     ],
-    plugins = [
-        "itf.plugins.base.base_plugin",
+    data = [
+        "//config",
     ],
-    tags = ["manual"],
+    plugins = [
+        base,
+    ],
 )

@@ -10,24 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from itf.core.dlt.dlt_receive import DltReceive, Protocol
-import time
+from enum import Enum
+from itf.core.base.os.config import global_os_config as os_config
 
 
-def test_dlt():
-    with DltReceive(
-        target_ip="127.0.0.1",
-        protocol=Protocol.UDP,
-        binary_path="./itf/core/dlt/dlt-receive",
-        data_router_config={
-            "vlan_address": "127.0.0.1",
-            "multicast_addresses": [
-                "239.255.42.99",
-                "231.255.42.99",
-                "234.255.42.99",
-                "237.255.42.99",
-            ],
-        },
-    ):
-        time.sleep(5)
-        pass
+# pylint: disable=no-member
+class OperatingSystem(Enum):
+    LINUX = os_config.os.linux
+    QNX = os_config.os.qnx
+    UNSPECIFIED = {}
+
+    @staticmethod
+    def argparse(s):
+        try:
+            return OperatingSystem[s.upper()]
+        except KeyError:
+            return s

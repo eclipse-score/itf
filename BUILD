@@ -27,7 +27,7 @@ exports_files([
 py_library(
     name = "itf",
     srcs = [
-        "//itf/plugins:docker",
+        "itf/__init__.py",
     ],
     data = [
         "//config",
@@ -35,10 +35,7 @@ py_library(
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
-        "//itf/plugins/base",
-        "//itf/plugins/com",
-        "//itf/plugins/dlt",
-        "//itf/plugins/utils",
+        "//itf/plugins:core",
     ],
 )
 

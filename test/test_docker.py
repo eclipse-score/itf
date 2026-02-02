@@ -10,6 +10,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-def test_docker_runs(docker):
-    exit_code, output = docker.exec_run("echo -n Hello, World!")
-    assert "Hello, World!" == output.decode()
+
+
+def check_command_exec(target, message):
+    exit_code, output = target.exec_run(f"echo -n {message}")
+    return f"{message}" == output.decode()
+
+
+def test_docker_runs_1(target):
+    assert check_command_exec(target, "hello, world 1")
+
+
+def test_docker_runs_2(target):
+    assert check_command_exec(target, "hello, world 1")
