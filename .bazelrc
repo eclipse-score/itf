@@ -1,3 +1,4 @@
+common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/
 common --registry=https://bcr.bazel.build
 
 test --test_output=errors

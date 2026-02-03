@@ -12,6 +12,7 @@
 # *******************************************************************************
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@score_tooling//:defs.bzl", "copyright_checker")
 
 compile_pip_requirements(
     name = "requirements",
@@ -52,3 +53,23 @@ alias(
 exports_files([
     ".ruff.toml",
 ])
+
+copyright_checker(
+    name = "copyright",
+    srcs = [
+        ".github",
+        "bazel",
+        "deps",
+        "examples",
+        "itf",
+        "scripts",
+        "test",
+        "tools",
+        "//:BUILD",
+        "//:MODULE.bazel",
+        "//:main.py",
+    ],
+    config = "@score_tooling//cr_checker/resources:config",
+    template = "@score_tooling//cr_checker/resources:templates",
+    visibility = ["//visibility:public"],
+)

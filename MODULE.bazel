@@ -21,7 +21,7 @@ module(
 # Python version
 #
 ###############################################################################
-bazel_dep(name = "rules_python", version = "1.0.0")
+bazel_dep(name = "rules_python", version = "1.4.1")
 
 PYTHON_VERSION = "3.12"
 
@@ -51,7 +51,7 @@ use_repo(pip, "itf_pip")
 # Provides formatting and linting of Bazel files.
 #
 ###############################################################################
-bazel_dep(name = "buildifier_prebuilt", version = "6.4.0")
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
 
 ###############################################################################
 #
@@ -78,6 +78,13 @@ bazel_dep(name = "rules_cc", version = "0.1.1")
 #
 ###############################################################################
 bazel_dep(name = "rules_shell", version = "0.6.0")
+
+###############################################################################
+#
+# Score custom modules loading
+#
+###############################################################################
+bazel_dep(name = "score_tooling", version = "1.0.4")
 
 ################################################################################
 #
