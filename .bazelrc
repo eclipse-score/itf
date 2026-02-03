@@ -1,3 +1,4 @@
+common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/
 common --registry=https://bcr.bazel.build
 
 test --test_output=errors
@@ -5,4 +6,3 @@ test --test_output=errors
 
 build:qemu-integration --run_under=//scripts:run_under_qemu
 build:qemu-integration --test_arg="--qemu"
-build:qemu-integration --test_arg="--os=qnx"

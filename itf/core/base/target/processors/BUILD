@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,27 +10,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_python//python:defs.bzl", "py_library")
 
-cc_binary(
-    name = "example-app",
-    srcs = ["main.cpp"],
-)
-
-cc_test(
-    name = "example-test",
-    srcs = ["test.cpp"],
-    deps = [
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-pkg_tar(
-    name = "example-app-pkg",
+py_library(
+    name = "processors",
     srcs = [
-        "example-app",
+        "__init__.py",
+        "qemu_processor.py",
+        "qvp_processor.py",
+        "safety_processor.py",
+        "target_processor.py",
     ],
-    visibility = ["//examples/docker:__pkg__"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//itf/core/base/os",
+        "//itf/core/base/target/config",
+        "//itf/core/com:ping",
+        "//itf/core/com:ssh",
+    ],
 )

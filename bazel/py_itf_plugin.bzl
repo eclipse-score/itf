@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,7 +10,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-def test_docker_runs(target):
-    exit_code, output = target.exec_run("/example-app")
-    assert 0 == exit_code
-    assert "Hello!" in output.decode()
+
+def py_itf_plugin(py_library, enabled_plugins, args, data, data_as_exec, tags):
+    return struct(
+        py_library = py_library,
+        enabled_plugins = enabled_plugins,
+        args = args,
+        data = data,
+        data_as_exec = data_as_exec,
+        tags = tags,
+    )

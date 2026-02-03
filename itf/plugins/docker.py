@@ -15,6 +15,8 @@ import subprocess
 import docker as pypi_docker
 import pytest
 
+from itf.plugins.core import determine_target_scope
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,15 +34,10 @@ def pytest_addoption(parser):
         required=False,
         help="Docker image bootstrap command, that will be executed before referencing the container.",
     )
-    parser.addoption(
-        "--dlt_receive_path",
-        action="store",
-        help="Path to dlt-receive binary",
-    )
 
 
-@pytest.fixture()
-def docker(request):
+@pytest.fixture(scope=determine_target_scope)
+def target_init(request):
     docker_image_bootstrap = request.config.getoption("docker_image_bootstrap")
     if docker_image_bootstrap:
         logger.info(f"Executing custom image bootstrap command: {docker_image_bootstrap}")

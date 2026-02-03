@@ -16,29 +16,29 @@ load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_test")
 load("@score_itf//bazel/rules:run_as_exec.bzl", "test_as_exec")
 
-def py_itf_test(name, srcs, args = [], data = [], plugins = [], **kwargs):
+def py_itf_test(name, srcs, args = [], data = [], data_as_exec = [], plugins = [], deps = [], tags = []):
     """Bazel macro for running ITF tests.
 
     Args:
       name: Name of the test target.
       srcs: List of source files for the test.
       args: Additional arguments to pass to ITF.
-      data: Data files needed for the test.
+      data: Data files that will be build for target config.
+      data_as_exec: Data files that will be build for exec(host) config.
       plugins: List of pytest plugins to enable.
-      **kwargs: Additional keyword arguments passed to py_test.
+      deps: Additional python dependencies needed for the test.
+      tags: Tags forwarded to the test target.
     """
     pytest_bootstrap = Label("@score_itf//:main.py")
     pytest_ini = Label("@score_itf//:pytest.ini")
-    dlt_receive = Label("@score_itf//itf/plugins/dlt:dlt-receive_as_host")
-    dlt_library = Label("@score_itf//itf/plugins/dlt:libdlt_as_host.so")
 
-    data_as_exec = [pytest_ini] + srcs
+    plugin_deps = []
+    for plugin in plugins:
+        plugin_deps.append(plugin.py_library)
 
-    if "itf.plugins.base.base_plugin" in plugins:
-        data_as_exec += [dlt_receive, dlt_library]
-        args.append("--dlt_receive_path=$(location %s)" % dlt_receive)
-
-    plugins = ["-p %s" % plugin for plugin in plugins]
+    plugin_tags = []
+    for plugin in plugins:
+        plugin_tags.extend(plugin.tags)
 
     py_test(
         name = "_" + name,
@@ -47,31 +47,47 @@ def py_itf_test(name, srcs, args = [], data = [], plugins = [], **kwargs):
         ] + srcs,
         main = pytest_bootstrap,
         deps = [
-            requirement("docker"),
-            requirement("pytest"),
-            requirement("paramiko"),
-            requirement("typing-extensions"),
-            requirement("netifaces"),
+            # Only core ITF dep allowed, rest is resolved by plugins
             "@score_itf//:itf",
-        ],
-        tags = ["manual"],
+        ] + deps + plugin_deps,
+        tags = ["manual"] + tags + plugin_tags,
     )
+
+    plugin_enable_args = ["-p itf.plugins.core"]
+    for plugin in plugins:
+        for enabled_plugin in plugin.enabled_plugins:
+            plugin_enable_args.append("-p %s" % enabled_plugin)
+
+    plugin_args = []
+    for plugin in plugins:
+        plugin_args.extend(plugin.args)
+
+    plugin_data = []
+    for plugin in plugins:
+        plugin_data.extend(plugin.data)
+
+    plugin_data_as_exec = []
+    for plugin in plugins:
+        plugin_data_as_exec.extend(plugin.data_as_exec)
+
+    data_as_exec = [pytest_ini] + srcs + data_as_exec + plugin_data_as_exec
 
     test_as_exec(
         name = name,
         executable = "_" + name,
         data_as_exec = data_as_exec,
-        data = data,
+        data = data + plugin_data,
         args = args +
                ["-c $(location %s)" % pytest_ini] +
                [
                    "-p no:cacheprovider",
                    "--show-capture=no",
                ] +
-               plugins +
+               plugin_enable_args +
+               plugin_args +
                ["$(location %s)" % x for x in srcs],
         env = {
             "PYTHONDONOTWRITEBYTECODE": "1",
         },
-        **kwargs
+        tags = tags + plugin_tags,
     )

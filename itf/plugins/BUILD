@@ -10,8 +10,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-filegroup(
+load("@itf_pip//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "core",
+    srcs = ["core.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("pytest"),
+    ],
+)
+
+py_library(
     name = "docker",
     srcs = ["docker.py"],
     visibility = ["//visibility:public"],
+    deps = [
+        requirement("docker"),
+        requirement("pytest"),
+    ],
 )

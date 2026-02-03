@@ -10,24 +10,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from itf.core.dlt.dlt_receive import DltReceive, Protocol
-import time
+from itf.core.base.os.operating_system import OperatingSystem
+from itf.core.base.target.config.base_processor import BaseProcessor
+from itf.core.base.target.processors.target_processor import TargetProcessor
 
 
-def test_dlt():
-    with DltReceive(
-        target_ip="127.0.0.1",
-        protocol=Protocol.UDP,
-        binary_path="./itf/core/dlt/dlt-receive",
-        data_router_config={
-            "vlan_address": "127.0.0.1",
-            "multicast_addresses": [
-                "239.255.42.99",
-                "231.255.42.99",
-                "234.255.42.99",
-                "237.255.42.99",
-            ],
-        },
-    ):
-        time.sleep(5)
-        pass
+class TargetSafetyProcessor(TargetProcessor):
+    """Represents the Safety processor of the target ECU."""
+
+    # pylint: disable=useless-super-delegation
+    def __init__(self, processor: BaseProcessor, os: OperatingSystem, diagnostic_ip=None):
+        super().__init__(processor, os, diagnostic_ip)

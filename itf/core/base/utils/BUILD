@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,7 +10,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-def test_docker_runs(target):
-    exit_code, output = target.exec_run("/example-app")
-    assert 0 == exit_code
-    assert "Hello!" in output.decode()
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "utils",
+    srcs = [
+        "__init__.py",
+        "exec_utils.py",
+    ],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//itf/core/com",
+    ],
+)

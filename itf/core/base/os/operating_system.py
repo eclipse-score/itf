@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,7 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-def test_docker_runs(target):
-    exit_code, output = target.exec_run("/example-app")
-    assert 0 == exit_code
-    assert "Hello!" in output.decode()
+from enum import Enum
+from itf.core.base.os.config import global_os_config as os_config
+
+
+# pylint: disable=no-member
+class OperatingSystem(Enum):
+    LINUX = os_config.os.linux
+    QNX = os_config.os.qnx
+    UNSPECIFIED = {}
+
+    @staticmethod
+    def argparse(s):
+        try:
+            return OperatingSystem[s.upper()]
+        except KeyError:
+            return s
