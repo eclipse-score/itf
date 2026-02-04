@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 from itf.core.base.target.config.base_processor import BaseProcessor
+from typing import Optional
 
 
 class PerformanceProcessor(BaseProcessor):
@@ -18,18 +19,20 @@ class PerformanceProcessor(BaseProcessor):
     def __init__(
         self,
         name: str,
-        ip_address: str = None,
+        ip_address: Optional[str] = None,
         ssh_port: int = 22,
-        ext_ip_address: str = None,
-        diagnostic_ip_address: str = None,
+        ext_ip_address: Optional[str] = None,
+        host_ip: Optional[str] = None,
+        diagnostic_ip_address: Optional[str] = None,
         diagnostic_address: int = 0,
-        serial_device: str = None,
+        diagnostic_host_ip: Optional[str] = None,
+        serial_device: Optional[str] = None,
         network_interfaces: list = [],
-        ecu_name: str = None,
-        data_router_config: dict = None,
+        ecu_name: Optional[str] = None,
+        data_router_config: Optional[dict] = None,
         qemu_num_cores: int = 2,
         qemu_ram_size: str = "1G",
-        params: dict = None,
+        params: Optional[dict] = None,
     ):
         """Initialize the PerformanceProcessor class.
 
@@ -37,8 +40,10 @@ class PerformanceProcessor(BaseProcessor):
         :param str ip_address: The IP address of the processor.
         :param int ssh_port: The SSH port for the processor.
         :param str ext_ip_address: The external IP address of the processor.
+        :param str host_ip: The ip of the host, used to find the correct network device.
         :param str diagnostic_ip_address: The internal IP address for diagnostics.
         :param int diagnostic_address: The diagnostic address of the processor.
+        :param str host_diagnosticip: The ip of the host for the diagnostic interface, used to find the correct network device.
         :param str serial_device: The serial device for the processor.
         :param list network_interfaces: The network interfaces for the processor.
         :param str ecu_name: The ECU name for the processor.
@@ -58,6 +63,8 @@ class PerformanceProcessor(BaseProcessor):
             params=params,
         )
         self.__ext_ip_address = ext_ip_address
+        self.__host_ip = host_ip
+        self.__diagnostic_host_ip = diagnostic_host_ip
         self.__network_interfaces = network_interfaces
         self.__ecu_name = ecu_name
         self.__data_router_config = data_router_config
@@ -68,6 +75,14 @@ class PerformanceProcessor(BaseProcessor):
     @property
     def ext_ip_address(self):
         return self.__ext_ip_address
+
+    @property
+    def host_ip(self) -> Optional[str]:
+        return self.__host_ip
+
+    @property
+    def host_diagnostic_ip(self) -> Optional[str]:
+        return self.__diagnostic_host_ip
 
     @property
     def ecu_name(self):

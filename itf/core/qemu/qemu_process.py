@@ -15,28 +15,26 @@ import subprocess
 
 from itf.core.utils.process.console import PipeConsole
 from itf.core.qemu.qemu import Qemu
+from itf.core.base.target.config.ecu import Ecu
 
 logger = logging.getLogger(__name__)
 
 
 class QemuProcess:
-    def __init__(self, path_to_qemu_image, path_to_bootloader, available_ram, available_cores):
-        self._path_to_qemu_image = path_to_qemu_image
-        self._path_to_bootloader = path_to_bootloader
-        self._available_ram = available_ram
-        self._available_cores = available_cores
-        self._qemu = Qemu(
-            self._path_to_qemu_image, self._path_to_bootloader, self._available_ram, self._available_cores
-        )
+
+    def __init__(self, config: Ecu):
+
+        self._path_to_qemu_image = config.qemu_image_path
+        self._qemu = Qemu(config)
         self._console = None
 
-    def __enter__(self):
+    def __enter__(self) -> "QemuProcess":
         return self.start()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
 
-    def start(self):
+    def start(self) -> "QemuProcess":
         logger.info("Starting Qemu...")
         logger.info(f"Using QEMU image: {self._path_to_qemu_image}")
         subprocess_params = {
@@ -58,5 +56,5 @@ class QemuProcess:
         self.start()
 
     @property
-    def console(self):
+    def console(self) -> PipeConsole:
         return self._console
