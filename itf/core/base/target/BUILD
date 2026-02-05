@@ -27,7 +27,7 @@ py_library(
         "//itf/core/base/os",
         "//itf/core/base/target/config",
         "//itf/core/base/target/processors",
-        "//itf/core/dlt",
         "//itf/core/qemu",
+        "//itf/plugins/dlt",
     ],
 )

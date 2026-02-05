@@ -59,11 +59,11 @@ copyright_checker(
     srcs = [
         ".github",
         "bazel",
-        "deps",
         "examples",
         "itf",
         "scripts",
         "test",
+        "third_party",
         "tools",
         "//:BUILD",
         "//:MODULE.bazel",
