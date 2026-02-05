@@ -15,14 +15,12 @@ import logging
 
 from itf.core.base.target.config.base_processor import BaseProcessor
 from itf.core.base.target.config.performance_processor import PerformanceProcessor
-from itf.core.base.target.config.safety_processor import SafetyProcessor
 from itf.core.base.target.config.ecu import Ecu
 
 
 logger = logging.getLogger(__name__)
 
 PERFORMANCE_PROCESSORS = {}
-SAFETY_PROCESSORS = {}
 OTHER_PROCESSORS = {}
 ECUS = {}
 
@@ -55,20 +53,6 @@ def load_configuration(config_file: str):
             )
             PERFORMANCE_PROCESSORS[perf_config["name"]] = performance_processor
 
-        safety_processor = None
-        if "safety_processor" in ecu_config:
-            safety_config = ecu_config.get("safety_processor")
-            safety_processor = SafetyProcessor(
-                name=safety_config["name"],
-                ip_address=safety_config["ip_address"],
-                diagnostic_ip_address=safety_config["diagnostic_ip_address"],
-                diagnostic_address=int(safety_config["diagnostic_address"], 16),
-                serial_device=safety_config["serial_device"],
-                use_doip=safety_config.get("use_doip", False),
-                params=safety_config.get("params", {}),
-            )
-            SAFETY_PROCESSORS[safety_config["name"]] = safety_processor
-
         other_processors = []
         for other_name, other_config in ecu_config.get("other_processors", {}).items():
             other_processor = BaseProcessor(
@@ -86,7 +70,6 @@ def load_configuration(config_file: str):
         ECUS[ecu_name] = Ecu(
             name=ecu_name,
             sut=performance_processor,
-            sc=safety_processor,
             others=other_processors,
         )
 

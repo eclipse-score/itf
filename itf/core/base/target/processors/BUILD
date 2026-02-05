@@ -17,8 +17,6 @@ py_library(
     srcs = [
         "__init__.py",
         "qemu_processor.py",
-        "qvp_processor.py",
-        "safety_processor.py",
         "target_processor.py",
     ],
     imports = ["."],

@@ -13,7 +13,6 @@
 import logging
 
 from itf.core.base.target.processors.target_processor import TargetProcessor
-from itf.core.base.target.processors.safety_processor import TargetSafetyProcessor
 from itf.core.base.os.operating_system import OperatingSystem
 from itf.core.base.target.config.ecu import Ecu
 
@@ -38,7 +37,6 @@ class Target:
         self.__target_ecu = target_ecu
         self.__target_sut_os = target_sut_os
         self.__sut = None
-        self.__safety_core = None
         # Other processors
         for other_ecu in self.target_ecu.others:
             setattr(self, other_ecu.name.lower(), None)  # Will be set when registering processors
@@ -59,12 +57,6 @@ class Target:
             self.__diagnostic_ip,
         )
         self.__processors.append(self.sut)
-
-        self.__safety_core = TargetSafetyProcessor(
-            self.__target_ecu.sc,
-            OperatingSystem.UNSPECIFIED,
-            diagnostic_ip=self.__diagnostic_ip,
-        )
 
         for processor in self.target_ecu.others:
             other_processor = TargetProcessor(processor, OperatingSystem.UNSPECIFIED)
@@ -90,14 +82,6 @@ class Target:
     @sut.setter
     def sut(self, value):
         self.__sut = value
-
-    @property
-    def safety_core(self):
-        return self.__safety_core
-
-    @safety_core.setter
-    def safety_core(self, value):
-        self.__safety_core = value
 
     @property
     def processors(self):

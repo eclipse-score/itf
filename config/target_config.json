@@ -13,14 +13,6 @@
             "qemu_num_cores": 2,
             "qemu_ram_size": "1G"
         },
-        "safety_processor": {
-            "name": "S_CORE_ECU_QEMU_BRIDGE_NETWORK_SC",
-            "ip_address": "192.168.122.76",
-            "diagnostic_ip_address": "192.168.122.76",
-            "diagnostic_address": "0x90",
-            "serial_device": "",
-            "use_doip": true
-        },
         "other_processors": {}
     },
     "S_CORE_ECU_QEMU_PORT_FORWARDING": {
@@ -36,14 +28,6 @@
             "ecu_name": "s_core_ecu_qemu_port_forwarding_pp",
             "qemu_num_cores": 2,
             "qemu_ram_size": "1G"
-        },
-        "safety_processor": {
-            "name": "CORE_ECU_QEMU_PORT_FORWARDING_SC",
-            "ip_address": "localhost",
-            "diagnostic_ip_address": "localhost",
-            "diagnostic_address": "0x90",
-            "serial_device": "",
-            "use_doip": true
         },
         "other_processors": {}
     }

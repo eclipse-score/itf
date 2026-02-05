@@ -15,5 +15,4 @@ from .config import target_ecu_argparse
 
 from .config import ECUS
 from .config import PERFORMANCE_PROCESSORS
-from .config import SAFETY_PROCESSORS
 from .config import OTHER_PROCESSORS
