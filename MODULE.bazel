@@ -81,6 +81,34 @@ bazel_dep(name = "rules_shell", version = "0.6.0")
 
 ###############################################################################
 #
+# Container dependencies
+#
+###############################################################################
+bazel_dep(name = "rules_oci", version = "1.8.0")
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+
+# Declare external images you need to pull, for example:
+oci.pull(
+    name = "ubuntu_24_04",
+    digest = "sha256:2e863c44b718727c860746568e1d54afd13b2fa71b160f5cd9058fc436217b30",
+    image = "ubuntu",
+    platforms = ["linux/amd64"],
+    tag = "24.04",
+)
+
+# For each oci.pull call, repeat the "name" here to expose them as dependencies.
+use_repo(oci, "ubuntu_24_04")
+
+###############################################################################
+#
+# Packaging dependencies
+#
+###############################################################################
+bazel_dep(name = "rules_pkg", version = "1.0.1")
+
+###############################################################################
+#
 # Score custom modules loading
 #
 ###############################################################################
@@ -97,5 +125,10 @@ git_repository(
     name = "dlt_daemon",
     branch = "master",
     build_file = "//third_party/dlt:dlt_daemon.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/dlt:0000-initialize-global-vars.patch",
+        "//third_party/dlt:0001-enable-multicast-udp.patch",
+    ],
     remote = "https://github.com/draganbjedov/dlt-daemon.git",
 )

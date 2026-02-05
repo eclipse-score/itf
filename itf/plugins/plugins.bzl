@@ -59,7 +59,5 @@ dlt = py_itf_plugin(
         "@score_itf//third_party/dlt:dlt-receive",
     ],
     tags = [
-        "local",
-        "manual",
     ],
 )

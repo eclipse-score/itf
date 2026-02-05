@@ -39,8 +39,14 @@ py_itf_test(
     srcs = [
         "test_dlt.py",
     ],
+    args = [
+        "--docker-image-bootstrap=$(location //test/resources:image_tarball)",
+        "--docker-image=score_itf_examples:latest",
+    ],
+    data = ["//test/resources:image_tarball"],
     plugins = [
         dlt,
+        docker,
     ],
 )
 

@@ -17,3 +17,27 @@ alias(
         "//visibility:public",
     ],
 )
+
+alias(
+    name = "dlt-adaptor-stdin",
+    actual = "@dlt_daemon//:dlt-adaptor-stdin",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "dlt-daemon",
+    actual = "@dlt_daemon//:dlt-daemon",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "dlt-daemon-conf",
+    actual = "@dlt_daemon//:dlt-daemon-conf",
+    visibility = [
+        "//visibility:public",
+    ],
+)
