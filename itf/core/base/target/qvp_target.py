@@ -17,7 +17,7 @@ from itf.core.base.os.operating_system import OperatingSystem
 from itf.core.base.target.base_target import Target
 from itf.core.base.target.config.ecu import Ecu
 from itf.core.base.target.processors.qvp_processor import TargetProcessorQVP
-from itf.core.dlt.dlt_receive import DltReceive, Protocol
+from itf.plugins.dlt.dlt_receive import DltReceive, Protocol
 
 
 logger = logging.getLogger(__name__)
@@ -43,10 +43,10 @@ def qvp_target(target_config, test_config):
     """
     with nullcontext() as qvp_process:
         with DltReceive(
+            host_ip=dlt_config.host_ip,
+            multicast_ips=dlt_config.multicast_ips,
+            binary_path=dlt_config.dlt_receive_path,
             target_ip=target_config.ip_address,
-            protocol=Protocol.UDP,
-            data_router_config=target_config.data_router_config,
-            binary_path=test_config.dlt_receive_path,
         ):
             target = TargetQvp(test_config.ecu, test_config.os)
             target.register_processors(qvp_process)

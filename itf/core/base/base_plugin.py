@@ -24,6 +24,8 @@ from itf.core.base.utils.exec_utils import pre_tests_phase, post_tests_phase
 from itf.core.utils import padder
 from itf.core.utils.bunch import Bunch
 
+from itf.plugins.dlt.dlt_receive import DltReceive, Protocol
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +36,6 @@ def pytest_addoption(parser):
         action="store",
         default="config/target_config.json",
         help="Path to json file with target configurations.",
-    )
-    # Internally provided in py_itf_test macro
-    parser.addoption(
-        "--dlt_receive_path",
-        action="store",
-        help="Path to dlt-receive binary",
     )
     parser.addoption(
         "--ecu",
@@ -86,35 +82,41 @@ def target_config_fixture(request):
 
 
 @pytest.fixture(scope="session")
-def target_fixture(target_config_fixture, test_config_fixture, request):
+def target_fixture(target_config_fixture, test_config_fixture, request, dlt_config):
     logger.info("Starting target_fixture in base_plugin.py ...")
     logger.info(f"Starting tests on host: {socket.gethostname()}")
 
-    if test_config_fixture.qemu:
-        with qemu_target(target_config_fixture, test_config_fixture) as qemu:
-            try:
-                pre_tests_phase(qemu, target_config_fixture.ip_address, test_config_fixture, request)
-                yield qemu
-            finally:
-                post_tests_phase(qemu, test_config_fixture)
+    with DltReceive(
+        protocol=Protocol.UDP,
+        host_ip=dlt_config.host_ip,
+        multicast_ips=dlt_config.multicast_ips,
+        binary_path=dlt_config.dlt_receive_path,
+    ):
+        if test_config_fixture.qemu:
+            with qemu_target(target_config_fixture, test_config_fixture) as qemu:
+                try:
+                    pre_tests_phase(qemu, target_config_fixture.ip_address, test_config_fixture, request)
+                    yield qemu
+                finally:
+                    post_tests_phase(qemu, test_config_fixture)
 
-    elif test_config_fixture.qvp:
-        with qvp_target(target_config_fixture, test_config_fixture) as qvp:
-            try:
-                pre_tests_phase(qvp, target_config_fixture.ip_address, test_config_fixture, request)
-                yield qvp
-            finally:
-                post_tests_phase(qvp, test_config_fixture)
+        elif test_config_fixture.qvp:
+            with qvp_target(target_config_fixture, test_config_fixture) as qvp:
+                try:
+                    pre_tests_phase(qvp, target_config_fixture.ip_address, test_config_fixture, request)
+                    yield qvp
+                finally:
+                    post_tests_phase(qvp, test_config_fixture)
 
-    elif test_config_fixture.hw:
-        with hw_target(target_config_fixture, test_config_fixture) as hardware:
-            try:
-                pre_tests_phase(hardware, target_config_fixture.ip_address, test_config_fixture, request)
-                yield hardware
-            finally:
-                post_tests_phase(hardware, test_config_fixture)
-    else:
-        raise RuntimeError("QEMU, QVP or HW not specified to use")
+        elif test_config_fixture.hw:
+            with hw_target(target_config_fixture, test_config_fixture) as hardware:
+                try:
+                    pre_tests_phase(hardware, target_config_fixture.ip_address, test_config_fixture, request)
+                    yield hardware
+                finally:
+                    post_tests_phase(hardware, test_config_fixture)
+        else:
+            raise RuntimeError("QEMU, QVP or HW not specified to use")
 
 
 def __make_test_config(config):
@@ -126,7 +128,6 @@ def __make_test_config(config):
         qemu_image=config.getoption("qemu_image"),
         qvp=config.getoption("qvp"),
         hw=config.getoption("hw"),
-        dlt_receive_path=config.getoption("dlt_receive_path"),
     )
 
 

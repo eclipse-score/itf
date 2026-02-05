@@ -10,3 +10,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+alias(
+    name = "dlt-receive",
+    actual = "@dlt_daemon//:dlt-receive",
+    visibility = [
+        "//visibility:public",
+    ],
+)

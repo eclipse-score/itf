@@ -10,24 +10,33 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from itf.core.dlt.dlt_receive import DltReceive, Protocol
 import time
 
+from itf.plugins.dlt.dlt_receive import DltReceive, Protocol
 
-def test_dlt():
+
+def test_dlt(dlt_config):
     with DltReceive(
-        target_ip="127.0.0.1",
         protocol=Protocol.UDP,
-        binary_path="./itf/core/dlt/dlt-receive",
-        data_router_config={
-            "vlan_address": "127.0.0.1",
-            "multicast_addresses": [
-                "239.255.42.99",
-                "231.255.42.99",
-                "234.255.42.99",
-                "237.255.42.99",
-            ],
-        },
+        host_ip=dlt_config.host_ip,
+        target_ip=dlt_config.target_ip,
+        multicast_ips=dlt_config.multicast_ips,
+        binary_path=dlt_config.dlt_receive_path,
     ):
-        time.sleep(5)
-        pass
+        time.sleep(1)
+
+
+def test_dlt_custom_config(dlt_config):
+    with DltReceive(
+        protocol=Protocol.UDP,
+        host_ip="127.0.0.1",
+        target_ip="127.0.0.1",
+        multicast_ips=[
+            "239.255.42.99",
+            "231.255.42.99",
+            "234.255.42.99",
+            "237.255.42.99",
+        ],
+        binary_path=dlt_config.dlt_receive_path,
+    ):
+        time.sleep(1)

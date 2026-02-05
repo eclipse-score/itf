@@ -16,7 +16,6 @@ from itf.core.base.os.operating_system import OperatingSystem
 from itf.core.base.target.base_target import Target
 from itf.core.base.target.config.ecu import Ecu
 from itf.core.base.target.processors.qemu_processor import TargetProcessorQemu
-from itf.core.dlt.dlt_receive import DltReceive, Protocol
 from itf.core.qemu.qemu_process import QemuProcess as Qemu
 
 
@@ -41,13 +40,7 @@ def qemu_target(target_config, test_config):
     with Qemu(
         target_config.qemu_image_path, None, target_config.qemu_ram_size, target_config.qemu_num_cores
     ) if target_config.qemu_image_path else nullcontext() as qemu_process:
-        with DltReceive(
-            target_ip=target_config.ip_address,
-            protocol=Protocol.UDP,
-            data_router_config=target_config.data_router_config,
-            binary_path=test_config.dlt_receive_path,
-        ):
-            target = TargetQemu(test_config.ecu, test_config.os)
-            target.register_processors(qemu_process)
-            yield target
-            target.teardown()
+        target = TargetQemu(test_config.ecu, test_config.os)
+        target.register_processors(qemu_process)
+        yield target
+        target.teardown()
