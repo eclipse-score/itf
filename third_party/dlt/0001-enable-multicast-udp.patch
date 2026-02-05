@@ -1,0 +1,20 @@
+diff --git a/src/daemon/dlt.conf b/src/daemon/dlt.conf
+index 736f417..363cb0e 100644
+--- a/src/daemon/dlt.conf
++++ b/src/daemon/dlt.conf
+@@ -183,12 +183,12 @@ PrintASCII = 1
+ # Connect with DLT Viewer UDP option to get messages by UDP socket.  
+ 
+ # Activate UDP multicast streaming by setting this option to 1 (Default: OFF)
+-# udpStreamActive = 0
++udpStreamActive = 1
+ 
+ # Multicast/Broadcast address to which the daemon send the messages
+ # Parameter is only used if udpStreamActive = 1. Only IPv4 is supported.
+-# udpStreamIP = 224.0.0.1
++udpStreamIP = 224.0.0.1
+ 
+ # UDP port to which the daemon send the messages.
+ # Parameter is only used if udpStreamActive = 1.
+-# udpStreamPort = 3491
++udpStreamPort = 3490

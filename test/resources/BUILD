@@ -11,12 +11,39 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+
+pkg_tar(
+    name = "dlt-bins-pkg",
+    srcs = [
+        "@score_itf//third_party/dlt:dlt-adaptor-stdin",
+        "@score_itf//third_party/dlt:dlt-daemon",
+        "@score_itf//third_party/dlt:dlt-receive",
+    ],
+    package_dir = "usr/bin",
+)
+
+pkg_tar(
+    name = "dlt-conf-pkg",
+    srcs = [
+        "@score_itf//third_party/dlt:dlt-daemon-conf",
+    ],
+    package_dir = "etc",
+)
+
+pkg_tar(
+    name = "dlt-pkg",
+    deps = [
+        ":dlt-bins-pkg",
+        ":dlt-conf-pkg",
+    ],
+)
 
 oci_image(
     name = "image",
-    base = "@ubuntu_24_04_examples",
+    base = "@ubuntu_24_04",
     tars = [
-        "//examples/cpp:example-app-pkg",
+        ":dlt-pkg",
     ],
 )
 
@@ -24,5 +51,5 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["score_itf_examples:latest"],
-    visibility = ["//examples/itf:__pkg__"],
+    visibility = ["//test:__pkg__"],
 )

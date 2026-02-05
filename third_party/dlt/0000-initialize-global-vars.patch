@@ -1,0 +1,32 @@
+diff --git a/src/offlinelogstorage/dlt_offline_logstorage.c b/src/offlinelogstorage/dlt_offline_logstorage.c
+index edf7b23..c9b9be0 100644
+--- a/src/offlinelogstorage/dlt_offline_logstorage.c
++++ b/src/offlinelogstorage/dlt_offline_logstorage.c
+@@ -41,6 +41,11 @@
+ #define GENERAL_BASE_NAME "General"
+ /* Hash map functions */
+ 
++/* logstorage max cache */
++unsigned int g_logstorage_cache_max;
++/* current logstorage cache size */
++unsigned int g_logstorage_cache_size;
++
+ static int dlt_logstorage_hash_create(int num_entries, struct hsearch_data *htab)
+ {
+     memset(htab, 0, sizeof(*htab));
+diff --git a/src/offlinelogstorage/dlt_offline_logstorage.h b/src/offlinelogstorage/dlt_offline_logstorage.h
+index df232b7..9b6122b 100644
+--- a/src/offlinelogstorage/dlt_offline_logstorage.h
++++ b/src/offlinelogstorage/dlt_offline_logstorage.h
+@@ -125,9 +125,9 @@
+ #define DLT_OFFLINE_LOGSTORAGE_IS_STRATEGY_SET(S, s) ((S) & (s))
+ 
+ /* logstorage max cache */
+-unsigned int g_logstorage_cache_max;
++extern unsigned int g_logstorage_cache_max;
+ /* current logstorage cache size */
+-unsigned int g_logstorage_cache_size;
++extern unsigned int g_logstorage_cache_size;
+ 
+ typedef struct
+ {
