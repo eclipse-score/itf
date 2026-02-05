@@ -13,7 +13,6 @@
 from typing import List
 from itf.core.base.target.config.base_processor import BaseProcessor
 from itf.core.base.target.config.performance_processor import PerformanceProcessor
-from itf.core.base.target.config.safety_processor import SafetyProcessor
 
 
 class Ecu:
@@ -22,19 +21,16 @@ class Ecu:
         self,
         name: str,
         sut: PerformanceProcessor,
-        sc: SafetyProcessor,
         others: List[BaseProcessor] = [],
     ):
         """Initialize the Ecu class.
 
         :param str name: The name of the ECU.
         :param sut: The SUT (Software Under Test) processor.
-        :param sc: The Safety Controller processor.
         :param others: A list of other processors associated with the ECU.
         """
         self.__name = name
         self.__sut = sut
-        self.__sc = sc
         self.__others = others
 
     @property
@@ -44,10 +40,6 @@ class Ecu:
     @property
     def sut(self):
         return self.__sut
-
-    @property
-    def sc(self):  # pylint: disable=invalid-name
-        return self.__sc
 
     @property
     def others(self):

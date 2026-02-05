@@ -20,7 +20,6 @@ py_library(
         "config.py",
         "ecu.py",
         "performance_processor.py",
-        "safety_processor.py",
     ],
     imports = ["."],
     visibility = ["//visibility:public"],

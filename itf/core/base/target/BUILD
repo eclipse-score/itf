@@ -17,9 +17,7 @@ py_library(
     srcs = [
         "__init__.py",
         "base_target.py",
-        "hw_target.py",
         "qemu_target.py",
-        "qvp_target.py",
     ],
     imports = ["."],
     visibility = ["//visibility:public"],

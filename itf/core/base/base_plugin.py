@@ -18,8 +18,6 @@ from itf.core.base.constants import TEST_CONFIG_KEY, TARGET_CONFIG_KEY
 from itf.core.base.target.config import load_configuration, target_ecu_argparse
 from itf.core.base.os.operating_system import OperatingSystem
 from itf.core.base.target.qemu_target import qemu_target
-from itf.core.base.target.qvp_target import qvp_target
-from itf.core.base.target.hw_target import hw_target
 from itf.core.base.utils.exec_utils import pre_tests_phase, post_tests_phase
 from itf.core.utils import padder
 from itf.core.utils.bunch import Bunch
@@ -56,9 +54,6 @@ def pytest_addoption(parser):
     parser.addoption("--qemu", action="store_true", help="Run tests with QEMU image")
     parser.addoption("--qemu_image", action="store", help="Path to a QEMU image")
 
-    parser.addoption("--qvp", action="store_true", help="Run tests with QVP")
-    parser.addoption("--hw", action="store_true", help="Run tests against connected HW")
-
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_sessionstart(session):
@@ -92,31 +87,12 @@ def target_fixture(target_config_fixture, test_config_fixture, request, dlt_conf
         multicast_ips=dlt_config.multicast_ips,
         binary_path=dlt_config.dlt_receive_path,
     ):
-        if test_config_fixture.qemu:
-            with qemu_target(target_config_fixture, test_config_fixture) as qemu:
-                try:
-                    pre_tests_phase(qemu, target_config_fixture.ip_address, test_config_fixture, request)
-                    yield qemu
-                finally:
-                    post_tests_phase(qemu, test_config_fixture)
-
-        elif test_config_fixture.qvp:
-            with qvp_target(target_config_fixture, test_config_fixture) as qvp:
-                try:
-                    pre_tests_phase(qvp, target_config_fixture.ip_address, test_config_fixture, request)
-                    yield qvp
-                finally:
-                    post_tests_phase(qvp, test_config_fixture)
-
-        elif test_config_fixture.hw:
-            with hw_target(target_config_fixture, test_config_fixture) as hardware:
-                try:
-                    pre_tests_phase(hardware, target_config_fixture.ip_address, test_config_fixture, request)
-                    yield hardware
-                finally:
-                    post_tests_phase(hardware, test_config_fixture)
-        else:
-            raise RuntimeError("QEMU, QVP or HW not specified to use")
+        with qemu_target(target_config_fixture, test_config_fixture) as qemu:
+            try:
+                pre_tests_phase(qemu, target_config_fixture.ip_address, test_config_fixture, request)
+                yield qemu
+            finally:
+                post_tests_phase(qemu, test_config_fixture)
 
 
 def __make_test_config(config):
@@ -126,8 +102,6 @@ def __make_test_config(config):
         os=config.getoption("os"),
         qemu=config.getoption("qemu"),
         qemu_image=config.getoption("qemu_image"),
-        qvp=config.getoption("qvp"),
-        hw=config.getoption("hw"),
     )
 
 
