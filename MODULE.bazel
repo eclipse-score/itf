@@ -109,6 +109,13 @@ bazel_dep(name = "rules_pkg", version = "1.0.1")
 
 ###############################################################################
 #
+# skylib dependency
+#
+###############################################################################
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+
+###############################################################################
+#
 # Score custom modules loading
 #
 ###############################################################################
@@ -119,16 +126,52 @@ bazel_dep(name = "score_tooling", version = "1.0.4")
 # Load DLT dependencies
 #
 ################################################################################
-git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-git_repository(
-    name = "dlt_daemon",
-    branch = "master",
-    build_file = "//third_party/dlt:dlt_daemon.BUILD",
+PYTHON_DLT_VERSION = "2.18.10.1"
+
+http_archive(
+    name = "python_dlt",
+    build_file = "//third_party/python_dlt:python_dlt.BUILD",
     patch_args = ["-p1"],
     patches = [
-        "//third_party/dlt:0000-initialize-global-vars.patch",
-        "//third_party/dlt:0001-enable-multicast-udp.patch",
+        "//third_party/python_dlt:0001-Use-runfiles-to-find-libdlt.so.2.patch",
     ],
-    remote = "https://github.com/draganbjedov/dlt-daemon.git",
+    sha256 = "cae256ac791d06c4e6e4665dc938e497a7de5784bf6a1244667572953990f324",
+    strip_prefix = "python-dlt-%s" % PYTHON_DLT_VERSION,
+    url = "https://github.com/bmwcarit/python-dlt/archive/refs/tags/v%s.tar.gz" % PYTHON_DLT_VERSION,
+)
+
+DLT_DAEMON_VERSION = "2.18.11"
+
+http_archive(
+    name = "dlt_daemon_%s" % DLT_DAEMON_VERSION.replace(".", "_"),
+    build_file = "//third_party/dlt/2_18_11:dlt_daemon.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/dlt/2_18_11:0001-Make-dlt_user.h-real.patch",
+        "//third_party/dlt/2_18_11:0002-Add-version-file.patch",
+        "//third_party/dlt/2_18_11:0003-dlt-receive-force-flush.patch",
+        "//third_party/dlt/2_18_11:0004-Add-multicast-config.patch",
+        "//third_party/dlt/2_18_11:0005-Debug-stdin-adaptor.patch",
+    ],
+    sha256 = "23698ce31aae71e6f4c5a2a463709a0333ac4b94fc2933edc61f433aaf427ae9",
+    strip_prefix = "dlt-daemon-%s" % DLT_DAEMON_VERSION,
+    url = "https://github.com/COVESA/dlt-daemon/archive/refs/tags/v%s.tar.gz" % DLT_DAEMON_VERSION,
+)
+
+DLT_DAEMON_CUSTOM_SHA = "35d11c2c4f4060957cf52c78c5cb426b6c543c47"
+
+http_archive(
+    name = "dlt_daemon",
+    build_file = "//third_party/dlt/custom:dlt_daemon.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/dlt/custom:0001-Fix-offline-log-storage-global-init.patch",
+        "//third_party/dlt/custom:0002-Add-mutlicast-config.patch",
+        "//third_party/dlt/custom:0003-Add-force-flush-for-dlt-receive.patch",
+    ],
+    sha256 = "1944197123c910d8926b5d2bc4e9eb436c1a2768f333834fae7b7386bc53eb97",
+    strip_prefix = "dlt-daemon-%s" % DLT_DAEMON_CUSTOM_SHA,
+    url = "https://github.com/draganbjedov/dlt-daemon/archive/%s.zip" % DLT_DAEMON_CUSTOM_SHA,
 )

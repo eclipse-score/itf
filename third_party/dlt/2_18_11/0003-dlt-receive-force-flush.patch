@@ -1,0 +1,56 @@
+From 2c6477f0c7a4159a17019983faedd908ed28de91 Mon Sep 17 00:00:00 2001
+From: Lukasz Tekieli <lukasz.tekieli@bmw.de>
+Date: Mon, 9 Feb 2026 13:17:45 +0100
+Subject: [PATCH 3/5] dlt-receive force flush
+
+---
+ src/console/dlt-receive.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/src/console/dlt-receive.c b/src/console/dlt-receive.c
+index 4181d83..86b3ce1 100644
+--- a/src/console/dlt-receive.c
++++ b/src/console/dlt-receive.c
+@@ -115,6 +115,7 @@ int dlt_receive_message_callback(DltMessage *message, void *data);
+ 
+ typedef struct {
+     int aflag;
++    int aflushflag;
+     int sflag;
+     int xflag;
+     int mflag;
+@@ -349,7 +350,7 @@ int main(int argc, char *argv[])
+     /* Fetch command line arguments */
+     opterr = 0;
+ 
+-    while ((c = getopt(argc, argv, "vashSRyuxmf:j:o:e:b:c:p:i:r:")) != -1)
++    while ((c = getopt(argc, argv, "vashSRyuxmwf:j:o:e:b:c:p:i:r:")) != -1)
+         switch (c) {
+         case 'v':
+         {
+@@ -361,6 +362,11 @@ int main(int argc, char *argv[])
+             dltdata.aflag = 1;
+             break;
+         }
++        case 'w':
++        {
++            dltdata.aflushflag = 1;
++            break;
++        }
+         case 's':
+         {
+             dltdata.sflag = 1;
+@@ -692,6 +698,10 @@ int dlt_receive_message_callback(DltMessage *message, void *data)
+             dlt_message_payload(message, text, DLT_RECEIVE_BUFSIZE, DLT_OUTPUT_ASCII, dltdata->vflag);
+ 
+             printf("[%s]\n", text);
++
++            if (dltdata->aflushflag) {
++                fflush(stdout);
++            }
+         }
+         else if (dltdata->mflag)
+         {
+-- 
+2.43.0
+

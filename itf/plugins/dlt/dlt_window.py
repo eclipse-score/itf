@@ -12,12 +12,13 @@
 # *******************************************************************************
 import logging
 import os
+import tempfile
 import time
-import dlt
+import dlt.dlt as python_dlt
 
 from itf.core.utils.bunch import Bunch
-from itf.core.dlt.dlt_receive import DltReceive, Protocol
 from itf.core.utils.process.process_wrapper import ProcessWrapper
+from itf.plugins.dlt.dlt_receive import DltReceive, Protocol, protocol_arguments
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ class DltWindow(ProcessWrapper):
 
     dlt_filter -> create './filter.txt' file and add flag -f filter.txt to dlt-receive.
     This enabled filtering dlt messages. Example of usages:
-    dlt = DltWindow(filter='EPTP LTCE')
+    dlt = DltWindow(dlt_filter='EPTP LTCE')
     Where:
     EPTP -> Application ID
     LTCE -> Contex ID
@@ -40,68 +41,49 @@ class DltWindow(ProcessWrapper):
     # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
-        target_ip: str = "127.0.0.1",
         protocol: Protocol = Protocol.UDP,
-        dlt_file: str = None,
+        host_ip: str = None,
+        multicast_ips: list[str] = None,
+        target_ip: str = None,
+        file_name: str = None,
         print_to_stdout: bool = False,
         logger_name: str = None,
-        sctf: bool = False,
-        clear_dlt: bool = True,
         dlt_filter: str = None,
-        data_router_config: dict = None,
         binary_path: str = None,
     ):
         """Initialize DltWindow with target IP, protocol, and optional parameters.
 
-        :param str target_ip: IP address of the target device.
-        :param Protocol protocol: Communication protocol (TCP or UDP).
-        :param str dlt_file: Path to the DLT file. Defaults to '/tmp/dlt_window.dlt'.
+        :param Protocol protocol: Protocol to use for receiving DLT logs (TCP or UDP).
+        :param str host_ip: IP address to bind to in case of UDP.
+        :param list[str] multicast_ips: Multicast IPs to join to in case of UDP.
+        :param str target_ip: IP address to connect to in case of TCP.
+        :param str file_name: Path to the DLT file. Defaults to '/tmp/dlt_window.dlt'.
         :param bool print_to_stdout: If True, prints DLT messages to stdout.
         :param str logger_name: Name of the logger to use.
-        :param bool sctf: If True, uses SCTF configuration.
         :param bool clear_dlt: If True, clears the DLT file at initialization.
-        :param str dlt_filter: Filter string for DLT messages.
-        :param dict data_router_config: Configuration for the data router
-         with keys "vlan_address" and "multicast_addresses".
+        :param str filter: Filter string for DLT messages.
         :param str binary_path: Path to the dlt-receive binary.
         """
-        self._target_ip = target_ip
-        self._protocol = protocol
-        self._dlt_file = f"{dlt_file or '/tmp/dlt_window.dlt'}"
+
+        self._file_name = file_name
+        if not self._file_name:
+            with tempfile.NamedTemporaryFile(delete=False, delete_on_close=False) as file:
+                self._file_name = file.name
         self._captured_logs = []
 
-        self._protocol_opts = DltReceive.protocol_arguments(self._target_ip, self._protocol, sctf, data_router_config)
+        logger_name = logger_name if logger_name else "dlt_receive_window"
+        self._initialize_log_capture(logger_name)
 
-        self._dlt_content = None
-        self._queried_counter = 0
+        dlt_receive_args = ["-o", self._file_name]
+        dlt_receive_args += protocol_arguments(protocol, host_ip, target_ip, multicast_ips)
+        dlt_receive_args += ["-a", "--stdout-flush"] if print_to_stdout else []
 
-        self.logger = logging.getLogger(logger_name) if logger_name else None
-        self._log_handler = None
-        if self.logger:
-            self._log_handler = logging.Handler()
-
-            # Dynamically assign emit method
-            def emit(record):
-                log_entry = self._log_handler.format(record)
-                self._captured_logs.append(log_entry)
-
-            self._log_handler.emit = emit
-
-            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-            self._log_handler.setFormatter(formatter)
-            self.logger.addHandler(self._log_handler)
-            self.logger.setLevel(logging.DEBUG)
-
-        if clear_dlt:
-            self.clear()
-
-        print_opts = ["-a"] if print_to_stdout else []
-        dlt_receive_args = ["-o", self._dlt_file] + self._protocol_opts + print_opts
-
+        self._filter_file = None
         if dlt_filter:
-            with open("./filter.txt", "w") as file:
-                file.write(dlt_filter)
-            dlt_receive_args += ["-f", "filter.txt"]
+            with tempfile.NamedTemporaryFile(mode="w", delete=False, delete_on_close=False) as file:
+                self._filter_file = file.name
+                file.write(f"{dlt_filter}\n\n")
+            dlt_receive_args += ["-f", self._filter_file]
 
         super().__init__(
             binary_path,
@@ -109,9 +91,47 @@ class DltWindow(ProcessWrapper):
             logger_name=logger_name,
         )
 
-    @staticmethod
-    def live_logs():
-        return DltWindow(logger_name="dlt_test", print_to_stdout=True)
+    def start(self):
+        self._start()
+
+    def stop(self):
+        self._stop(None, None, None)
+
+    def record(self, filters=None):
+        return DltLogRecord(self._file_name, filters)
+
+    def file_name(self):
+        return self._file_name
+
+    def get_logged_output(self, clear_after_read=False):
+        """Returns captured DLT logs as a single string.
+
+        :param clear_after_read: If True, clears logs after reading. Defaults to True.
+        :return: String containing all log lines.
+        """
+        logs = "\n".join(self._captured_logs)
+        if clear_after_read:
+            self._captured_logs.clear()
+        return logs
+
+    def get_captured_logs(self):
+        return self._captured_logs
+
+    def _initialize_log_capture(self, logger_name):
+        self._logger = logging.getLogger(logger_name)
+        self._log_handler = None
+        if self._logger:
+            self._log_handler = logging.Handler()
+
+            def emit(record):
+                log_entry = self._log_handler.format(record)
+                self._captured_logs.append(log_entry)
+
+            self._log_handler.emit = emit
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            self._log_handler.setFormatter(formatter)
+            self._logger.addHandler(self._log_handler)
+            self._logger.setLevel(logging.DEBUG)
 
     def __enter__(self):
         self._start()
@@ -120,35 +140,31 @@ class DltWindow(ProcessWrapper):
     def _start(self):
         super().__enter__()
 
-    def start(self):
-        self._start()
-
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._stop(exc_type, exc_val, exc_tb)
 
     def _stop(self, exc_type, exc_val, exc_tb):
         super().__exit__(exc_type, exc_val, exc_tb)
-        if os.path.exists("./filter.txt"):
-            os.remove("./filter.txt")
-        if self.logger and self._log_handler:
-            self.logger.removeHandler(self._log_handler)
+        if self._filter_file and os.path.exists(self._filter_file):
+            os.remove(self._filter_file)
+        if self._logger and self._log_handler:
+            self._logger.removeHandler(self._log_handler)
         self._captured_logs.clear()
 
-    def stop(self):
-        self._stop(None, None, None)
 
-    def record(self):
-        return self
-
-    def load(self, filters=None):
+class DltLogRecord:
+    def __init__(self, file_name, filters=None):
         """Load and filter DLT messages from the recorded file
 
+        :param str file_name: File with DLT logs
         :param list filters: List of filters to apply [("APPID", "CTID"), ...]
             [("", "")] : loads everything, same as filters=None
             [("Fasi", "")] : loads all messages with APPID="Fasi" and non extended ones
             [("Fasi", "mata")] : loads messages with APPID="Fasi" and CTID="mata", also all non extended ones
         """
-        self._dlt_content = dlt.load(self._dlt_file, filters=filters)
+
+        self._dlt_content = python_dlt.load(file_name, filters=filters)
+        self._queried_counter = 0
 
     def find(self, query=None, include_ext=True, include_non_ext=False, full_match=True, timeout=None):
         """Find DLT messages matching the input query
@@ -188,12 +204,12 @@ class DltWindow(ProcessWrapper):
                 if isinstance(payload, bytes):
                     payload = payload.decode(errors="ignore")
 
-                normalized_time = DltWindow.normalize_timestamp_precision(msg.storage_timestamp)
+                normalized_time = _normalize_timestamp_precision(msg.storage_timestamp)
                 result.append(
                     Bunch(
                         time_stamp=msg.tmsp,
-                        apid=msg.apid.decode("ascii"),
-                        ctid=msg.ctid.decode("ascii"),
+                        apid=msg.apid,
+                        ctid=msg.ctid,
                         payload=payload,
                         raw_msg=msg,
                         epoch_time=normalized_time,
@@ -229,36 +245,15 @@ class DltWindow(ProcessWrapper):
         """
         return self._queried_counter
 
-    def clear(self):
-        DltReceive.remove_dlt_file(self._dlt_file)
 
-    def get_dlt_file_path(self):
-        return self._dlt_file
+def _normalize_timestamp_precision(epoch_time):
+    try:
+        time_str = str(epoch_time)
+        seconds, microseconds = time_str.split(".")
 
-    def get_logged_output(self, clear_after_read=False):
-        """
-        Returns captured DLT logs as a single string.
+        if len(microseconds) < 6:
+            microseconds = microseconds.rjust(6, "0")
 
-        :param clear_after_read: If True, clears logs after reading. Defaults to True.
-        :return: String containing all log lines.
-        """
-        logs = "\n".join(self._captured_logs)
-        if clear_after_read:
-            self._captured_logs.clear()
-        return logs
-
-    def getdlt_live_buffer(self):
-        return self._captured_logs
-
-    @staticmethod
-    def normalize_timestamp_precision(epoch_time):
-        try:
-            time_str = str(epoch_time)
-            seconds, microseconds = time_str.split(".")
-
-            if len(microseconds) < 6:
-                microseconds = microseconds.rjust(6, "0")
-
-        except Exception as error:
-            logger.error(f"Error normalizing timestamp precision: {error}")
-        return f"{seconds}.{microseconds}"
+    except Exception as error:
+        logger.error(f"Error normalizing timestamp precision: {error}")
+    return f"{seconds}.{microseconds}"

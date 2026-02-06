@@ -1,3 +1,12 @@
+From 01d6810d7374dfcc1e82bbbf4f7b64a255a97dfe Mon Sep 17 00:00:00 2001
+From: Lukasz Tekieli <lukasz.tekieli@bmw.de>
+Date: Mon, 9 Feb 2026 09:29:48 +0100
+Subject: [PATCH 2/3] Add mutlicast config
+
+---
+ src/daemon/dlt.conf | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
 diff --git a/src/daemon/dlt.conf b/src/daemon/dlt.conf
 index 736f417..363cb0e 100644
 --- a/src/daemon/dlt.conf
@@ -18,3 +27,6 @@ index 736f417..363cb0e 100644
  # Parameter is only used if udpStreamActive = 1.
 -# udpStreamPort = 3491
 +udpStreamPort = 3490
+-- 
+2.43.0
+

@@ -61,7 +61,7 @@ class DltReceive(ProcessWrapper):
         self._dlt_file_name = file_name or f"{get_output_dir()}/dlt_receive.dlt"
 
         dlt_receive_args = ["-o", self._dlt_file_name] if enable_file_output else []
-        dlt_receive_args += _protocol_arguments(protocol, host_ip, target_ip, multicast_ips)
+        dlt_receive_args += protocol_arguments(protocol, host_ip, target_ip, multicast_ips)
         dlt_receive_args += ["-a"] if print_to_stdout else []
 
         if self._dlt_file_name and enable_file_output:
@@ -78,7 +78,7 @@ class DltReceive(ProcessWrapper):
         return self._dlt_file_name
 
 
-def _protocol_arguments(protocol, host_ip, target_ip, multicast_ips):
+def protocol_arguments(protocol, host_ip, target_ip, multicast_ips):
     dlt_port = "3490"
     proto_specific_opts = []
 

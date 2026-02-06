@@ -1,0 +1,46 @@
+From aeb78475b5d934e76d8e36af987353286531cb14 Mon Sep 17 00:00:00 2001
+From: Lukasz Tekieli <lukasz.tekieli@bmw.de>
+Date: Mon, 9 Feb 2026 13:53:23 +0100
+Subject: [PATCH 5/5] Debug stdin adaptor
+
+---
+ src/adaptor/dlt-adaptor-stdin.c | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/src/adaptor/dlt-adaptor-stdin.c b/src/adaptor/dlt-adaptor-stdin.c
+index 0d502a2..4076275 100644
+--- a/src/adaptor/dlt-adaptor-stdin.c
++++ b/src/adaptor/dlt-adaptor-stdin.c
+@@ -189,16 +189,25 @@ int main(int argc, char *argv[])
+     if (timeout > -1)
+         dlt_set_resend_timeout_atexit((uint32_t)timeout);
+ 
+-    while (fgets(str, MAXSTRLEN, stdin))
+-        if (strcmp(str, "") != 0)
++    while (fgets(str, MAXSTRLEN, stdin)) {
++        fprintf(stderr, "Waiting for more input...");
++        if (strcmp(str, "") != 0) {
+             DLT_LOG(mycontext, verbosity, DLT_STRING(str));
++        }
++        fprintf(stderr, "Inptut processed...");
++    }
+ 
+     DLT_UNREGISTER_CONTEXT(mycontext);
++    fprintf(stderr, "Context unregistered...");
+ 
+-    if (bflag == 1)
++    if (bflag == 1) {
+         DLT_UNREGISTER_APP_FLUSH_BUFFERED_LOGS();
+-    else
++        fprintf(stderr, "App unregistered with flush");
++    }
++    else {
+         DLT_UNREGISTER_APP();
++        fprintf(stderr, "App unregistered");
++    }
+ 
+     return 0;
+ }
+-- 
+2.43.0
+

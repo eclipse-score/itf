@@ -25,6 +25,9 @@ cc_library(
     hdrs = glob(["include/**/*.h"]),
     defines = [
         "_GNU_SOURCE",
+        "DLT_WRITEV_TIMEOUT_MS=1000",
+        "DLT_LIB_USE_UNIX_SOCKET_IPC",
+        'DLT_USER_IPC_PATH=\\"/tmp\\"',
     ],
     includes = [
         "include/dlt",
@@ -36,11 +39,24 @@ cc_library(
         "-pthread",
         "-lrt",
     ],
+    alwayslink = True,
+)
+
+cc_binary(
+    name = "libdlt.so",
+    linkshared = True,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":dlt-library",
+    ],
 )
 
 cc_binary(
     name = "dlt-receive",
-    srcs = ["src/console/dlt-receive.c"],
+    srcs = [
+	"src/console/dlt-control-common.h",
+        "src/console/dlt-receive.c"
+    ],
     deps = [
         ":dlt-library",
     ],
@@ -62,7 +78,7 @@ cc_binary(
     name = "dlt-daemon",
     srcs = glob([
         "include/**/*.h",
-        "src/daemon/*.h",
+        "src/daemon/**/*.h",
         "src/gateway/*.h",
         "src/lib/**/*.h",
         "src/offlinelogstorage/*.h",
@@ -86,14 +102,24 @@ cc_binary(
 	"src/shared/dlt_offline_trace.c",
 	"src/shared/dlt_shm.c",
 	"src/shared/dlt_user_shared.c",
+	"src/shared/dlt_multiple_files.c",
+	"src/shared/dlt_log.c",
+	"src/shared/dlt_protocol.c",
+	"src/daemon/udp_connection/dlt_daemon_udp_socket.c",
     ],
     defines = [
         "_GNU_SOURCE",
         'CONFIGURATION_FILES_DIR=\\"/etc\\"',
+        "DLT_WRITEV_TIMEOUT_MS=1000",
+        "DLT_LIB_USE_UNIX_SOCKET_IPC",
+	"DLT_DAEMON_USE_UNIX_SOCKET_IPC",
+        'DLT_USER_IPC_PATH=\\"/tmp\\"',
+	"UDP_CONNECTION_SUPPORT",
     ],
     includes = [
         "include/dlt",
         "src/daemon",
+        "src/daemon/udp_connection",
         "src/gateway",
         "src/lib",
         "src/offlinelogstorage",

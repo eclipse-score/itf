@@ -1,0 +1,64 @@
+From 1f9e72da0f6b0adb968a4f3edfdb42ab0bc1594c Mon Sep 17 00:00:00 2001
+From: Lukasz Tekieli <lukasz.tekieli@bmw.de>
+Date: Mon, 9 Feb 2026 09:30:05 +0100
+Subject: [PATCH 3/3] Add force flush for dlt-receive
+
+---
+ src/console/dlt-receive.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/src/console/dlt-receive.c b/src/console/dlt-receive.c
+index 3e03236..4b5f79b 100644
+--- a/src/console/dlt-receive.c
++++ b/src/console/dlt-receive.c
+@@ -99,6 +99,7 @@ int dlt_receive_message_callback(DltMessage *message, void *data);
+ 
+ typedef struct {
+     int aflag;
++    int aflushflag;
+     int sflag;
+     int xflag;
+     int mflag;
+@@ -323,6 +324,7 @@ int main(int argc, char* argv[])
+ 
+     /* Initialize dltdata */
+     dltdata.aflag = 0;
++    dltdata.aflushflag = 0;
+     dltdata.sflag = 0;
+     dltdata.xflag = 0;
+     dltdata.mflag = 0;
+@@ -355,6 +357,7 @@ int main(int argc, char* argv[])
+             {"mcast-ip", required_argument, 0, 'i'},
+             {"port",     required_argument, 0, 'p'},
+             {"net-if",   required_argument, 0, 'n'},
++            {"stdout-flush",   no_argument, 0, 'w'},
+             {0,          0,                 0,  0 }
+         };
+ 
+@@ -474,6 +477,11 @@ int main(int argc, char* argv[])
+                }
+                break;
+ 
++			}
++        case 'w':
++			{
++            	dltdata.aflushflag = 1;
++            	break;
+ 			}
+         case '?':
+ 			{
+@@ -691,6 +699,11 @@ int dlt_receive_message_callback(DltMessage *message, void *data)
+             dlt_message_payload(message,text,DLT_CLIENT_RCVBUFSIZE,DLT_OUTPUT_ASCII,dltdata->vflag);
+ 
+             printf("[%s]\n",text);
++
++            if (dltdata->aflushflag)
++            {
++                fflush(stdout);
++            }
+         }
+         else if (dltdata->mflag)
+         {
+-- 
+2.43.0
+
