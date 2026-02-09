@@ -44,6 +44,5 @@ base = py_itf_plugin(
     ],
     tags = [
         "local",
-        "manual",
     ],
 )

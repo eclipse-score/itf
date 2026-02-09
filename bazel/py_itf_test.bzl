@@ -34,11 +34,11 @@ def py_itf_test(name, srcs, args = [], data = [], data_as_exec = [], plugins = [
 
     plugin_deps = []
     for plugin in plugins:
-        plugin_deps.append(plugin.py_library)
+        plugin_deps += [plugin.py_library]
 
     plugin_tags = []
     for plugin in plugins:
-        plugin_tags.extend(plugin.tags)
+        plugin_tags += plugin.tags
 
     py_test(
         name = "_" + name,
@@ -56,15 +56,15 @@ def py_itf_test(name, srcs, args = [], data = [], data_as_exec = [], plugins = [
     plugin_enable_args = ["-p itf.plugins.core"]
     for plugin in plugins:
         for enabled_plugin in plugin.enabled_plugins:
-            plugin_enable_args.append("-p %s" % enabled_plugin)
+            plugin_enable_args += ["-p %s" % enabled_plugin]
 
     plugin_args = []
     for plugin in plugins:
-        plugin_args.extend(plugin.args)
+        plugin_args += (plugin.args)
 
     plugin_data = []
     for plugin in plugins:
-        plugin_data.extend(plugin.data)
+        plugin_data += plugin.data
 
     plugin_data_as_exec = []
     for plugin in plugins:
