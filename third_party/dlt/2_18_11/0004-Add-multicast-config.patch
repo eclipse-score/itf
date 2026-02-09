@@ -1,0 +1,33 @@
+From c61cd663b53bd9388b4df64db2b326c683d2bfb7 Mon Sep 17 00:00:00 2001
+From: Lukasz Tekieli <lukasz.tekieli@bmw.de>
+Date: Mon, 9 Feb 2026 13:38:18 +0100
+Subject: [PATCH 4/5] Add multicast config
+
+---
+ src/daemon/dlt.conf | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/daemon/dlt.conf b/src/daemon/dlt.conf
+index c5be169..8331f38 100644
+--- a/src/daemon/dlt.conf
++++ b/src/daemon/dlt.conf
+@@ -212,13 +212,13 @@ ControlSocketPath = /tmp/dlt-ctrl.sock
+ # UDP Multicast Configuration                                                #
+ ##############################################################################
+ # Enable UDP connection support for daemon(Control Message/Multicast is enabled)
+-# UDPConnectionSetup = 1
++UDPConnectionSetup = 1
+ 
+ # UDP multicast address(default:225.0.0.37)
+-# UDPMulticastIPAddress = 225.0.0.37
++UDPMulticastIPAddress = 224.0.0.1
+ 
+ # UDP multicast port(default:3491)
+-# UDPMulticastIPPort = 3491
++UDPMulticastIPPort = 3490
+ 
+ ##############################################################################
+ # BindAddress Limitation                                                     #
+-- 
+2.43.0
+

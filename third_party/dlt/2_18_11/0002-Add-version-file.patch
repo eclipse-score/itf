@@ -1,0 +1,83 @@
+From c5485cfdf9ef4ef550d71ba8c24528fa733c90ae Mon Sep 17 00:00:00 2001
+From: Lukasz Tekieli <lukasz.tekieli@bmw.de>
+Date: Mon, 9 Feb 2026 12:49:28 +0100
+Subject: [PATCH 2/5] Add version file
+
+---
+ .gitignore                |  1 -
+ include/dlt/dlt_version.h | 51 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 51 insertions(+), 1 deletion(-)
+ create mode 100644 include/dlt/dlt_version.h
+
+diff --git a/.gitignore b/.gitignore
+index 436236f..cbdb642 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -4,7 +4,6 @@ build
+ automotive-dlt.spec
+ automotive-dlt.pc
+ config.h
+-include/dlt/dlt_version.h
+ .project
+ .cproject
+ .settings
+diff --git a/include/dlt/dlt_version.h b/include/dlt/dlt_version.h
+new file mode 100644
+index 0000000..3229664
+--- /dev/null
++++ b/include/dlt/dlt_version.h
+@@ -0,0 +1,51 @@
++/*
++ * SPDX license identifier: MPL-2.0
++ *
++ * Copyright (C) 2011-2015, BMW AG
++ *
++ * This file is part of COVESA Project DLT - Diagnostic Log and Trace.
++ *
++ * This Source Code Form is subject to the terms of the
++ * Mozilla Public License (MPL), v. 2.0.
++ * If a copy of the MPL was not distributed with this file,
++ * You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * For further information see http://www.covesa.org/.
++ */
++
++/* DO NOT EDIT! GENERATED AUTOMATICALLY! */
++#ifndef __DLT_VERSION_H_
++#define __DLT_VERSION_H_
++
++#define _DLT_PACKAGE_VERSION_STATE "STABLE"
++#define _DLT_PACKAGE_VERSION "2.18.10"
++#define _DLT_PACKAGE_MAJOR_VERSION "2"
++#define _DLT_PACKAGE_MINOR_VERSION "18"
++#define _DLT_PACKAGE_PATCH_LEVEL "10"
++#define _DLT_PACKAGE_REVISION "6a66ac510c0b28d6064184b73f5df0c45cf51ae7"
++
++#ifdef DLT_SYSTEMD_ENABLE
++#define _DLT_SYSTEMD_ENABLE "+SYSTEMD"
++#else
++#define _DLT_SYSTEMD_ENABLE "-SYSTEMD"
++#endif
++
++#ifdef DLT_SYSTEMD_WATCHDOG_ENABLE
++#define _DLT_SYSTEMD_WATCHDOG_ENABLE "+SYSTEMD_WATCHDOG"
++#else
++#define _DLT_SYSTEMD_WATCHDOG_ENABLE "-SYSTEMD_WATCHDOG"
++#endif
++
++#ifdef DLT_TEST_ENABLE
++#define _DLT_TEST_ENABLE "+TEST"
++#else
++#define _DLT_TEST_ENABLE "-TEST"
++#endif
++
++#ifdef DLT_SHM_ENABLE
++#define _DLT_SHM_ENABLE "+SHM"
++#else
++#define _DLT_SHM_ENABLE "-SHM"
++#endif
++
++#endif
+-- 
+2.43.0
+

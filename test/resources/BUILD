@@ -51,5 +51,10 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["score_itf_examples:latest"],
-    visibility = ["//test:__pkg__"],
+    visibility = [
+        "//test:__pkg__",
+        # TODO: Should be only visibile to examples
+        "//visibility:public",
+        #"@score_itf_examples//:__subpackages__",
+    ],
 )

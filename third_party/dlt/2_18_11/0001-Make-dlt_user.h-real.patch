@@ -1,0 +1,46 @@
+From 20564840a86980183979f8ef6319009407e4c6d0 Mon Sep 17 00:00:00 2001
+From: Lukasz Tekieli <lukasz.tekieli@bmw.de>
+Date: Mon, 9 Feb 2026 12:44:49 +0100
+Subject: [PATCH 1/5] Make dlt_user.h real
+
+---
+ .gitignore                                | 1 -
+ include/dlt/{dlt_user.h.in => dlt_user.h} | 4 ++--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+ rename include/dlt/{dlt_user.h.in => dlt_user.h} (99%)
+
+diff --git a/.gitignore b/.gitignore
+index 6d28b92..436236f 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -5,7 +5,6 @@ automotive-dlt.spec
+ automotive-dlt.pc
+ config.h
+ include/dlt/dlt_version.h
+-include/dlt/dlt_user.h
+ .project
+ .cproject
+ .settings
+diff --git a/include/dlt/dlt_user.h.in b/include/dlt/dlt_user.h
+similarity index 99%
+rename from include/dlt/dlt_user.h.in
+rename to include/dlt/dlt_user.h
+index 31c894c..ef98875 100644
+--- a/include/dlt/dlt_user.h.in
++++ b/include/dlt/dlt_user.h
+@@ -77,10 +77,10 @@
+ #include <stdbool.h>
+ 
+ #ifndef DLT_NETWORK_TRACE_ENABLE
+-#cmakedefine DLT_NETWORK_TRACE_ENABLE
++#define DLT_NETWORK_TRACE_ENABLE 0
+ #endif
+ 
+-#cmakedefine01 DLT_DISABLE_MACRO
++#define DLT_DISABLE_MACRO 0
+ 
+ #ifdef DLT_NETWORK_TRACE_ENABLE
+ #   include <mqueue.h>
+-- 
+2.43.0
+
