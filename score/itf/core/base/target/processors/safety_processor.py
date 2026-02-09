@@ -10,14 +10,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from score.itf.core.com.ssh import execute_command
+from score.itf.core.base.os.operating_system import OperatingSystem
+from score.itf.core.base.target.config.base_processor import BaseProcessor
+from score.itf.core.base.target.processors.target_processor import TargetProcessor
 
 
-def test_ssh_with_default_user(target_fixture):
-    with target_fixture.sut.ssh() as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+class TargetSafetyProcessor(TargetProcessor):
+    """Represents the Safety processor of the target ECU."""
 
-
-def test_ssh_with_qnx_user(target_fixture):
-    with target_fixture.sut.ssh(username="qnxuser") as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+    # pylint: disable=useless-super-delegation
+    def __init__(self, processor: BaseProcessor, os: OperatingSystem, diagnostic_ip=None):
+        super().__init__(processor, os, diagnostic_ip)

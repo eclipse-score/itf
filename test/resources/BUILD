@@ -53,7 +53,7 @@ oci_tarball(
     repo_tags = ["score_itf_examples:latest"],
     visibility = [
         "//test:__pkg__",
-        # TODO: Should be only visibile to examples
+        # TODO: Should be only visible to examples
         "//visibility:public",
         #"@score_itf_examples//:__subpackages__",
     ],

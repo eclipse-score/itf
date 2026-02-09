@@ -13,8 +13,8 @@
 import pytest
 import time
 
-from itf.plugins.dlt.dlt_receive import DltReceive, Protocol
-from itf.plugins.dlt.dlt_window import DltWindow
+from score.itf.plugins.dlt.dlt_receive import DltReceive, Protocol
+from score.itf.plugins.dlt.dlt_window import DltWindow
 
 
 def test_dlt_standard_config(target, dlt_config):

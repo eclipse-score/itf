@@ -39,7 +39,7 @@ The bazel configs generally influence the build options. These include modifying
 - `--config=qemu-integration` - Run ITF for QEMU target. If `--qemu_image` is specified, ITF will automatically start QEMU with the provided image before running the tests.
 
 The Python arguments customize the runtime behavior.
-They can be found in [`itf/plugins/base/base_plugin.py`](itf/plugins/base/base_plugin.py) file or displayed by passing `--test_arg="--help"` to any test invocation.
+They can be found in [`score/itf/plugins/base/base_plugin.py`](score/itf/plugins/base/base_plugin.py) file or displayed by passing `--test_arg="--help"` to any test invocation.
 All the options can be passed in command line wrapped in `--test_arg="<...>"` or in `args` parameter of `py_itf_test` macro in `BUILD` file.
 
 Runtime arguments:
@@ -127,7 +127,8 @@ Other processors: `other_processors`
 ITF provides a macro `py_itf_test` to simplify the creation of ITF based tests.
 BUILD file example:
 ```python
-load("@itf//:defs.bzl", "py_itf_test")
+load("//:defs.bzl", "py_itf_test")
+load("//score/itf/plugins:plugins.bzl", "base")
 
 py_itf_test(
     name = "test_ssh_qemu",
@@ -140,7 +141,7 @@ py_itf_test(
         "--qemu_image=$(location //build:init)",
     ],
     plugins = [
-        "itf.plugins.base.base_plugin",
+        "base",
     ],
     data = [
         "//build:init",
@@ -214,7 +215,7 @@ Tests are written using `pytest` framework. Tests can utilize various ITF plugin
 
 Example test using SSH to connect to the target ECU:
 ```python
-from itf.plugins.com.ssh import execute_command
+from score.itf.core.com.ssh import execute_command
 
 
 def test_ssh_with_default_user(target_fixture):
@@ -226,17 +227,17 @@ Main plugin is base plugin which provides common functionality, fixtures and arg
 It should be specified in the `plugins` parameter of `py_itf_test` macro.
 ```python
     plugins = [
-        "itf.plugins.base.base_plugin",
+        "score.itf.plugins.base.base_plugin",
     ],
 ```
 
 Fixtures provided by base plugin are:
-* [`target_fixture`](itf/plugins/base/base_plugin.py#L89) - Provides access to the target ECU under test, its processors, connection methods, etc.
-* [`test_config_fixture`](itf/plugins/base/base_plugin.py#L78) - Provides access to the test configuration, command line arguments.
-* [`target_config_fixture`](itf/plugins/base/base_plugin.py#L83) - Provides access to the target configuration read from target configuration file.
+* [`target_fixture`](score/itf/core/base/base_plugin.py#L80) - Provides access to the target ECU under test, its processors, connection methods, etc.
+* [`test_config_fixture`](score/itf/core/base/base_plugin.py#L69) - Provides access to the test configuration, command line arguments.
+* [`target_config_fixture`](score/itf/core/base/base_plugin.py#L74) - Provides access to the target configuration read from target configuration file.
 
 ### Communication with ECU
-Main communication with target ECU is done via [`target_fixture`](itf/plugins/base/base_plugin.py#L89).
+Main communication with target ECU is done via [`target_fixture`](score/itf/core/base/base_plugin.py#L80).
 
 Usage of `target_fixture` to get performance processor SSH connection:
 ```python
@@ -260,14 +261,14 @@ Usage of `target_fixture` to check is ping lost of performance processor:
 target_fixture.sut.performance_processor.ping_lost()
 ```
 
-For parameters of above mentioned functionality see [`target_processor.py`](itf/plugins/base/target/processors/target_processor.py).
+For parameters of above mentioned functionality see [`target_processor.py`](score/itf/core/base/target/processors/target_processor.py).
 
 ## Capture DLT messages
 By default ITF will start capturing DLT messages from the target ECU's performance processor
 when the test starts and stop capturing when the test ends.
 Captured DLT messages can be found in `dlt_receive.dlt` which can be found in `bazel-testlogs` folder.
 
-Class [`DltWindow`](itf/plugins/dlt/dlt_window.py) can used in test to capture DLT messages in tests.
+Class [`DltWindow`](score/itf/plugins/dlt/dlt_window.py) can used in test to capture DLT messages in tests.
 ```python
 dlt = DltWindow(dlt_file="./my_test.dlt")
 with dlt.record():
