@@ -10,14 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from score.itf.core.com.ssh import execute_command
+load("@rules_python//python:defs.bzl", "py_library")
 
-
-def test_ssh_with_default_user(target_fixture):
-    with target_fixture.sut.ssh() as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
-
-
-def test_ssh_with_qnx_user(target_fixture):
-    with target_fixture.sut.ssh(username="qnxuser") as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+py_library(
+    name = "utils",
+    srcs = [
+        "__init__.py",
+        "bazel.py",
+        "bunch.py",
+        "utils.py",
+    ],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//score/itf/core/utils/process",
+    ],
+)

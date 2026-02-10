@@ -28,7 +28,7 @@ exports_files([
 py_library(
     name = "itf",
     srcs = [
-        "itf/__init__.py",
+        "score/itf/__init__.py",
     ],
     data = [
         "//config",
@@ -36,7 +36,7 @@ py_library(
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
-        "//itf/plugins:core",
+        "//score/itf/plugins:core",
     ],
 )
 

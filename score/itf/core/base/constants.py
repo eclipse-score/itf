@@ -10,14 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from score.itf.core.com.ssh import execute_command
+import pytest
+from score.itf.core.utils.bunch import Bunch
 
-
-def test_ssh_with_default_user(target_fixture):
-    with target_fixture.sut.ssh() as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
-
-
-def test_ssh_with_qnx_user(target_fixture):
-    with target_fixture.sut.ssh(username="qnxuser") as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+TEST_CONFIG_KEY = pytest.StashKey[Bunch]()
+TARGET_CONFIG_KEY = pytest.StashKey[Bunch]()

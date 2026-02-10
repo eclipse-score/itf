@@ -10,14 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from score.itf.core.com.ssh import execute_command
+from enum import Enum
+from score.itf.core.base.os.config import global_os_config as os_config
 
 
-def test_ssh_with_default_user(target_fixture):
-    with target_fixture.sut.ssh() as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+# pylint: disable=no-member
+class OperatingSystem(Enum):
+    LINUX = os_config.os.linux
+    QNX = os_config.os.qnx
+    UNSPECIFIED = {}
 
-
-def test_ssh_with_qnx_user(target_fixture):
-    with target_fixture.sut.ssh(username="qnxuser") as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+    @staticmethod
+    def argparse(s):
+        try:
+            return OperatingSystem[s.upper()]
+        except KeyError:
+            return s

@@ -18,11 +18,10 @@ index e0c3daf..d2d32e1 100644
 -    dltlib = ctypes.cdll.LoadLibrary("libdlt.so.2")
 +    from python.runfiles import Runfiles
 +    r = Runfiles.Create()
-+    so_path = r.Rlocation("score_itf/itf/plugins/dlt/libdlt.so.2")
++    so_path = r.Rlocation("score_itf/score/itf/plugins/dlt/libdlt.so.2")
 +    dltlib = ctypes.cdll.LoadLibrary(so_path)
  else:
      raise RuntimeError("Platform %s not supported" % sys.platform)
- 
--- 
-2.43.0
 
+--
+2.43.0

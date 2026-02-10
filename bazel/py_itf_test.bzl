@@ -53,7 +53,7 @@ def py_itf_test(name, srcs, args = [], data = [], data_as_exec = [], plugins = [
         tags = ["manual"] + tags + plugin_tags,
     )
 
-    plugin_enable_args = ["-p itf.plugins.core"]
+    plugin_enable_args = ["-p score.itf.plugins.core"]
     for plugin in plugins:
         for enabled_plugin in plugin.enabled_plugins:
             plugin_enable_args.append("-p %s" % enabled_plugin)

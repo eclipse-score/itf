@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("//:defs.bzl", "py_itf_test")
-load("//itf/plugins:plugins.bzl", "base", "dlt", "docker")
+load("//score/itf/plugins:plugins.bzl", "base", "dlt", "docker")
 
 py_itf_test(
     name = "test_rules_are_working_correctly",
