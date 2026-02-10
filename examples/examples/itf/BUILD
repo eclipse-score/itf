@@ -61,6 +61,10 @@ py_itf_test(
         base,
         dlt,
     ],
+    tags = [
+        "local",
+        "manual",
+    ],
 )
 
 py_itf_test(
@@ -79,5 +83,9 @@ py_itf_test(
     plugins = [
         base,
         dlt,
+    ],
+    tags = [
+        "local",
+        "manual",
     ],
 )
