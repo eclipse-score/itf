@@ -30,9 +30,6 @@ py_library(
     srcs = [
         "itf/__init__.py",
     ],
-    data = [
-        "//config",
-    ],
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [

@@ -50,12 +50,12 @@ py_itf_test(
         "test_ssh.py",
     ],
     args = [
-        "--target_config=$(location @score_itf//config)",
+        "--target_config=$(location @score_itf//test/resources:target_config)",
         "--ecu=s_core_ecu_qemu_bridge_network",
         "--qemu",
     ],
     data = [
-        "@score_itf//config",
+        "@score_itf//test/resources:target_config",
     ],
     plugins = [
         base,
@@ -73,12 +73,12 @@ py_itf_test(
         "test_ssh.py",
     ],
     args = [
-        "--target_config=$(location @score_itf//config)",
+        "--target_config=$(location @score_itf//test/resources:target_config)",
         "--ecu=s_core_ecu_qemu_port_forwarding",
         "--qemu",
     ],
     data = [
-        "@score_itf//config",
+        "@score_itf//test/resources:target_config",
     ],
     plugins = [
         base,

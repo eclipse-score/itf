@@ -13,6 +13,32 @@
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
+filegroup(
+    name = "dlt_config",
+    srcs = [
+        "dlt_config.json",
+    ],
+    visibility = [
+        "//test:__pkg__",
+        # TODO: Should be only visibile to examples
+        "//visibility:public",
+        #"@score_itf_examples//:__subpackages__",
+    ],
+)
+
+filegroup(
+    name = "target_config",
+    srcs = [
+        "target_config.json",
+    ],
+    visibility = [
+        "//test:__pkg__",
+        # TODO: Should be only visibile to examples
+        "//visibility:public",
+        #"@score_itf_examples//:__subpackages__",
+    ],
+)
+
 pkg_tar(
     name = "dlt-bins-pkg",
     srcs = [
