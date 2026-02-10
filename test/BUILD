@@ -72,6 +72,24 @@ py_itf_test(
 )
 
 py_itf_test(
+    name = "test_ssh_bridge_network_no_dlt",
+    srcs = [
+        "test_ssh.py",
+    ],
+    args = [
+        "--target_config=$(location //config)",
+        "--ecu=s_core_ecu_qemu_bridge_network",
+        "--qemu",
+    ],
+    data = [
+        "//config",
+    ],
+    plugins = [
+        base,
+    ],
+)
+
+py_itf_test(
     name = "test_ssh_port_forwarding",
     srcs = [
         "test_ssh.py",
