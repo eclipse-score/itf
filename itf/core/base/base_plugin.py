@@ -22,8 +22,6 @@ from itf.core.base.utils.exec_utils import pre_tests_phase, post_tests_phase
 from itf.core.utils import padder
 from itf.core.utils.bunch import Bunch
 
-from itf.plugins.dlt.dlt_receive import DltReceive, Protocol
-
 
 logger = logging.getLogger(__name__)
 
@@ -77,22 +75,24 @@ def target_config_fixture(request):
 
 
 @pytest.fixture(scope="session")
-def target_fixture(target_config_fixture, test_config_fixture, request, dlt_config):
+def dlt():
+    """Overrideable fixture for enabling dlt collection.
+    The DLT plugin should be loaded after the base plugin.
+    """
+    pass
+
+
+@pytest.fixture(scope="session")
+def target_fixture(target_config_fixture, test_config_fixture, request, dlt):
     logger.info("Starting target_fixture in base_plugin.py ...")
     logger.info(f"Starting tests on host: {socket.gethostname()}")
 
-    with DltReceive(
-        protocol=Protocol.UDP,
-        host_ip=dlt_config.host_ip,
-        multicast_ips=dlt_config.multicast_ips,
-        binary_path=dlt_config.dlt_receive_path,
-    ):
-        with qemu_target(target_config_fixture, test_config_fixture) as qemu:
-            try:
-                pre_tests_phase(qemu, target_config_fixture.ip_address, test_config_fixture, request)
-                yield qemu
-            finally:
-                post_tests_phase(qemu, test_config_fixture)
+    with qemu_target(target_config_fixture, test_config_fixture) as qemu:
+        try:
+            pre_tests_phase(qemu, target_config_fixture.ip_address, test_config_fixture, request)
+            yield qemu
+        finally:
+            post_tests_phase(qemu, test_config_fixture)
 
 
 def __make_test_config(config):

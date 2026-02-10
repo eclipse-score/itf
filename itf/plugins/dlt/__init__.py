@@ -15,6 +15,7 @@ import pytest
 
 from itf.core.utils.bunch import Bunch
 from itf.plugins.core import determine_target_scope
+from itf.plugins.dlt.dlt_receive import DltReceive, Protocol
 
 
 def pytest_addoption(parser):
@@ -54,3 +55,14 @@ def dlt_config(request):
     b.dlt_receive_path = request.config.getoption("dlt_receive_path")
 
     return b
+
+
+@pytest.fixture(scope="session")
+def dlt(dlt_config):
+    with DltReceive(
+        protocol=Protocol.UDP,
+        host_ip=dlt_config.host_ip,
+        multicast_ips=dlt_config.multicast_ips,
+        binary_path=dlt_config.dlt_receive_path,
+    ):
+        yield
