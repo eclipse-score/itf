@@ -18,6 +18,7 @@ py_library(
     srcs = ["core.py"],
     visibility = ["//visibility:public"],
     deps = [
+        "//score/itf/core/target",
         requirement("pytest"),
     ],
 )
@@ -27,6 +28,8 @@ py_library(
     srcs = ["docker.py"],
     visibility = ["//visibility:public"],
     deps = [
+        ":core",
+        "//score/itf/core/target",
         requirement("docker"),
         requirement("pytest"),
     ],

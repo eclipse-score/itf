@@ -12,7 +12,6 @@
 # *******************************************************************************
 """Bazel interface for running pytest"""
 
-load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_test")
 load("@score_itf//bazel/rules:run_as_exec.bzl", "test_as_exec")
 

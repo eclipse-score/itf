@@ -16,6 +16,7 @@ import docker as pypi_docker
 import pytest
 
 from score.itf.plugins.core import determine_target_scope
+from score.itf.plugins.core import Target
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,18 @@ def pytest_addoption(parser):
     )
 
 
+DOCKER_CAPABILITIES = ["exec"]
+
+
+class DockerTarget(Target):
+    def __init__(self, container, capabilities=DOCKER_CAPABILITIES):
+        super().__init__(capabilities=capabilities)
+        self.container = container
+
+    def __getattr__(self, name):
+        return getattr(self.container, name)
+
+
 @pytest.fixture(scope=determine_target_scope)
 def target_init(request):
     docker_image_bootstrap = request.config.getoption("docker_image_bootstrap")
@@ -46,5 +59,5 @@ def target_init(request):
     docker_image = request.config.getoption("docker_image")
     client = pypi_docker.from_env()
     container = client.containers.run(docker_image, "sleep infinity", detach=True, auto_remove=True, init=True)
-    yield container
+    yield DockerTarget(container)
     container.stop(timeout=1)
