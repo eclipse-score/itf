@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,13 +10,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-def test_local_fixture_has_correct_value(fixture42):
-    assert 42 == fixture42
 
+load("@itf_pip//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library")
 
-def test_target_fixture_is_available(target):
-    assert target is not None
-
-
-def test_target_fixture_has_no_capabilities_by_default(target):
-    assert target.get_capabilities() == set()
+py_library(
+    name = "target",
+    srcs = [
+        "__init__.py",
+        "target.py",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("typing-extensions"),
+    ],
+)

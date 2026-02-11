@@ -15,6 +15,7 @@ import pytest
 
 from score.itf.core.utils.bunch import Bunch
 from score.itf.plugins.core import determine_target_scope
+from score.itf.plugins.dlt.dlt_receive import DltReceive, Protocol
 
 
 def pytest_addoption(parser):
