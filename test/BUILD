@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("//:defs.bzl", "py_itf_test")
-load("//score/itf/plugins:plugins.bzl", "base", "dlt", "docker")
+load("//score/itf/plugins:plugins.bzl", "dlt", "docker", "qemu")
 
 py_itf_test(
     name = "test_rules_are_working_correctly",
@@ -66,7 +66,7 @@ py_itf_test(
         "//test/resources:target_config",
     ],
     plugins = [
-        base,
+        qemu,
         dlt,
     ],
     tags = [
@@ -89,7 +89,7 @@ py_itf_test(
         "//test/resources:target_config",
     ],
     plugins = [
-        base,
+        qemu,
     ],
     tags = [
         "local",
@@ -103,7 +103,7 @@ py_itf_test(
         "test_ssh.py",
     ],
     args = [
-        "--target_config=$(location resources/target_config.json)",
+        "--target_config=$(location //test/resources:target_config)",
         "--ecu=s_core_ecu_qemu_port_forwarding",
         "--qemu",
     ],
@@ -111,7 +111,7 @@ py_itf_test(
         "//test/resources:target_config",
     ],
     plugins = [
-        base,
+        qemu,
         dlt,
     ],
     tags = [

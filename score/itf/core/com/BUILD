@@ -10,6 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
+load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 
 py_library(
@@ -20,8 +22,9 @@ py_library(
         "ssh.py",
         "ssh_command.py",
     ],
-    imports = ["."],
-    visibility = ["//visibility:public"],
+    deps = [
+        requirement("paramiko"),
+    ],
 )
 
 py_library(
@@ -30,13 +33,10 @@ py_library(
         "__init__.py",
         "ping.py",
     ],
-    imports = ["."],
-    visibility = ["//visibility:public"],
 )
 
 py_library(
     name = "com",
-    imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
         ":ping",

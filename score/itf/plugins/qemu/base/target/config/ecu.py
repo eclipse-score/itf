@@ -11,8 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 from typing import List
-from score.itf.core.base.target.config.base_processor import BaseProcessor
-from score.itf.core.base.target.config.performance_processor import PerformanceProcessor
+from score.itf.plugins.qemu.base.target.config.base_processor import BaseProcessor
+from score.itf.plugins.qemu.base.target.config.performance_processor import PerformanceProcessor
 
 
 class Ecu:

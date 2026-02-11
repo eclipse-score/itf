@@ -39,6 +39,7 @@ py_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//score/itf/core/process",
         "//score/itf/core/utils",
         "//third_party/python_dlt",
     ],

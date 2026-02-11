@@ -30,9 +30,12 @@ py_library(
     srcs = [
         "score/itf/__init__.py",
     ],
-    imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
+        "//score/itf/core/com",
+        "//score/itf/core/process",
+        "//score/itf/core/target",
+        "//score/itf/core/utils",
         "//score/itf/plugins:core",
     ],
 )

@@ -14,11 +14,11 @@ import logging
 import socket
 import pytest
 
-from score.itf.core.base.constants import TEST_CONFIG_KEY, TARGET_CONFIG_KEY
-from score.itf.core.base.target.config import load_configuration, target_ecu_argparse
-from score.itf.core.base.os.operating_system import OperatingSystem
-from score.itf.core.base.target.qemu_target import qemu_target
-from score.itf.core.base.utils.exec_utils import pre_tests_phase, post_tests_phase
+from score.itf.plugins.qemu.base.constants import TEST_CONFIG_KEY, TARGET_CONFIG_KEY
+from score.itf.plugins.qemu.base.target.config import load_configuration, target_ecu_argparse
+from score.itf.plugins.qemu.base.os.operating_system import OperatingSystem
+from score.itf.plugins.qemu.base.target.qemu_target import qemu_target
+from score.itf.plugins.qemu.base.utils.exec_utils import pre_tests_phase, post_tests_phase
 from score.itf.core.utils import padder
 from score.itf.core.utils.bunch import Bunch
 

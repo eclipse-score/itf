@@ -13,8 +13,8 @@
 import logging
 import subprocess
 
-from score.itf.core.utils.process.console import PipeConsole
-from score.itf.core.qemu.qemu import Qemu
+from score.itf.core.process.console import PipeConsole
+from score.itf.plugins.qemu.qemu import Qemu
 
 logger = logging.getLogger(__name__)
 

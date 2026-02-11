@@ -17,7 +17,7 @@ import time
 import dlt.dlt as python_dlt
 
 from score.itf.core.utils.bunch import Bunch
-from score.itf.core.utils.process.process_wrapper import ProcessWrapper
+from score.itf.core.process.process_wrapper import ProcessWrapper
 from score.itf.plugins.dlt.dlt_receive import DltReceive, Protocol, protocol_arguments
 
 

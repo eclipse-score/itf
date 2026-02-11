@@ -28,10 +28,10 @@ docker = py_itf_plugin(
     ],
 )
 
-base = py_itf_plugin(
-    py_library = "@score_itf//score/itf/core/base",
+qemu = py_itf_plugin(
+    py_library = "@score_itf//score/itf/plugins/qemu",
     enabled_plugins = [
-        "score.itf.core.base.base_plugin",
+        "score.itf.plugins.qemu",
     ],
     args = [
     ],

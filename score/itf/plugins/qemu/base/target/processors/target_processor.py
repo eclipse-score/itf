@@ -12,8 +12,8 @@
 # *******************************************************************************
 import logging
 
-from score.itf.core.base.target.config.base_processor import BaseProcessor
-from score.itf.core.base.os.operating_system import OperatingSystem
+from score.itf.plugins.qemu.base.target.config.base_processor import BaseProcessor
+from score.itf.plugins.qemu.base.os.operating_system import OperatingSystem
 
 from score.itf.core.com.sftp import Sftp
 from score.itf.core.com.ssh import Ssh

@@ -13,9 +13,9 @@
 import json
 import logging
 
-from score.itf.core.base.target.config.base_processor import BaseProcessor
-from score.itf.core.base.target.config.performance_processor import PerformanceProcessor
-from score.itf.core.base.target.config.ecu import Ecu
+from score.itf.plugins.qemu.base.target.config.base_processor import BaseProcessor
+from score.itf.plugins.qemu.base.target.config.performance_processor import PerformanceProcessor
+from score.itf.plugins.qemu.base.target.config.ecu import Ecu
 
 
 logger = logging.getLogger(__name__)

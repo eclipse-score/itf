@@ -15,7 +15,7 @@ import logging
 import os
 
 from score.itf.core.utils.bazel import get_output_dir
-from score.itf.core.utils.process.process_wrapper import ProcessWrapper
+from score.itf.core.process.process_wrapper import ProcessWrapper
 
 
 logger = logging.getLogger(__name__)
