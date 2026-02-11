@@ -15,7 +15,7 @@
 
 import logging
 
-from score.itf.core.base.target.base_target import Target
+from score.itf.plugins.qemu.base.target.base_target import Target
 from score.itf.core.com.ssh import execute_command
 
 

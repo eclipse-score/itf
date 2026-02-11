@@ -18,7 +18,7 @@ import os
 import pytest
 
 from subprocess import TimeoutExpired
-from score.itf.core.utils.process.console import PipeConsole
+from score.itf.core.process.console import PipeConsole
 
 
 logger = logging.getLogger(__name__)

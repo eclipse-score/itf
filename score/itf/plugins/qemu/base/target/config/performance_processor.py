@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from score.itf.core.base.target.config.base_processor import BaseProcessor
+from score.itf.plugins.qemu.base.target.config.base_processor import BaseProcessor
 
 
 class PerformanceProcessor(BaseProcessor):

@@ -12,11 +12,11 @@
 # *******************************************************************************
 from contextlib import contextmanager, nullcontext
 
-from score.itf.core.base.os.operating_system import OperatingSystem
-from score.itf.core.base.target.base_target import Target
-from score.itf.core.base.target.config.ecu import Ecu
-from score.itf.core.base.target.processors.qemu_processor import TargetProcessorQemu
-from score.itf.core.qemu.qemu_process import QemuProcess as Qemu
+from score.itf.plugins.qemu.base.os.operating_system import OperatingSystem
+from score.itf.plugins.qemu.base.target.base_target import Target
+from score.itf.plugins.qemu.base.target.config.ecu import Ecu
+from score.itf.plugins.qemu.base.target.processors.qemu_processor import TargetProcessorQemu
+from score.itf.plugins.qemu.qemu_process import QemuProcess as Qemu
 
 
 class TargetQemu(Target):

@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 from enum import Enum
-from score.itf.core.base.os.config import global_os_config as os_config
+from score.itf.plugins.qemu.base.os.config import global_os_config as os_config
 
 
 # pylint: disable=no-member

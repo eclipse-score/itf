@@ -10,22 +10,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_python//python:defs.bzl", "py_library")
+from score.itf.plugins.qemu.base.os.operating_system import OperatingSystem
+from score.itf.plugins.qemu.base.target.config.base_processor import BaseProcessor
+from score.itf.plugins.qemu.base.target.processors.target_processor import TargetProcessor
 
-py_library(
-    name = "target",
-    srcs = [
-        "__init__.py",
-        "base_target.py",
-        "qemu_target.py",
-    ],
-    imports = ["."],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//score/itf/core/base/os",
-        "//score/itf/core/base/target/config",
-        "//score/itf/core/base/target/processors",
-        "//score/itf/core/qemu",
-        "//score/itf/plugins/dlt",
-    ],
-)
+
+class TargetSafetyProcessor(TargetProcessor):
+    """Represents the Safety processor of the target ECU."""
+
+    # pylint: disable=useless-super-delegation
+    def __init__(self, processor: BaseProcessor, os: OperatingSystem, diagnostic_ip=None):
+        super().__init__(processor, os, diagnostic_ip)

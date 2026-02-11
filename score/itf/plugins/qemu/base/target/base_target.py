@@ -12,9 +12,9 @@
 # *******************************************************************************
 import logging
 
-from score.itf.core.base.target.processors.target_processor import TargetProcessor
-from score.itf.core.base.os.operating_system import OperatingSystem
-from score.itf.core.base.target.config.ecu import Ecu
+from score.itf.plugins.qemu.base.target.processors.target_processor import TargetProcessor
+from score.itf.plugins.qemu.base.os.operating_system import OperatingSystem
+from score.itf.plugins.qemu.base.target.config.ecu import Ecu
 
 logger = logging.getLogger(__name__)
 

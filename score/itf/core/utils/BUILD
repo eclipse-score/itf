@@ -20,9 +20,5 @@ py_library(
         "bunch.py",
         "utils.py",
     ],
-    imports = ["."],
     visibility = ["//visibility:public"],
-    deps = [
-        "//score/itf/core/utils/process",
-    ],
 )
