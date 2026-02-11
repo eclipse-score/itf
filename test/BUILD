@@ -56,14 +56,14 @@ py_itf_test(
         "test_ssh.py",
     ],
     args = [
-        "--target_config=$(location //config)",
-        "--dlt-config=$(location dlt_config.json)",
+        "--target_config=$(location //test/resources:target_config)",
+        "--dlt-config=$(location //test/resources:dlt_config)",
         "--ecu=s_core_ecu_qemu_bridge_network",
         "--qemu",
     ],
     data = [
-        "dlt_config.json",
-        "//config",
+        "//test/resources:dlt_config",
+        "//test/resources:target_config",
     ],
     plugins = [
         base,
@@ -81,12 +81,12 @@ py_itf_test(
         "test_ssh.py",
     ],
     args = [
-        "--target_config=$(location //config)",
+        "--target_config=$(location //test/resources:target_config)",
         "--ecu=s_core_ecu_qemu_bridge_network",
         "--qemu",
     ],
     data = [
-        "//config",
+        "//test/resources:target_config",
     ],
     plugins = [
         base,
@@ -103,12 +103,12 @@ py_itf_test(
         "test_ssh.py",
     ],
     args = [
-        "--target_config=$(location //config)",
+        "--target_config=$(location resources/target_config.json)",
         "--ecu=s_core_ecu_qemu_port_forwarding",
         "--qemu",
     ],
     data = [
-        "//config",
+        "//test/resources:target_config",
     ],
     plugins = [
         base,
