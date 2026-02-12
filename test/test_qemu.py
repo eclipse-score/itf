@@ -10,33 +10,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-import pytest
-
 from score.itf.core.com.ssh import execute_command
 
 
-@pytest.fixture(scope="session")
-def docker_configuration():
-    return {
-        "environment": {
-            "PASSWORD_ACCESS": "true",
-            "USER_NAME": "score",
-            "USER_PASSWORD": "score",
-        },
-        "command": None,
-        "init": False,
-    }
+def test_ssh_with_default_user(target_fixture):
+    with target_fixture.sut.ssh() as ssh:
+        execute_command(ssh, "echo 'Username:' $USER && uname -a")
 
 
-def check_command_exec(target, message):
-    exit_code, output = target.exec_run(f"echo -n {message}")
-    return f"{message}" == output.decode()
-
-
-def test_docker_runs_1(target):
-    assert check_command_exec(target, "hello, world 1")
-
-
-def test_ssh_with_default_user(target):
-    with target.ssh() as ssh:
+def test_ssh_with_qnx_user(target_fixture):
+    with target_fixture.sut.ssh(username="qnxuser") as ssh:
         execute_command(ssh, "echo 'Username:' $USER && uname -a")

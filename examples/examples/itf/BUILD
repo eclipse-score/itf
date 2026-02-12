@@ -45,9 +45,9 @@ py_itf_test(
 )
 
 py_itf_test(
-    name = "test_ssh_bridge_network",
+    name = "test_qemu_ssh_bridge_network",
     srcs = [
-        "test_ssh.py",
+        "test_qemu.py",
     ],
     args = [
         "--target_config=$(location @score_itf//test/resources:target_config)",
@@ -68,9 +68,9 @@ py_itf_test(
 )
 
 py_itf_test(
-    name = "test_ssh_port_forwarding",
+    name = "test_qemu_ssh_port_forwarding",
     srcs = [
-        "test_ssh.py",
+        "test_qemu.py",
     ],
     args = [
         "--target_config=$(location @score_itf//test/resources:target_config)",
