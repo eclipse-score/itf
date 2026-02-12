@@ -50,12 +50,10 @@ py_itf_test(
         "test_qemu.py",
     ],
     args = [
-        "--target_config=$(location @score_itf//test/resources:target_config)",
-        "--ecu=s_core_ecu_qemu_bridge_network",
-        "--qemu",
+        "--qemu-config=$(location @score_itf//test/resources:qemu_bridge_config)",
     ],
     data = [
-        "@score_itf//test/resources:target_config",
+        "@score_itf//test/resources:qemu_bridge_config",
     ],
     plugins = [
         qemu,
@@ -73,12 +71,10 @@ py_itf_test(
         "test_qemu.py",
     ],
     args = [
-        "--target_config=$(location @score_itf//test/resources:target_config)",
-        "--ecu=s_core_ecu_qemu_port_forwarding",
-        "--qemu",
+        "--qemu-config=$(location @score_itf//test/resources:qemu_port_forwarding_config)",
     ],
     data = [
-        "@score_itf//test/resources:target_config",
+        "@score_itf//test/resources:qemu_port_forwarding_config",
     ],
     plugins = [
         qemu,

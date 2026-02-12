@@ -20,13 +20,18 @@ logger = logging.getLogger(__name__)
 
 
 class QemuProcess:
-    def __init__(self, path_to_qemu_image, path_to_bootloader, available_ram, available_cores):
+    def __init__(self, path_to_qemu_image, available_ram, available_cores, network_adapters=[], port_forwarding=[]):
         self._path_to_qemu_image = path_to_qemu_image
-        self._path_to_bootloader = path_to_bootloader
         self._available_ram = available_ram
         self._available_cores = available_cores
+        self._network_adapters = network_adapters
+        self._port_forwarding = port_forwarding
         self._qemu = Qemu(
-            self._path_to_qemu_image, self._path_to_bootloader, self._available_ram, self._available_cores
+            self._path_to_qemu_image,
+            self._available_ram,
+            self._available_cores,
+            network_adapters=self._network_adapters,
+            port_forwarding=self._port_forwarding,
         )
         self._console = None
 

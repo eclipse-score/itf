@@ -9,281 +9,520 @@ https://www.apache.org/licenses/LICENSE-2.0
 SPDX-License-Identifier: Apache-2.0
 *******************************************************************************
 -->
-# Integration Test Framework
-This module implements support for running [`pytest`](https://docs.pytest.org/en/latest/contents.html) based tests
-for ECUs (Electronic Control Units) in automotive domain.
-The Integration Test Framework aims to support ECU testing on real hardware and on simulation (QEMU or QVP) as target.
+# Integration Test Framework (ITF)
 
-## Usage
-In your `MODULE.bazel` file, add the following line to include the ITF dependency:
-```
-bazel_dep(name = "itf", version = "0.1.0")
+ITF is a [`pytest`](https://docs.pytest.org/en/latest/contents.html)-based testing framework designed for ECU (Electronic Control Unit) testing in automotive domains. It provides a flexible, plugin-based architecture that enables testing on multiple target environments including Docker containers, QEMU virtual machines, and real hardware.
+
+## Key Features
+
+- **Plugin-Based Architecture**: Modular design with support for Docker, QEMU, DLT, and custom plugins
+- **Target Abstraction**: Unified `Target` interface with capability-based system for different test environments
+- **Flexible Testing**: Write tests once, run across multiple targets (Docker, QEMU, hardware)
+- **Capability System**: Tests can query and adapt based on available target capabilities
+- **Bazel Integration**: Seamless integration with Bazel build system via `py_itf_test` macro
+
+## Quick Start
+
+### Installation
+
+Add ITF to your `MODULE.bazel`:
+```starlark
+bazel_dep(name = "score_itf", version = "0.1.0")
 ```
 
-In your `.bazelrc` file, add the following line to include ITF configurations:
+Configure your `.bazelrc`:
 ```
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/
 common --registry=https://bcr.bazel.build
-
-build:qemu-integration --config=x86_64-qnx
-build:qemu-integration --run_under=@score_itf//scripts:run_under_qemu
-build:qemu-integration --test_arg="--qemu"
-build:qemu-integration --test_arg="--os=qnx"
 ```
 
-## Configuration options
-Several additional command line options can be added to the execution to customize it.
-These are divided into two groups: bazel configs and pytest arguments.
+### Basic Test Example
 
-The bazel configs generally influence the build options. These include modifying the bazel `select()` statements, changing the dependencies tree, etc. Available configs are:
-- `--config=qemu-integration` - Run ITF for QEMU target. If `--qemu_image` is specified, ITF will automatically start QEMU with the provided image before running the tests.
-
-The Python arguments customize the runtime behavior.
-They can be found in [`score/itf/plugins/base/base_plugin.py`](score/itf/plugins/base/base_plugin.py) file or displayed by passing `--test_arg="--help"` to any test invocation.
-All the options can be passed in command line wrapped in `--test_arg="<...>"` or in `args` parameter of `py_itf_test` macro in `BUILD` file.
-
-Runtime arguments:
-* `--target_config` - Path to the target configuration file
-* `--dlt_receive_path` - Path to DLT receive binary (Internally provided in `py_itf_test` macro)
-* `--ecu` - Target ECU under test
-* `--os` - Target Operating System
-* `--qemu` - Run tests with QEMU image
-* `--qemu_image` - Path to a QEMU image
-* `--qvp` - Run tests with QVP simulation
-* `--hw` - Run tests against connected HW
-
-
-## Target configuration file
-Target configuration file is a JSON file defining the ECUs under test, their connection parameters, DLT settings, etc.
-Target configuration file path can be specified using `--target_config` argument.
-An example file for S-CORE QEMU can be found in [`config/target_config.json`](config/target_config.json).
-
-```json
-{
-    "S_CORE_ECU_QEMU_BRIDGE_NETWORK": {
-        "performance_processor": {
-            "name": "S_CORE_ECU_QEMU_BRIDGE_NETWORK_PP",
-            "ip_address": "192.168.122.76",
-            "ext_ip_address": "192.168.122.76",
-            "ssh_port": 22,
-            "diagnostic_ip_address": "192.168.122.76",
-            "diagnostic_address": "0x91",
-            "serial_device": "",
-            "network_interfaces": [],
-            "ecu_name": "s_core_ecu_qemu_bridge_network_pp",
-            "data_router_config": {
-                "vlan_address": "127.0.0.1",
-                "multicast_addresses": []
-            },
-            "qemu_num_cores": 2,
-            "qemu_ram_size": "1G"
-        },
-        "safety_processor": {
-            "name": "S_CORE_ECU_QEMU_BRIDGE_NETWORK_SC",
-            "ip_address": "192.168.122.76",
-            "diagnostic_ip_address": "192.168.122.76",
-            "diagnostic_address": "0x90",
-            "serial_device": "",
-            "use_doip": true
-        },
-        "other_processors": {}
-    },
-    ...
-}
-```
-
-Target configuration file contains a dictionary of ECUs. Each ECU contains its processors (`performance_processor`, `safety_processor`, `other_processors`).
-Each processor contains its connection parameters.
-
-Performance processor: `performance_processor`
-* `name` - Name of the processor
-* `ip_address` - IP address of the processor
-* `ext_ip_address` - External IP address of the processor (for cases where no direct access is possible)
-* `ssh_port` - SSH port of the processor
-* `diagnostic_ip_address` - IP address for diagnostics communication
-* `diagnostic_address` - Diagnostic address of the processor
-* `serial_device` - Serial device path if serial connection is used
-* `network_interfaces` - List of network interfaces on the processor
-* `ecu_name` - Name of the ECU as known on the target system
-* `data_router_config` - Configuration for data router
-  * `vlan_address` - VLAN address for data router
-  * `multicast_addresses` - List of multicast addresses for data router
-* `qemu_num_cores` - Number of CPU cores to allocate for QEMU
-* `qemu_ram_size` - Amount of RAM to allocate for QEMU
-* `use_doip` - Whether to use DoIP for diagnostics communication
-
-Safety processor: `safety_processor`
-* `name` - Name of the processor
-* `ip_address` - IP address of the processor
-* `diagnostic_ip_address` - IP address for diagnostics communication
-* `diagnostic_address` - Diagnostic address of the processor
-* `serial_device` - Serial device path if serial connection is used
-* `use_doip` - Whether to use DoIP for diagnostics communication
-
-Other processors: `other_processors`
-* Dictionary of other processors with same parameters as `safety_processor`.
-
-## Bazel
-ITF provides a macro `py_itf_test` to simplify the creation of ITF based tests.
-BUILD file example:
 ```python
+# test_example.py
+from score.itf.core.com.ssh import execute_command
+
+def test_ssh_connection(target):
+    with target.ssh() as ssh:
+        execute_command(ssh, "echo 'Hello from target!'")
+```
+
+### BUILD Configuration
+
+```starlark
 load("//:defs.bzl", "py_itf_test")
-load("//score/itf/plugins:plugins.bzl", "base")
+load("//score/itf/plugins:plugins.bzl", "docker")
 
 py_itf_test(
-    name = "test_ssh_qemu",
-    srcs = [
-        "test/itf/test_ssh.py",
-    ],
-    args = [
-        "--target_config=$(location target_config.json)",
-        "--ecu=s_core_ecu_qemu",
-        "--qemu_image=$(location //build:init)",
-    ],
-    plugins = [
-        "base",
-    ],
-    data = [
-        "//build:init",
-        "target_config.json",
-    ],
+    name = "test_example",
+    srcs = ["test_example.py"],
+    args = ["--docker-image=ubuntu:24.04"],
+    plugins = [docker],
 )
 ```
 
-## Regenerating pip dependencies
+## Architecture
+
+### Target System
+
+ITF uses a capability-based target system. The `Target` base class provides a common interface that all target implementations extend:
+
+```python
+from score.itf.plugins.core import Target
+
+class MyTarget(Target):
+    def __init__(self):
+        super().__init__(capabilities={'ssh', 'sftp', 'exec'})
+```
+
+Tests can check for capabilities and adapt accordingly:
+
+```python
+from score.itf.plugins.core import requires_capabilities
+
+@requires_capabilities("exec")
+def test_docker_command(target):
+    exit_code, output = target.exec_run("ls -la")
+    assert exit_code == 0
+
+@requires_capabilities("ssh", "sftp")
+def test_file_transfer(target):
+    with target.ssh() as ssh:
+        # SSH operations
+        pass
+```
+
+### Plugin System
+
+ITF supports modular plugins that extend functionality:
+
+- **`core`**: Basic functionality that is the entry point for plugin extensions and hooks
+- **`docker`**: Docker container targets with `exec` capability
+- **`qemu`**: QEMU virtual machine targets with `ssh` and `sftp` capabilities
+- **`dlt`**: DLT (Diagnostic Log and Trace) message capture and analysis
+
+## Writing Tests
+
+### Basic Test Structure
+
+Tests receive a `target` fixture that provides access to the target environment:
+
+```python
+def test_basic(target):
+    # Use target methods based on capabilities
+    if target.has_capability("ssh"):
+        with target.ssh() as ssh:
+            # Perform SSH operations
+            pass
+```
+
+### Docker Tests
+
+```python
+def test_docker_exec(target):
+    exit_code, output = target.exec_run("uname -a")
+    assert exit_code == 0
+    assert b"Linux" in output
+```
+
+BUILD file:
+```starlark
+py_itf_test(
+    name = "test_docker",
+    srcs = ["test_docker.py"],
+    args = ["--docker-image=ubuntu:24.04"],
+    plugins = [docker],
+)
+```
+
+### QEMU Tests
+
+```python
+from score.itf.core.com.ssh import execute_command
+
+def test_qemu_ssh(target):
+    with target.ssh(username="root", password="") as ssh:
+        result = execute_command(ssh, "uname -a")
+```
+
+BUILD file:
+```starlark
+py_itf_test(
+    name = "test_qemu",
+    srcs = ["test_qemu.py"],
+    args = [
+        "--qemu-image=$(location //path:qemu_image)",
+        "--qemu-config=$(location qemu_config.json)",
+    ],
+    data = [
+        "//path:qemu_image",
+        "qemu_config.json",
+    ],
+    plugins = [qemu],
+)
+```
+
+QEMU targets are configured using a JSON configuration file that specifies network settings, resource allocation, and other parameters:
+
+```json
+{
+    "networks": [
+        {
+            "name": "tap0",
+            "ip_address": "169.254.158.190",
+            "gateway": "169.254.21.88"
+        }
+    ],
+    "ssh_port": 22,
+    "qemu_num_cores": 2,
+    "qemu_ram_size": "1G"
+}
+```
+
+
+### Capability-Based Tests
+
+The `@requires_capabilities` decorator automatically skips tests if the target doesn't support required capabilities:
+
+```python
+from score.itf.plugins.core import requires_capabilities
+
+@requires_capabilities("exec")
+def test_docker_specific(target):
+    # Only runs on targets with 'exec' capability
+    target.exec_run("echo test")
+
+@requires_capabilities("ssh", "sftp")
+def test_network_features(target):
+    # Only runs on targets with both 'ssh' and 'sftp'
+    with target.ssh() as ssh:
+        pass
+```
+
+## Communication APIs
+
+### SSH Operations
+
+```python
+from score.itf.core.com.ssh import execute_command
+
+def test_ssh_command(target):
+    with target.ssh(username="root", password="") as ssh:
+        result = execute_command(ssh, "ls -la /tmp")
+```
+
+### SFTP File Transfer
+
+```python
+def test_file_transfer(target):
+    with target.sftp() as sftp:
+        sftp.put("local_file.txt", "/tmp/remote_file.txt")
+        sftp.get("/tmp/remote_file.txt", "downloaded_file.txt")
+```
+
+### Network Testing
+
+```python
+def test_ping(target):
+    # Check if target is reachable
+    assert target.ping(timeout=5)
+    
+    # Wait until target becomes unreachable
+    target.ping_lost(timeout=30, interval=1)
+```
+
+## DLT Support
+
+The DLT plugin enables capturing and analyzing Diagnostic Log and Trace messages. `DltWindow` captures DLT messages from a target and allows querying the recorded data:
+
+```python
+from score.itf.plugins.dlt.dlt_window import DltWindow
+from score.itf.plugins.dlt.dlt_receive import Protocol
+import re
+
+def test_with_dlt_capture(target, dlt_config):
+    # Create DltWindow to capture DLT messages via UDP
+    with DltWindow(
+        protocol=Protocol.UDP,
+        host_ip="127.0.0.1",
+        multicast_ips=["224.0.0.1"],
+        print_to_stdout=False,
+        binary_path=dlt_config.dlt_receive_path,
+    ) as window:
+        # Perform operations that generate DLT messages
+        with target.ssh() as ssh:
+            execute_command(ssh, "my_application")
+        
+        # Access the recorded DLT data
+        record = window.record()
+        
+        # Query for specific DLT messages
+        query = {
+            "apid": re.compile(r"APP1"),
+            "payload": re.compile(r".*Started successfully.*")
+        }
+        results = record.find(query=query)
+        assert len(results) > 0
+        
+        # Or iterate through all messages
+        for frame in record.find():
+            if "error" in frame.payload.lower():
+                print(f"Error found: {frame.payload}")
+```
+
+DLT messages can also be captured with TCP protocol and optional filters:
+
+```python
+# TCP connection to specific target
+with DltWindow(
+    protocol=Protocol.TCP,
+    target_ip="192.168.1.100",
+    print_to_stdout=True,
+    binary_path=dlt_config.dlt_receive_path,
+) as window:
+    # Operations...
+    pass
+
+# With application/context ID filter
+with DltWindow(
+    protocol=Protocol.UDP,
+    host_ip="127.0.0.1",
+    multicast_ips=["224.0.0.1"],
+    dlt_filter="APPID CTID",  # Filter by APPID and CTID
+    binary_path=dlt_config.dlt_receive_path,
+) as window:
+    # Operations...
+    pass
+```
+
+### DLT Configuration File
+
+DLT settings can be specified in a JSON configuration file:
+
+```json
+{
+    "target_ip": "192.168.122.76",
+    "host_ip": "192.168.122.1",
+    "multicast_ips": [
+        "239.255.42.99"
+    ]
+}
+```
+
+This configuration file can be passed to tests via the `--dlt-config` argument in the BUILD file:
+
+```starlark
+py_itf_test(
+    name = "test_with_dlt",
+    srcs = ["test.py"],
+    args = [
+        "--dlt-config=$(location dlt_config.json)",
+    ],
+    data = ["dlt_config.json"],
+    plugins = [dlt, docker],
+)
+```
+
+## Advanced Features
+
+### Target Lifecycle Management
+
+Control whether targets persist across tests using the `--keep-target` flag:
+
+```bash
+# Keep target running between tests (faster, but shared state)
+bazel test //test:my_test -- --test_arg="--keep-target"
+
+# Default: Create fresh target for each test
+bazel test //test:my_test
+```
+
+### Custom Docker Configuration
+
+Override Docker settings in tests:
+
+```python
+import pytest
+
+@pytest.fixture
+def docker_configuration():
+    return {
+        "environment": {"MY_VAR": "value"},
+        "command": "my-custom-command",
+        "ports": {"8080/tcp": 8080},
+    }
+
+def test_with_custom_docker(target):
+    # Uses custom configuration
+    pass
+```
+## Running Tests
+
+### Basic Test Execution
+
+```bash
+# Run all tests
+bazel test //test/...
+
+# Run specific test
+bazel test //test:test_docker
+
+# Show test output
+bazel test //test:test_docker --test_output=all
+
+# Show pytest output
+bazel test //test:test_docker --test_arg="-s"
+
+# Don't cache test results
+bazel test //test:test_docker --nocache_test_results
+```
+
+### Docker Tests
+
+```bash
+bazel test //test:test_docker \
+    --test_arg="--docker-image=ubuntu:24.04"
+```
+
+### QEMU Tests
+
+```bash
+# With pre-built QEMU image
+bazel test //test:test_qemu \
+    --test_arg="--qemu-image=/path/to/kernel.img"
+```
+
+## QEMU Setup (Linux)
+
+### Prerequisites
+
+Check KVM support:
+```bash
+ls -l /dev/kvm
+```
+
+If `/dev/kvm` exists, your system supports hardware virtualization.
+
+### Installation (Ubuntu/Debian)
+
+```bash
+sudo apt-get install qemu-kvm libvirt-daemon-system \
+    libvirt-clients bridge-utils qemu-utils
+
+# Add user to required groups
+sudo adduser $(id -un) libvirt
+sudo adduser $(id -un) kvm
+
+# Re-login to apply group changes
+sudo login $(id -un)
+
+# Verify group membership
+groups
+```
+
+### KVM Acceleration
+
+ITF automatically detects KVM availability and uses:
+- **KVM acceleration** when `/dev/kvm` is accessible (fast)
+- **TCG emulation** as fallback (slower, no virtualization)
+
+## Development
+
+### Regenerating Dependencies
+
 ```bash
 bazel run //:requirements.update
 ```
 
-## Running tests
+### Code Formatting
+
 ```bash
-bazel test //test/...
+bazel run //:format.fix
 ```
 
-Specify additionally:
-- `--test_arg="-s"` to get stdout/err from pytest
-- `--test_output=all` to get stdout/err from bazel
-- `--nocache_test_results` not to cache test runs
+### Running Tests During Development
 
-## Preparation for testing with QEMU
-To run the tests against QEMU target, KVM must be installed.
-Following steps are for Ubuntu. See this tutorial: https://help.ubuntu.com/community/KVM/Installation
-
-First, check if your system supports KVM. Run `ls -l /dev/kvm` - if the device is there, your system does support it.
-
-Install necessary packages:
 ```bash
-sudo apt-get install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils python3-guestfs qemu-utils libguestfs-tools
-sudo adduser `id -un` libvirt
-sudo adduser `id -un` kvm
+# Run with verbose output
+bazel test //test/... \
+    --test_output=all \
+    --test_arg="-s" \
+    --nocache_test_results
 ```
 
-After the installation, you need to relogin - either reboot or ``` sudo login `id -un` ```.
-Verify that the user is in KVM group by running: ``` groups ```.
+## Creating Custom Plugins
 
-## Running test against QNX Qemu
-ITF can be run against running Qemu defined here https://github.com/eclipse-score/reference_integration/tree/main/qnx_qemu.
-Steps:
-* Checkout repository https://github.com/eclipse-score/reference_integration
-* Run ssh test with qemu started with bridge network
-  * Start Qemu with bridge network from `reference_integration/qnx_qemu` folder:
-    ```bash
-    bazel run --config=x86_64-qnx //:run_qemu
-    ```
-  * Run ITF test from `itf` folder:
-    ```bash
-    bazel test //test:test_ssh_bridge_network --test_output=streamed
-    ```
-  * Note: If it fails, check `IP address set to:` in logs of started Qemu and update IP addresses in `itf/config/target_config.json` for `S_CORE_ECU_QEMU_BRIDGE_NETWORK`
-* Run ssh test with qemu started with port forwarding
-  * Start Qemu with bridge network from `reference_integration/qnx_qemu` folder:
-    ```bash
-    bazel run --config=x86_64-qnx //:run_qemu_portforward
-    ```
-  * Run ITF test from `itf` folder:
-    ```bash
-    bazel test //test:test_ssh_port_forwarding --test_output=streamed
-    ```
-* Run ITF test with Qemu started automatically (https://github.com/eclipse-score/reference_integration/blob/main/qnx_qemu/README.md)
-  * From `reference_integration/qnx_qemu` folder, run:
-    ```bash
-    bazel test --config=qemu-integration //:test_ssh_qemu --test_output=streamed
-    ```
+Create a custom plugin by implementing the pytest hooks:
 
-## Writing tests
-Tests are written using `pytest` framework. Tests can utilize various ITF plugins to interact with the target ECU, perform diagnostics, capture logs, etc.
-
-Example test using SSH to connect to the target ECU:
 ```python
-from score.itf.core.com.ssh import execute_command
+# my_plugin.py
+import pytest
+from score.itf.plugins.core import Target, determine_target_scope
 
+MY_CAPABILITIES = ["custom_feature"]
 
-def test_ssh_with_default_user(target_fixture):
-    with target_fixture.sut.ssh() as ssh:
-        execute_command(ssh, "echo 'Username:' $USER && uname -a")
+class MyTarget(Target):
+    def __init__(self):
+        super().__init__(capabilities=MY_CAPABILITIES)
+    
+    def custom_operation(self):
+        # Custom functionality
+        pass
+
+@pytest.fixture(scope=determine_target_scope)
+def target_init():
+    yield MyTarget()
 ```
 
-Main plugin is base plugin which provides common functionality, fixtures and argument parsing.
-It should be specified in the `plugins` parameter of `py_itf_test` macro.
-```python
-    plugins = [
-        "score.itf.plugins.base.base_plugin",
-    ],
+Register the plugin in `plugins.bzl`:
+
+```starlark
+load("//bazel:py_itf_plugin.bzl", "py_itf_plugin")
+
+my_plugin = py_itf_plugin(
+    py_library = "//path/to:my_plugin",
+    enabled_plugins = ["my_plugin"],
+    args = [],
+    data = [],
+    data_as_exec = [],
+    tags = [],
+)
 ```
 
-Fixtures provided by base plugin are:
-* [`target_fixture`](score/itf/core/base/base_plugin.py#L80) - Provides access to the target ECU under test, its processors, connection methods, etc.
-* [`test_config_fixture`](score/itf/core/base/base_plugin.py#L69) - Provides access to the test configuration, command line arguments.
-* [`target_config_fixture`](score/itf/core/base/base_plugin.py#L74) - Provides access to the target configuration read from target configuration file.
+Use in tests:
 
-### Communication with ECU
-Main communication with target ECU is done via [`target_fixture`](score/itf/core/base/base_plugin.py#L80).
-
-Usage of `target_fixture` to get performance processor SSH connection:
-```python
-with target_fixture.sut.performance_processor.ssh() as ssh:
-    # Use ssh connection
+```starlark
+py_itf_test(
+    name = "test_custom",
+    srcs = ["test.py"],
+    plugins = [my_plugin],
+)
 ```
 
-Usage of `target_fixture` to get performance processor SFTP connection:
-```python
-with target_fixture.sut.performance_processor.sftp() as sftp:
-    # Use sftp connection
+## Project Structure
+
+```
+score/itf/
+├── core/                 # Core ITF functionality
+│   ├── com/              # Communication modules (SSH, SFTP)
+│   ├── process/          # Process management
+│   ├── target/           # Target base class
+│   └── utils/            # Utility functions
+├── plugins/              # Plugin implementations
+│   ├── core.py           # Core plugin with Target and decorators
+│   ├── docker.py         # Docker plugin
+│   ├── dlt/              # DLT plugin
+│   └── qemu/             # QEMU plugin
+└── ...
 ```
 
-Usage of `target_fixture` to ping performance processor:
-```python
-target_fixture.sut.performance_processor.ping()
-```
+## Contributing
 
-Usage of `target_fixture` to check is ping lost of performance processor:
-```python
-target_fixture.sut.performance_processor.ping_lost()
-```
+Contributions are welcome! Please ensure:
+- All tests pass: `bazel test //test/...`
+- Code is formatted: `bazel run //:format.fix`
+- New features include tests and documentation
 
-For parameters of above mentioned functionality see [`target_processor.py`](score/itf/core/base/target/processors/target_processor.py).
+## License
 
-## Capture DLT messages
-By default ITF will start capturing DLT messages from the target ECU's performance processor
-when the test starts and stop capturing when the test ends.
-Captured DLT messages can be found in `dlt_receive.dlt` which can be found in `bazel-testlogs` folder.
-
-Class [`DltWindow`](score/itf/plugins/dlt/dlt_window.py) can used in test to capture DLT messages in tests.
-```python
-dlt = DltWindow(dlt_file="./my_test.dlt")
-with dlt.record():
-    # Do something which will send DLT messages
-
-# Stop recording
-dlt.stop()
-
-# Load captured DLT messages from file
-dlt.load()
-
-# Query captured DLT messages to check does it contains expected messages
-query_dict = dict(apid=re.compile(r"LOGC"), payload_decoded=re.compile(rf".*{process}\[my_process.*\]:\s+Thread priority set to 70"))
-dlt_thread_results = dlt.find(query=query_dict)
-
-# Clear captured messages
-dlt.clear()
-```
+Apache License 2.0 - See [LICENSE](LICENSE) file for details.
