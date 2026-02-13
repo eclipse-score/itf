@@ -27,9 +27,22 @@ filegroup(
 )
 
 filegroup(
-    name = "target_config",
+    name = "qemu_bridge_config",
     srcs = [
-        "target_config.json",
+        "qemu_bridge_config.json",
+    ],
+    visibility = [
+        "//test:__pkg__",
+        # TODO: Should be only visibile to examples
+        "//visibility:public",
+        #"@score_itf_examples//:__subpackages__",
+    ],
+)
+
+filegroup(
+    name = "qemu_port_forwarding_config",
+    srcs = [
+        "qemu_port_forwarding_config.json",
     ],
     visibility = [
         "//test:__pkg__",

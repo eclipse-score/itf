@@ -14,7 +14,6 @@ import os
 import shlex
 import sys
 import subprocess
-import netifaces
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,44 +27,32 @@ class Qemu:
     def __init__(
         self,
         path_to_image,
-        path_to_bootloader=None,
         ram="1G",
         cores="2",
         cpu="Cascadelake-Server-v5",
-        host_first_network_device_ip_address="160.48.199.77",
-        host_second_network_device_ip_address="192.168.1.99",
+        network_adapters=[],
+        port_forwarding=[],
     ):
         """Create a QEMU instance with the specified parameters.
 
         :param str path_to_image: The path to the Qemu image file.
-        :param str path_to_bootloader: The path to the Qemu bootloader file.
         :param str ram: The amount of RAM to allocate to the QEMU instance.
         :param str cores: The number of CPU cores to allocate to the QEMU instance.
         :param str cpu: The CPU model to emulate.
          Default is Cascadelake-Server-v5 used to emulate modern Intel CPU features.
          For older Ubuntu versions change that to host in case of errors.
-        :param str host_first_network_device_ip_address: The IP address of the first network device on the host.
-        :param str host_second_network_device_ip_address: The IP address of the second network device on the host.
         """
         self.__qemu_path = "/usr/bin/qemu-system-x86_64"
-
-        self.__first_network_device_name = "unknown"
-        self.__second_network_device_name = "unknown"
-        self.__first_network_adapter_mac = "52:54:11:22:33:01"
-        self.__second_network_adapter_mac = "52:54:11:22:33:02"
-        self.__first_network_device_ip_address = host_first_network_device_ip_address
-        self.__second_network_device_ip_address = host_second_network_device_ip_address
-
         self.__path_to_image = path_to_image
-        self.__path_to_bootloader = path_to_bootloader
         self.__ram = ram
         self.__cores = cores
         self.__cpu = cpu
+        self.__network_adapters = network_adapters
+        self.__port_forwarding = port_forwarding
 
         self.__check_qemu_is_installed()
         self.__find_available_kvm_support()
         self.__check_kvm_readable_when_necessary()
-        self.__find_tap_devices()
 
         self._subprocess = None
 
@@ -77,7 +64,7 @@ class Qemu:
 
     def start(self, subprocess_params=None):
         logger.debug(self.__build_qemu_command())
-        subprocess_args = {"args": shlex.split(self.__build_qemu_command())}
+        subprocess_args = {"args": self.__build_qemu_command()}
         if subprocess_params:
             subprocess_args.update(subprocess_params)
         self._subprocess = subprocess.Popen(**subprocess_args)
@@ -119,45 +106,57 @@ class Qemu:
                 )
                 sys.exit(-1)
 
-    def __find_tap_devices(self):
-        for interface in netifaces.interfaces():
-            try:
-                interface_address = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]["addr"]
-                if interface_address == self.__first_network_device_ip_address:
-                    self.__first_network_device_name = "tap0"
-                if interface_address == self.__second_network_device_ip_address:
-                    self.__second_network_device_name = interface
-            except KeyError:
-                pass
-
-        if "unknown" in (self.__first_network_device_name, self.__second_network_device_name):
-            logger.fatal("Could not find correct tap devices. Please setup network for Qemu first!")
-            sys.exit(-1)
-
     def __build_qemu_command(self):
         return (
-            f"{self.__qemu_path}"
-            " --enable-kvm"  # Use hardware virtualization for better performance
-            f" -smp {self.__cores},maxcpus={self.__cores},cores={self.__cores}"
-            f" -cpu {self.__cpu}"  # Specify CPU to emulate
-            f" -m {self.__ram}"  # Specify RAM size
-            f" -kernel {self.__path_to_image}"  # Specify kernel image
-            " -nographic"  # Disable graphical display (console-only)
-            " -serial mon:stdio"  # Redirect serial output to console
-            " -object rng-random,filename=/dev/urandom,id=rng0"  # Provide hardware random number generation
-            f" {self.__first_network_adapter()}"
-            f" {self.__second_network_adapter()}"
-            " -device virtio-rng-pci,rng=rng0"  # Provide hardware random number generation
+            [
+                f"{self.__qemu_path}",
+                "--enable-kvm"
+                if self._accelerator_support == "kvm"
+                else " -accel tcg",  # Use hardware virtualization if available
+                "-smp",
+                f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
+                "-cpu",
+                f"{self.__cpu}",  # Specify CPU to emulate
+                "-m",
+                f"{self.__ram}",  # Specify RAM size
+                "-kernel",
+                f"{self.__path_to_image}",  # Specify kernel image
+                "-nographic",  # Disable graphical display (console-only)
+                "-serial",
+                "mon:stdio",  # Redirect serial output to console
+                "-object",
+                "rng-random,filename=/dev/urandom,id=rng0",  # Provide hardware random number generation
+                "-device",
+                "virtio-rng-pci,rng=rng0",  # Provide hardware random number generation
+            ]
+            + self.__network_devices_args()
+            + self.__port_forwarding_args()
         )
 
-    def __first_network_adapter(self):
-        return (
-            f" -netdev tap,id=t1,ifname={self.__first_network_device_name},script=no,downscript=no"
-            f" -device virtio-net-pci,netdev=t1,id=nic1,mac={self.__first_network_adapter_mac},guest_csum=off"
-        )
+    def __network_devices_args(self):
+        def get_netdev_args(adapter, id):
+            return [
+                "-netdev",
+                f"tap,id=t{id},ifname={adapter},script=no,downscript=no",
+                "-device",
+                f"virtio-net-pci,netdev=t{id},id=nic{id},guest_csum=off",
+            ]
 
-    def __second_network_adapter(self):
-        return (
-            f" -netdev tap,id=t2,ifname={self.__second_network_device_name},script=no,downscript=no"
-            f" -device virtio-net-pci,netdev=t2,id=nic2,mac={self.__second_network_adapter_mac},guest_csum=off"
-        )
+        result = []
+        for id, adapter in enumerate(self.__network_adapters, start=1):
+            if not adapter.startswith("lo"):
+                result.extend(get_netdev_args(adapter, id))
+        return result
+
+    def __port_forwarding_args(self):
+        result = []
+        for id, forwarding in enumerate(self.__port_forwarding, start=1):
+            result.extend(
+                [
+                    "-netdev",
+                    f"user,id=net{id},hostfwd=tcp::{forwarding.host_port}-:{forwarding.guest_port}",
+                    "-device",
+                    f"virtio-net-pci,netdev=net{id}",
+                ]
+            )
+        return result
