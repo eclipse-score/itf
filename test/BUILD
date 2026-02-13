@@ -70,11 +70,13 @@ py_itf_test(
     ],
     args = [
         "--qemu-config=$(location //test/resources:qemu_bridge_config)",
+        "--qemu-image=$(location //test/resources/qnx:init)",
         "--dlt-config=$(location //test/resources:dlt_config)",
     ],
     data = [
         "//test/resources:dlt_config",
         "//test/resources:qemu_bridge_config",
+        "//test/resources/qnx:init",
     ],
     plugins = [
         qemu,
@@ -93,9 +95,11 @@ py_itf_test(
     ],
     args = [
         "--qemu-config=$(location //test/resources:qemu_bridge_config)",
+        "--qemu-image=$(location //test/resources/qnx:init)",
     ],
     data = [
         "//test/resources:qemu_bridge_config",
+        "//test/resources/qnx:init",
     ],
     plugins = [
         qemu,
@@ -113,9 +117,11 @@ py_itf_test(
     ],
     args = [
         "--qemu-config=$(location //test/resources:qemu_port_forwarding_config)",
+        "--qemu-image=$(location //test/resources/qnx:init)",
     ],
     data = [
         "//test/resources:qemu_port_forwarding_config",
+        "//test/resources/qnx:init",
     ],
     plugins = [
         qemu,
