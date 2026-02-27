@@ -13,16 +13,10 @@
 
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel/rules:as_exec.bzl", "as_exec")
-
-as_exec(
-    name = "dlt-library",
-    src = "//third_party/dlt:libdlt.so",
-)
 
 copy_file(
     name = "libdlt",
-    src = ":dlt-library",
+    src = "//third_party/dlt:libdlt.so",
     out = "libdlt.so.2",
     allow_symlink = True,
 )
