@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 import os
+import shutil
 import time
 
 
@@ -19,6 +20,11 @@ def _execute_command(cmd):
 
 
 def _ping(address, wait_ms_precision=None):
+    if shutil.which("ping") is None:
+        raise RuntimeError(
+            "The 'ping' utility is not installed on this system. "
+            "Please install it (e.g. 'apt install iputils-ping' on Debian/Ubuntu systems)."
+        )
     timeout_command = f"timeout {wait_ms_precision} " if wait_ms_precision else ""
     return _execute_command(f"{timeout_command}ping -c 1 -W 1 " + address) == 0
 

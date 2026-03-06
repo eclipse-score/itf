@@ -134,6 +134,13 @@ py_itf_test(
 )
 
 py_itf_test(
+    name = "test_ping",
+    srcs = [
+        "test_ping.py",
+    ],
+)
+
+py_itf_test(
     name = "test_qemu_config_schema",
     srcs = [
         "test_qemu_config_schema.py",
