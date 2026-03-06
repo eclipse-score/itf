@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@score_itf//:defs.bzl", "py_itf_test")
-load("@score_itf//score/itf/plugins:plugins.bzl", "dlt", "docker", "qemu")
 
 py_itf_test(
     name = "test_docker",
@@ -24,7 +23,7 @@ py_itf_test(
     ],
     data = ["//examples/docker:image_load"],
     plugins = [
-        docker,
+        "@score_itf//score/itf/plugins:docker_plugin",
     ],
 )
 
@@ -39,8 +38,8 @@ py_itf_test(
 #     ],
 #     data = ["@score_itf//test/resources:image_tarball"],
 #     plugins = [
-#         dlt,
-#         docker,
+#         "@score_itf//score/itf/plugins:dlt_plugin",
+#         "@score_itf//score/itf/plugins:docker_plugin",
 #     ],
 # )
 
@@ -58,8 +57,8 @@ py_itf_test(
         "@score_itf//test/resources:qemu_bridge_config",
     ],
     plugins = [
-        qemu,
-        dlt,
+        "@score_itf//score/itf/plugins:qemu_plugin",
+        "@score_itf//score/itf/plugins:dlt_plugin",
     ],
     tags = [
         "manual",
@@ -80,8 +79,8 @@ py_itf_test(
         "@score_itf//test/resources:qemu_port_forwarding_config",
     ],
     plugins = [
-        qemu,
-        dlt,
+        "@score_itf//score/itf/plugins:qemu_plugin",
+        "@score_itf//score/itf/plugins:dlt_plugin",
     ],
     tags = [
         "manual",

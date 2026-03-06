@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("//:defs.bzl", "py_itf_test")
-load("//score/itf/plugins:plugins.bzl", "dlt", "docker", "qemu")
 
 py_itf_test(
     name = "test_rules_are_working_correctly",
@@ -30,7 +29,7 @@ py_itf_test(
         "--docker-image=ubuntu:24.04",
     ],
     plugins = [
-        docker,
+        "//score/itf/plugins:docker_plugin",
     ],
 )
 
@@ -45,8 +44,8 @@ py_itf_test(
     ],
     data = ["//test/resources:image_load"],
     plugins = [
-        dlt,
-        docker,
+        "//score/itf/plugins:dlt_plugin",
+        "//score/itf/plugins:docker_plugin",
     ],
 )
 
@@ -59,8 +58,45 @@ py_itf_test(
         "--docker-image=linuxserver/openssh-server:version-10.2_p1-r0",
     ],
     plugins = [
-        docker,
+        "//score/itf/plugins:docker_plugin",
     ],
+)
+
+py_itf_test(
+    name = "test_ssh_configurable",
+    srcs = [
+        "test_ssh.py",
+    ],
+    args = select(
+        {
+            "@platforms//os:qnx": [
+                "--qemu-config=$(location //test/resources:qemu_bridge_config)",
+                "--qemu-image=$(location //test/resources/qnx:init)",
+            ],
+            "//conditions:default": [
+                "--docker-image=linuxserver/openssh-server:version-10.2_p1-r0",
+            ],
+        },
+    ),
+    data = select(
+        {
+            "@platforms//os:qnx": [
+                "//test/resources:qemu_bridge_config",
+                "//test/resources/qnx:init",
+            ],
+            "//conditions:default": [],
+        },
+    ),
+    plugins = select(
+        {
+            "@platforms//os:qnx": [
+                "//score/itf/plugins:qemu_plugin",
+            ],
+            "//conditions:default": [
+                "//score/itf/plugins:docker_plugin",
+            ],
+        },
+    ),
 )
 
 py_itf_test(
@@ -79,8 +115,8 @@ py_itf_test(
         "//test/resources/qnx:init",
     ],
     plugins = [
-        qemu,
-        dlt,
+        "//score/itf/plugins:qemu_plugin",
+        "//score/itf/plugins:dlt_plugin",
     ],
     tags = [
         "local",
@@ -102,7 +138,7 @@ py_itf_test(
         "//test/resources/qnx:init",
     ],
     plugins = [
-        qemu,
+        "//score/itf/plugins:qemu_plugin",
     ],
     tags = [
         "local",
@@ -124,8 +160,8 @@ py_itf_test(
         "//test/resources/qnx:init",
     ],
     plugins = [
-        qemu,
-        dlt,
+        "//score/itf/plugins:qemu_plugin",
+        "//score/itf/plugins:dlt_plugin",
     ],
     tags = [
         "local",
