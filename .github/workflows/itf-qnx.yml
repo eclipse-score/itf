@@ -1,0 +1,58 @@
+# *******************************************************************************
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+name: ITF QNX QEMU Tests
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+jobs:
+  itf-qnx-qemu-tests-build-all:
+    runs-on: ubuntu-latest
+    environment: workflow-approval
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+      - name: Setup QNX License
+        env:
+          SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+        run: |
+          mkdir -p /opt/score_qnx/license
+          echo "${SCORE_QNX_LICENSE}" | base64 --decode > /opt/score_qnx/license/licenses
+      - name: Install qemu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Allow unprivileged user namespaces
+        run: |
+          sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Build and test
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: |
+          bazel test --config=qemu-integration //test:qnx_qemu_tests \
+            --credential_helper=*.qnx.com=${{ github.workspace }}/tools/qnx_credential_helper.py
+      - name: Cleanup QNX License
+        if: always()
+        run: |
+          rm -rf /opt/score_qnx
+          rm -rf "${HOME}/.cache/bazel"
