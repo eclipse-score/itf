@@ -119,7 +119,6 @@ py_itf_test(
         "//score/itf/plugins:dlt_plugin",
     ],
     tags = [
-        "local",
         "manual",
     ],
 )
@@ -141,7 +140,6 @@ py_itf_test(
         "//score/itf/plugins:qemu_plugin",
     ],
     tags = [
-        "local",
         "manual",
     ],
 )
@@ -164,8 +162,20 @@ py_itf_test(
         "//score/itf/plugins:dlt_plugin",
     ],
     tags = [
-        "local",
         "manual",
+    ],
+)
+
+test_suite(
+    name = "qnx_qemu_tests",
+    tags = [
+        "manual",
+    ],
+    tests = [
+        ":test_qemu_bridge_network",
+        ":test_qemu_bridge_network_no_dlt",
+        ":test_qemu_port_forwarding",
+        ":test_ssh_configurable",
     ],
 )
 
