@@ -26,12 +26,14 @@ class Qemu:
 
     def __init__(
         self,
+        qemu_arch,
         path_to_image,
+        score_disk=None,
         ram="1G",
         cores="2",
-        cpu="Cascadelake-Server-v5",
+        cpu="cortex-a57",
         network_adapters=[],
-        port_forwarding=[],
+        host_qemu_network=None,
     ):
         """Create a QEMU instance with the specified parameters.
 
@@ -39,16 +41,22 @@ class Qemu:
         :param str ram: The amount of RAM to allocate to the QEMU instance.
         :param str cores: The number of CPU cores to allocate to the QEMU instance.
         :param str cpu: The CPU model to emulate.
-         Default is Cascadelake-Server-v5 used to emulate modern Intel CPU features.
-         For older Ubuntu versions change that to host in case of errors.
+         Default is cortex-a57 for aarch64.
+        :param host_qemu_network: HostQemuNetwork config with subnet, guest_ip,
+         mac_address and port_forwarding rules.
         """
-        self.__qemu_path = "/usr/bin/qemu-system-x86_64"
+        self.__qemu_arch = qemu_arch
+        if self.__qemu_arch == "aarch64":
+            self.__qemu_path = "/usr/bin/qemu-system-aarch64"
+        else:
+            self.__qemu_path = "/usr/bin/qemu-system-x86_64"
         self.__path_to_image = path_to_image
+        self.__score_disk = score_disk
         self.__ram = ram
         self.__cores = cores
         self.__cpu = cpu
         self.__network_adapters = network_adapters
-        self.__port_forwarding = port_forwarding
+        self.__host_qemu_network = host_qemu_network
 
         self.__check_qemu_is_installed()
         self.__find_available_kvm_support()
@@ -107,31 +115,61 @@ class Qemu:
                 sys.exit(-1)
 
     def __build_qemu_command(self):
-        return (
-            [
-                f"{self.__qemu_path}",
-                "--enable-kvm"
-                if self._accelerator_support == "kvm"
-                else " -accel tcg",  # Use hardware virtualization if available
-                "-smp",
-                f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
-                "-cpu",
-                f"{self.__cpu}",  # Specify CPU to emulate
-                "-m",
-                f"{self.__ram}",  # Specify RAM size
-                "-kernel",
-                f"{self.__path_to_image}",  # Specify kernel image
-                "-nographic",  # Disable graphical display (console-only)
-                "-serial",
-                "mon:stdio",  # Redirect serial output to console
-                "-object",
-                "rng-random,filename=/dev/urandom,id=rng0",  # Provide hardware random number generation
-                "-device",
-                "virtio-rng-pci,rng=rng0",  # Provide hardware random number generation
-            ]
-            + self.__network_devices_args()
-            + self.__port_forwarding_args()
-        )
+        if self.__qemu_arch == "x86_64":
+            return (
+                [
+                    f"{self.__qemu_path}",
+                    "--enable-kvm"
+                    if self._accelerator_support == "kvm"
+                    else " -accel tcg",  # Use hardware virtualization if available
+                    "-smp",
+                    f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
+                    "-cpu",
+                    f"{self.__cpu}",  # Specify CPU to emulate
+                    "-m",
+                    f"{self.__ram}",  # Specify RAM size
+                    "-kernel",
+                    f"{self.__path_to_image}",  # Specify kernel image
+                    "-nographic",  # Disable graphical display (console-only)
+                    "-serial",
+                    "mon:stdio",  # Redirect serial output to console
+                    "-object",
+                    "rng-random,filename=/dev/urandom,id=rng0",  # Provide hardware random number generation
+                    "-device",
+                    "virtio-rng-pci,rng=rng0",  # Provide hardware random number generation
+                ]
+                + self.__network_devices_args()
+                + self.__port_forwarding_args()
+            )
+        else:
+            return (
+                [
+                    f"{self.__qemu_path}",
+                    "-machine", "virt-4.2",
+                    "-cpu",
+                    f"{self.__cpu}",
+                    "-smp",
+                    f"{self.__cores}",
+                    "-m",
+                    f"{self.__ram}",
+                    "-kernel",
+                    f"{self.__path_to_image}",
+                ]
+                + self.__disk_drive_args()
+                + self.__port_forwarding_args()
+                + [
+                    "-nographic",
+                    "-object",
+                    "rng-random,filename=/dev/urandom,id=rng0",
+                    "-device",
+                    "virtio-rng-device,rng=rng0",
+                    "-serial",
+                    "mon:stdio",
+                ]
+                + self.__network_devices_args()
+            )
+
+            
 
     def __network_devices_args(self):
         def get_netdev_args(adapter, id):
@@ -148,15 +186,60 @@ class Qemu:
                 result.extend(get_netdev_args(adapter, id))
         return result
 
+    def __disk_drive_args(self):
+        """Build disk drive arguments for virtio-blk-device (aarch64)."""
+        if not self.__score_disk:
+            return []
+        if not os.path.isfile(self.__score_disk):
+            logger.info(f"Creating disk image: {self.__score_disk}")
+            subprocess.run(
+                ["qemu-img", "create", "-f", "qcow2", self.__score_disk, "512M"],
+                check=True,
+            )
+        return [
+            "-drive",
+            f"file={self.__score_disk},if=none,id=drv0",
+            "-device",
+            "virtio-blk-device,drive=drv0",
+        ]
+
     def __port_forwarding_args(self):
-        result = []
-        for id, forwarding in enumerate(self.__port_forwarding, start=1):
-            result.extend(
-                [
+        """Build port-forwarding arguments.
+
+        For aarch64, all forwarding rules are combined into a single
+        ``-netdev user`` entry with a ``-device virtio-net-device``.
+        For x86_64, each rule gets its own ``-netdev``/``-device`` pair.
+        """
+        if self.__host_qemu_network is None:
+            return []
+
+        pf_rules = self.__host_qemu_network.port_forwarding
+        if not pf_rules:
+            return []
+
+        guest_ip = self.__host_qemu_network.ip_address
+        subnet = self.__host_qemu_network.subnet
+        mac = self.__host_qemu_network.mac_address
+
+        if self.__qemu_arch == "aarch64":
+            # Single -netdev user with all hostfwd entries
+            hostfwd_parts = ",".join(
+                f"hostfwd=tcp::{pf.host_port}-{guest_ip}:{pf.target_port}"
+                for pf in pf_rules
+            )
+            netdev = f"user,id=net0,net={subnet},{hostfwd_parts}"
+            return [
+                "-netdev", netdev,
+                "-device", f"virtio-net-device,mac={mac},netdev=net0",
+            ]
+        else:
+            # x86_64: one -netdev/-device pair per forwarding rule
+            result = []
+            for id, forwarding in enumerate(pf_rules, start=0):
+                result.extend([
                     "-netdev",
-                    f"user,id=net{id},hostfwd=tcp::{forwarding.host_port}-:{forwarding.guest_port}",
+                    f"user,id=net{id},hostfwd=tcp::{forwarding.host_port}-{guest_ip}:{forwarding.target_port}",
                     "-device",
                     f"virtio-net-pci,netdev=net{id}",
-                ]
-            )
-        return result
+                ])
+            return result

@@ -245,7 +245,7 @@ class QemuTarget(Target):
         :return: Ssh connection object.
         :rtype: Ssh
         """
-        ssh_ip = self._config.networks[0].ip_address
+        ssh_ip = self._config.ip_address
         ssh_port = port if port else self._config.ssh_port
         return Ssh(
             target_ip=ssh_ip,
@@ -259,20 +259,20 @@ class QemuTarget(Target):
         )
 
     def sftp(self, ssh_connection=None):
-        ssh_ip = self._config.networks[0].ip_address
+        ssh_ip = self._config.ip_address
         ssh_port = self._config.ssh_port
         return Sftp(ssh_connection, ssh_ip, ssh_port)
 
     def ping(self, timeout, wait_ms_precision=None):
         return ping(
-            address=self._config.networks[0].ip_address,
+            address=self._config.ip_address,
             timeout=timeout,
             wait_ms_precision=wait_ms_precision,
         )
 
     def ping_lost(self, timeout, interval=1, wait_ms_precision=None):
         return ping_lost(
-            address=self._config.networks[0].ip_address,
+            address=self._config.ip_address,
             timeout=timeout,
             interval=interval,
             wait_ms_precision=wait_ms_precision,
@@ -284,13 +284,13 @@ def qemu_target(test_config):
     """Context manager for QEMU target setup."""
     with (
         QemuProcess(
+            test_config.qemu_arch,
             test_config.qemu_image,
-            test_config.qemu_config.qemu_ram_size,
-            test_config.qemu_config.qemu_num_cores,
-            network_adapters=[adapter.name for adapter in test_config.qemu_config.networks],
-            port_forwarding=test_config.qemu_config.port_forwarding
-            if hasattr(test_config.qemu_config, "port_forwarding")
-            else [],
+            test_config.qemu_config.disk_image,
+            str(test_config.qemu_config.ram_size),
+            str(test_config.qemu_config.cpu_count),
+            network_adapters=[],
+            host_qemu_network=test_config.qemu_config.host_qemu_network,
         )
         if test_config.qemu_image
         else nullcontext() as qemu_process
