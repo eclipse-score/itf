@@ -119,27 +119,27 @@ class Qemu:
             return (
                 [
                     f"{self.__qemu_path}",
-                    "--enable-kvm"
-                    if self._accelerator_support == "kvm"
-                    else " -accel tcg",  # Use hardware virtualization if available
+                    "-cpu", "host",
+                    "-accel", "kvm",
                     "-smp",
                     f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
-                    "-cpu",
-                    f"{self.__cpu}",  # Specify CPU to emulate
                     "-m",
                     f"{self.__ram}",  # Specify RAM size
                     "-kernel",
                     f"{self.__path_to_image}",  # Specify kernel image
-                    "-nographic",  # Disable graphical display (console-only)
-                    "-serial",
-                    "mon:stdio",  # Redirect serial output to console
+                ]
+                + self.__disk_drive_args()
+                + self.__port_forwarding_args()
+                + [
+                    "-nographic",
                     "-object",
-                    "rng-random,filename=/dev/urandom,id=rng0",  # Provide hardware random number generation
+                    "rng-random,filename=/dev/urandom,id=rng0",
                     "-device",
-                    "virtio-rng-pci,rng=rng0",  # Provide hardware random number generation
+                    "virtio-rng-pci,rng=rng0",
+                    "-serial",
+                    "mon:stdio",
                 ]
                 + self.__network_devices_args()
-                + self.__port_forwarding_args()
             )
         else:
             return (
@@ -196,13 +196,21 @@ class Qemu:
                 ["qemu-img", "create", "-f", "qcow2", self.__score_disk, "512M"],
                 check=True,
             )
-        return [
-            "-drive",
-            f"file={self.__score_disk},if=none,id=drv0",
-            "-device",
-            "virtio-blk-device,drive=drv0",
-        ]
-
+        if self.__qemu_arch == "aarch64":
+            return [
+                "-drive",
+                f"file={self.__score_disk},if=none,id=drv0",
+                "-device",
+                "virtio-blk-device,drive=drv0",
+            ]
+        else:
+            return [
+                "-drive",
+                f"file={self.__score_disk},if=none,id=drv0",
+                "-device",
+                "virtio-blk-pci,drive=drv0",
+            ]
+            
     def __port_forwarding_args(self):
         """Build port-forwarding arguments.
 
@@ -233,13 +241,14 @@ class Qemu:
                 "-device", f"virtio-net-device,mac={mac},netdev=net0",
             ]
         else:
-            # x86_64: one -netdev/-device pair per forwarding rule
-            result = []
-            for id, forwarding in enumerate(pf_rules, start=0):
-                result.extend([
-                    "-netdev",
-                    f"user,id=net{id},hostfwd=tcp::{forwarding.host_port}-{guest_ip}:{forwarding.target_port}",
-                    "-device",
-                    f"virtio-net-pci,netdev=net{id}",
-                ])
-            return result
+            # Single -netdev user with all hostfwd entries
+            hostfwd_parts = ",".join(
+                f"hostfwd=tcp::{pf.host_port}-{guest_ip}:{pf.target_port}"
+                for pf in pf_rules
+            )
+            netdev = f"user,id=net0,net={subnet},{hostfwd_parts}"
+            return [
+                "-netdev", netdev,
+                "-device", f"virtio-net-pci,mac={mac},netdev=net0",
+            ]
+
