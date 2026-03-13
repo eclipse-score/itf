@@ -12,7 +12,10 @@
 # *******************************************************************************
 
 from abc import ABC, abstractmethod
-from typing import Set, Optional, Tuple
+from typing import List, Set, Optional, Tuple
+
+from score.itf.core.process.async_process import AsyncProcess
+from score.itf.core.process.wrapped_process import WrappedProcess
 
 
 class Target(ABC):
@@ -91,6 +94,32 @@ class Target(ABC):
         """Execute a command on the target."""
 
     @abstractmethod
+    def execute_async(
+        self,
+        binary_path: str,
+        args: Optional[List[str]] = None,
+        cwd: str = "/",
+    ) -> AsyncProcess:
+        """Start a binary without blocking and return an :class:`AsyncProcess` handle.
+
+        :param binary_path: path to the binary to execute.
+        :param args: list of string arguments for the binary (default: ``None``).
+        :param cwd: working directory inside the target environment.
+        :return: an :class:`AsyncProcess` instance.
+        """
+
+    def wrap_exec(
+        self,
+        *args,
+        **kwargs,
+    ) -> WrappedProcess:
+        return WrappedProcess(
+            self,
+            *args,
+            **kwargs,
+        )
+
+    @abstractmethod
     def upload(self, local_path: str, remote_path: str) -> None:
         """Upload a file from the test host to the target."""
 
@@ -109,6 +138,9 @@ class UnsupportedTarget(Target):
     REQUIRED_CAPABILITIES: Set[str] = set()
 
     def execute(self, command: str) -> Tuple[int, bytes]:
+        raise NotImplementedError("No target plugin selected: exec is unavailable")
+
+    def execute_async(self, binary_path: str, args: Optional[List[str]] = None, cwd: str = "/") -> AsyncProcess:
         raise NotImplementedError("No target plugin selected: exec is unavailable")
 
     def upload(self, local_path: str, remote_path: str) -> None:

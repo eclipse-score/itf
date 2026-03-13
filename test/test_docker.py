@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2025-2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,6 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+import os
+import pytest
 
 import score.itf
 
@@ -59,3 +61,23 @@ def test_restart(target, tmp_path):
     exit_code, output = target.execute("echo -n restarted")
     assert exit_code == 0
     assert output == b"restarted"
+
+
+CONTAINER_EXTRA_MNT_PATH = "/extra/mount/directory"
+
+
+@pytest.fixture(scope="session")
+def docker_configuration():
+    return {
+        "volumes": {
+            os.path.dirname(os.path.abspath(__file__)): {
+                "bind": CONTAINER_EXTRA_MNT_PATH,
+                "mode": "rw",
+            }
+        }
+    }
+
+
+def test_extra_mount(target):
+    exit_code, _ = target.execute(f"ls -al {CONTAINER_EXTRA_MNT_PATH}")
+    assert exit_code == 0, "Extra volume not mounted!"

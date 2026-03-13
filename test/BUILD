@@ -23,6 +23,7 @@ py_itf_test(
 py_itf_test(
     name = "test_docker",
     srcs = [
+        "test_async_exec.py",
         "test_docker.py",
     ],
     args = [
@@ -102,6 +103,7 @@ py_itf_test(
 py_itf_test(
     name = "test_qemu_bridge_network",
     srcs = [
+        "test_async_exec.py",
         "test_qemu.py",
     ],
     args = [
@@ -126,6 +128,7 @@ py_itf_test(
 py_itf_test(
     name = "test_qemu_bridge_network_no_dlt",
     srcs = [
+        "test_async_exec.py",
         "test_qemu.py",
     ],
     args = [
@@ -147,6 +150,7 @@ py_itf_test(
 py_itf_test(
     name = "test_qemu_port_forwarding",
     srcs = [
+        "test_async_exec.py",
         "test_qemu.py",
     ],
     args = [
