@@ -119,8 +119,8 @@ class Qemu:
             return (
                 [
                     f"{self.__qemu_path}",
-                    "-cpu", "host",
-                    "-accel", "kvm",
+                    "-cpu", "max",
+                    "-accel", "tcg",
                     "-smp",
                     f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
                     "-m",
