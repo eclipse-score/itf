@@ -61,6 +61,7 @@ py_itf_test(
     plugins = [
         "//score/itf/plugins:docker_plugin",
     ],
+    pytest_config = "//:pyproject.toml",  # Optional same content as default pytest.ini
 )
 
 py_itf_test(

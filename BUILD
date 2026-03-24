@@ -52,6 +52,7 @@ alias(
 
 exports_files([
     ".ruff.toml",
+    "pyproject.toml",
 ])
 
 copyright_checker(
