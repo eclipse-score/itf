@@ -23,7 +23,7 @@ load("@score_itf//bazel:py_itf_plugin.bzl", "PyItfPluginInfo")
 
 def _itf_test_impl(ctx):
     executable = ctx.executable.test_binary
-    pytest_ini = ctx.file.pytest_ini
+    pytest_config = ctx.file.pytest_config
 
     # ---- build the full argument list ----
     args = []
@@ -32,16 +32,19 @@ def _itf_test_impl(ctx):
     #    Rewrite $(location) → $(rootpath) so expand_location produces
     #    runfiles-relative paths instead of exec-root-relative paths.
     #    This matches Bazel's native test-rule args semantics.
-    expand_targets = list(ctx.attr.data) + list(ctx.attr.data_as_exec) + [ctx.attr.pytest_ini]
+    expand_targets = list(ctx.attr.data) + list(ctx.attr.data_as_exec) + [ctx.attr.pytest_config]
     for arg in ctx.attr.extra_args:
         arg = arg.replace("$(location ", "$(rootpath ").replace("$(locations ", "$(rootpaths ")
         args.append(ctx.expand_location(arg, targets = expand_targets))
 
     # 2. Pytest configuration
-    args.extend(["-c", pytest_ini.short_path])
+    args.extend(["-c", pytest_config.short_path])
     args.extend(["-p", "no:cacheprovider", "--show-capture=no"])
 
-    # 3. Plugin enable flags and plugin-specific args (resolved at analysis time)
+    # 3. JUnit XML output (Bazel sets XML_OUTPUT_FILE environment variable)
+    args.append("--junit-xml=$XML_OUTPUT_FILE")
+
+    # 4. Plugin enable flags and plugin-specific args (resolved at analysis time)
     args.append("-p score.itf.plugins.core")
     for plugin_target in ctx.attr.plugins:
         info = plugin_target[PyItfPluginInfo]
@@ -49,7 +52,7 @@ def _itf_test_impl(ctx):
             args.append("-p %s" % ep)
         args.extend(info.resolved_args)
 
-    # 4. Source file paths (positional args for pytest)
+    # 5. Source file paths (positional args for pytest)
     for src in ctx.files.srcs:
         args.append(src.short_path)
 
@@ -116,7 +119,7 @@ def _itf_test_impl(ctx):
         ctx.files.data +
         ctx.files.data_as_exec +
         ctx.files.srcs +
-        [pytest_ini, inner_bin] +
+        [pytest_config, inner_bin] +
         ctx.files.test_binary
     )
     transitive = (
@@ -169,8 +172,8 @@ _itf_test = rule(
             cfg = "exec",
             allow_files = [".py"],
         ),
-        "pytest_ini": attr.label(
-            doc = "pytest.ini configuration file.",
+        "pytest_config": attr.label(
+            doc = "pytest configuration file.",
             cfg = "exec",
             allow_single_file = True,
             mandatory = True,
@@ -203,10 +206,13 @@ _itf_test = rule(
 # Symbolic macro: the public API, creates the py_test + _itf_test pair.
 # =============================================================================
 
-def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins, deps, tags, **kwargs):
+def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins, deps, tags, pytest_config, **kwargs):
     """Symbolic macro implementation for ITF tests."""
     pytest_bootstrap = Label("@score_itf//:main.py")
-    pytest_ini = Label("@score_itf//:pytest.ini")
+
+    # Use provided pytest_config or fall back to default
+    if not pytest_config:
+        pytest_config = Label("@score_itf//:pytest.ini")
 
     # Internal py_test target: compiles & bundles Python deps.
     # Plugins forward DefaultInfo from their py_library, so they work as deps.
@@ -227,7 +233,7 @@ def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins,
         test_binary = name + ".test_binary",
         plugins = plugins,
         srcs = srcs,
-        pytest_ini = pytest_ini,
+        pytest_config = pytest_config,
         data = data,
         data_as_exec = data_as_exec,
         extra_args = args,
@@ -248,6 +254,7 @@ py_itf_test = macro(
         "data_as_exec": attr.label_list(default = [], allow_files = True),
         "plugins": attr.label_list(default = [], providers = [PyItfPluginInfo]),
         "deps": attr.label_list(default = [], providers = [PyInfo]),
+        "pytest_config": attr.label(default = None, allow_single_file = True, doc = "Custom pytest configuration file. If not specified, uses the default from @score_itf//:pytest.ini."),
     },
     inherit_attrs = "common",
 )
