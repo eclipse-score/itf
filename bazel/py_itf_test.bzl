@@ -41,7 +41,10 @@ def _itf_test_impl(ctx):
     args.extend(["-c", pytest_ini.short_path])
     args.extend(["-p", "no:cacheprovider", "--show-capture=no"])
 
-    # 3. Plugin enable flags and plugin-specific args (resolved at analysis time)
+    # 3. JUnit XML output (Bazel sets XML_OUTPUT_FILE environment variable)
+    args.append("--junit-xml=$XML_OUTPUT_FILE")
+
+    # 4. Plugin enable flags and plugin-specific args (resolved at analysis time)
     args.append("-p score.itf.plugins.core")
     for plugin_target in ctx.attr.plugins:
         info = plugin_target[PyItfPluginInfo]
@@ -49,7 +52,7 @@ def _itf_test_impl(ctx):
             args.append("-p %s" % ep)
         args.extend(info.resolved_args)
 
-    # 4. Source file paths (positional args for pytest)
+    # 5. Source file paths (positional args for pytest)
     for src in ctx.files.srcs:
         args.append(src.short_path)
 
