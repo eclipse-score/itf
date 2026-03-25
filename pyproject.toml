@@ -15,5 +15,9 @@ junit_suite_name = "ITF"
 junit_duration_report = "call"
 junit_family = "xunit1"
 
+markers = [
+    "test_properties(dict)",  # add custom properties to test XML output
+]
+
 [tool.ruff]
 line-length = 120

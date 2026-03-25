@@ -205,3 +205,13 @@ py_itf_test(
         "@rules_python//python/runfiles",
     ],
 )
+
+py_itf_test(
+    name = "test_attribute_plugin",
+    srcs = [
+        "test_attribute_plugin.py",
+    ],
+    plugins = [
+        "//score/itf/plugins:attribute_plugin",
+    ],
+)

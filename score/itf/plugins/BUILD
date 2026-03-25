@@ -70,3 +70,12 @@ py_itf_plugin(
     py_library = "//score/itf/plugins/dlt",
     visibility = ["//visibility:public"],
 )
+
+py_itf_plugin(
+    name = "attribute_plugin",
+    enabled_plugins = [
+        "attribute_plugin",
+    ],
+    py_library = "@score_tooling//python_basics/score_pytest:attribute_plugin",
+    visibility = ["//visibility:public"],
+)
