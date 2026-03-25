@@ -156,16 +156,25 @@ class DockerTarget(Target):
         )
         exec_id = exec_instance["Id"]
         stream = self._client.api.exec_start(exec_id, stream=True)
-        pid = int(next(stream).decode().strip())
+        first_chunk = next(stream).decode()
+        pid_line, _, remainder = first_chunk.partition("\n")
+        pid = int(pid_line.strip())
 
         cmd_logger = logging.getLogger(os.path.basename(command.split()[0]))
         output_lines = []
 
-        def _async_log(log_stream):
-            for chunk in log_stream:
-                for line in chunk.decode().strip().split("\n"):
+        def _process_text(text):
+            for line in text.strip().split("\n"):
+                if line:
                     cmd_logger.info(line)
                     output_lines.append(line)
+
+        if remainder.strip():
+            _process_text(remainder)
+
+        def _async_log(log_stream):
+            for chunk in log_stream:
+                _process_text(chunk.decode())
 
         output_thread = threading.Thread(target=_async_log, args=(stream,), daemon=True)
         output_thread.start()
