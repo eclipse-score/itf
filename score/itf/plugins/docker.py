@@ -30,6 +30,9 @@ from score.itf.plugins.core import Target
 
 logger = logging.getLogger(__name__)
 
+# Default timeout (seconds) for Docker client operations.
+DOCKER_CLIENT_TIMEOUT = 180
+
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -119,7 +122,7 @@ class DockerTarget(Target):
     def __init__(self, container):
         super().__init__()
         self.container = container
-        self._client = pypi_docker.from_env()
+        self._client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
 
     def __getattr__(self, name):
         return getattr(self.container, name)
@@ -271,7 +274,7 @@ def target_init(request, _docker_configuration):
         subprocess.run([docker_image_bootstrap], check=True)
 
     docker_image = request.config.getoption("docker_image")
-    client = pypi_docker.from_env()
+    client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
     container = client.containers.run(
         docker_image,
         _docker_configuration["command"],
