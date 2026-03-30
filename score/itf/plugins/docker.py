@@ -189,7 +189,7 @@ class DockerTarget(Target):
         remote_name = os.path.basename(remote_path)
 
         tar_stream = io.BytesIO()
-        with tarfile.open(fileobj=tar_stream, mode="w") as tar:
+        with tarfile.open(fileobj=tar_stream, mode="w", dereference=True) as tar:
             tar.add(local_path, arcname=remote_name)
         tar_stream.seek(0)
 
