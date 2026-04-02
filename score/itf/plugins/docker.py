@@ -30,6 +30,9 @@ from score.itf.plugins.core import Target
 
 logger = logging.getLogger(__name__)
 
+# Default timeout (seconds) for Docker client operations.
+DOCKER_CLIENT_TIMEOUT = 180
+
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -119,7 +122,7 @@ class DockerTarget(Target):
     def __init__(self, container):
         super().__init__()
         self.container = container
-        self._client = pypi_docker.from_env()
+        self._client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
 
     def __getattr__(self, name):
         return getattr(self.container, name)
@@ -155,10 +158,9 @@ class DockerTarget(Target):
             workdir=cwd,
         )
         exec_id = exec_instance["Id"]
-        stream = self._client.api.exec_start(exec_id, stream=True)
-        first_chunk = next(stream).decode()
-        pid_line, _, remainder = first_chunk.partition("\n")
-        pid = int(pid_line.strip())
+        # demux=True delivers stdout/stderr as separate (bytes|None, bytes|None)
+        # tuples, preventing early stderr from the child from masking the PID.
+        stream = self._client.api.exec_start(exec_id, stream=True, demux=True)
 
         cmd_logger = logging.getLogger(os.path.basename(command.split()[0]))
         output_lines = []
@@ -169,12 +171,26 @@ class DockerTarget(Target):
                     cmd_logger.info(line)
                     output_lines.append(line)
 
-        if remainder.strip():
-            _process_text(remainder)
+        pid = None
+        for stdout_chunk, stderr_chunk in stream:
+            if stderr_chunk:
+                _process_text(stderr_chunk.decode())
+            if stdout_chunk:
+                pid_line, _, remainder = stdout_chunk.decode().partition("\n")
+                pid = int(pid_line.strip())
+                if remainder.strip():
+                    _process_text(remainder)
+                break
+
+        if pid is None:
+            raise RuntimeError(f"Failed to extract PID from stdout for '{command}'")
 
         def _async_log(log_stream):
-            for chunk in log_stream:
-                _process_text(chunk.decode())
+            for stdout_chunk, stderr_chunk in log_stream:
+                if stdout_chunk:
+                    _process_text(stdout_chunk.decode())
+                if stderr_chunk:
+                    _process_text(stderr_chunk.decode())
 
         output_thread = threading.Thread(target=_async_log, args=(stream,), daemon=True)
         output_thread.start()
@@ -254,6 +270,7 @@ def _docker_configuration(docker_configuration):
         "environment": {},
         "command": "sleep infinity",
         "init": True,
+        "shm_size": "2G",
         "volumes": {},
     }
     merged_configuration = {**configuration, **docker_configuration}
@@ -271,7 +288,7 @@ def target_init(request, _docker_configuration):
         subprocess.run([docker_image_bootstrap], check=True)
 
     docker_image = request.config.getoption("docker_image")
-    client = pypi_docker.from_env()
+    client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
     container = client.containers.run(
         docker_image,
         _docker_configuration["command"],
@@ -280,6 +297,7 @@ def target_init(request, _docker_configuration):
         init=_docker_configuration["init"],
         environment=_docker_configuration["environment"],
         volumes=_docker_configuration["volumes"],
+        shm_size=_docker_configuration["shm_size"],
     )
     try:
         yield DockerTarget(container)

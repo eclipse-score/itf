@@ -21,6 +21,7 @@ PyItfPluginInfo = provider(
         "resolved_args": "List of CLI args with $(location ...) pre-resolved.",
         "plugin_runfiles": "Merged runfiles from all plugin data dependencies.",
         "plugin_files": "Depset of all files contributed by the plugin.",
+        "env": "Dict of environment variables contributed by the plugin.",
     },
 )
 
@@ -53,6 +54,7 @@ def _py_itf_plugin_impl(ctx):
             resolved_args = resolved_args,
             plugin_runfiles = plugin_runfiles,
             plugin_files = all_plugin_files,
+            env = ctx.attr.env,
         ),
     ]
 
@@ -91,6 +93,10 @@ py_itf_plugin = rule(
             default = [],
             allow_files = True,
             cfg = "exec",
+        ),
+        "env": attr.string_dict(
+            doc = "Environment variables contributed by plugin to the test.",
+            default = {},
         ),
     },
 )
