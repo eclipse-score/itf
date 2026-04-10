@@ -4,8 +4,11 @@ common --registry=https://bcr.bazel.build
 test --test_output=errors
 
 build:x86_64-qnx --incompatible_strict_action_env
-build:x86_64-qnx --platforms=@score_bazel_platforms//:x86_64-qnx8_0
+build:x86_64-qnx --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
 build:x86_64-qnx --sandbox_writable_path=/var/tmp
+build:x86_64-qnx --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
+build:x86_64-qnx --extra_toolchains=@score_qnx_x86_64_ifs_toolchain//:ifs-x86_64-qnx-sdp_8.0.0
+build:x86_64-qnx --credential_helper=*.qnx.com=%workspace%/tools/qnx_credential_helper.py
 
 test:qemu-integration --config=x86_64-qnx
 test:qemu-integration --run_under=//scripts:run_under_qemu
