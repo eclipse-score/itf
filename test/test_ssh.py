@@ -104,20 +104,17 @@ def test_execute_command_output_returns_minus_one_on_timeout(target):
 
 def test_execute_command_output_captures_large_stdout(target):
     # Generate a sizeable amount of stdout without relying on external utilities
-    # (works with busybox /bin/sh). Roughly 65 bytes per iteration => ~325KB.
-    cmd = (
-        "i=0; "
-        "while [ $i -lt 5000 ]; do "
-        "printf '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\\n'; "
-        "i=$((i+1)); "
-        "done"
-    )
+    # (works with busybox /bin/sh). 256 bytes per iteration => ~256KB with 1000
+    # iterations.  Kept lower than 5000 to stay well within the execution timeout
+    # on emulated targets (QNX QEMU).
+    line = "0123456789abcdef" * 16  # 256 chars
+    cmd = f"i=0; while [ $i -lt 1000 ]; do printf '{line}\\n'; i=$((i+1)); done"
 
     with target.ssh() as ssh:
         exit_code, stdout_lines, stderr_lines = ssh.execute_command_output(
             cmd,
             timeout=10,
-            max_exec_time=30,
+            max_exec_time=60,
             verbose=False,
             separate_stderr=True,
         )
@@ -125,4 +122,4 @@ def test_execute_command_output_captures_large_stdout(target):
     assert exit_code == 0
     assert stderr_lines == []
     stdout = "".join(stdout_lines)
-    assert len(stdout) > 300_000
+    assert len(stdout) > 200_000

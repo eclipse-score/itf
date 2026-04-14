@@ -40,24 +40,24 @@ common --registry=https://bcr.bazel.build
 
 ```python
 # test_example.py
-from score.itf.core.com.ssh import execute_command
-
-def test_ssh_connection(target):
-    with target.ssh() as ssh:
-        execute_command(ssh, "echo 'Hello from target!'")
+def test_docker_exec(target):
+    exit_code, output = target.execute("echo 'Hello from target!'")
+    assert exit_code == 0
+    assert b"Hello from target!" in output
 ```
 
 ### BUILD Configuration
 
+For external consumers, use the `@score_itf` prefix for all loads and plugin references:
+
 ```starlark
-load("//:defs.bzl", "py_itf_test")
-load("//score/itf/plugins:plugins.bzl", "docker")
+load("@score_itf//:defs.bzl", "py_itf_test")
 
 py_itf_test(
     name = "test_example",
     srcs = ["test_example.py"],
     args = ["--docker-image=ubuntu:24.04"],
-    plugins = [docker],
+    plugins = ["@score_itf//score/itf/plugins:docker_plugin"],
 )
 ```
 
@@ -97,8 +97,8 @@ def test_file_transfer(target):
 ITF supports modular plugins that extend functionality:
 
 - **`core`**: Basic functionality that is the entry point for plugin extensions and hooks
-- **`docker`**: Docker container targets with `exec` capability
-- **`qemu`**: QEMU virtual machine targets with `ssh` and `sftp` capabilities
+- **`docker`**: Docker container targets with `exec`, `file_transfer`, and `restart` capabilities
+- **`qemu`**: QEMU virtual machine targets with `ssh`, `sftp`, `exec`, `file_transfer`, and `restart` capabilities
 - **`dlt`**: DLT (Diagnostic Log and Trace) message capture and analysis
 
 ## Writing Tests
@@ -118,6 +118,8 @@ def test_basic(target):
 
 ### Docker Tests
 
+Docker tests use `target.execute()` which runs commands via Docker's native exec API. This works with any Docker image:
+
 ```python
 def test_docker_exec(target):
     exit_code, output = target.execute("uname -a")
@@ -131,18 +133,53 @@ py_itf_test(
     name = "test_docker",
     srcs = ["test_docker.py"],
     args = ["--docker-image=ubuntu:24.04"],
-    plugins = [docker],
+    plugins = ["@score_itf//score/itf/plugins:docker_plugin"],
+)
+```
+
+#### SSH on Docker Targets
+
+If you need SSH access to a Docker container (via `target.ssh()`), the Docker image must have an SSH server installed and running. A plain image like `ubuntu:24.04` will **not** work with `target.ssh()`.
+
+Use an SSH-capable image (e.g. `linuxserver/openssh-server`) and configure credentials via the `docker_configuration` fixture:
+
+```python
+import pytest
+
+@pytest.fixture(scope="session")
+def docker_configuration():
+    return {
+        "environment": {
+            "PASSWORD_ACCESS": "true",
+            "USER_NAME": "score",
+            "USER_PASSWORD": "score",
+        },
+        "command": None,
+        "init": False,
+    }
+
+def test_ssh_on_docker(target):
+    with target.ssh() as ssh:
+        exit_code = ssh.execute_command("echo 'Hello via SSH!'")
+        assert exit_code == 0
+```
+
+```starlark
+py_itf_test(
+    name = "test_docker_ssh",
+    srcs = ["test_docker_ssh.py"],
+    args = ["--docker-image=linuxserver/openssh-server:version-10.2_p1-r0"],
+    plugins = ["@score_itf//score/itf/plugins:docker_plugin"],
 )
 ```
 
 ### QEMU Tests
 
 ```python
-from score.itf.core.com.ssh import execute_command
-
 def test_qemu_ssh(target):
     with target.ssh(username="root", password="") as ssh:
-        result = execute_command(ssh, "uname -a")
+        exit_code = ssh.execute_command("uname -a")
+        assert exit_code == 0
 ```
 
 BUILD file:
@@ -158,7 +195,7 @@ py_itf_test(
         "//path:qemu_image",
         "qemu_config.json",
     ],
-    plugins = [qemu],
+    plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
 )
 ```
 
@@ -203,33 +240,49 @@ def test_network_features(target):
 
 ### SSH Operations
 
-```python
-from score.itf.core.com.ssh import execute_command
+The `Ssh` class provides `execute_command` (returns exit code) and `execute_command_output` (returns exit code, stdout lines, stderr lines) methods. SSH requires a target with an SSH server running (e.g. a Docker image with OpenSSH, or a QEMU VM).
 
+```python
 def test_ssh_command(target):
     with target.ssh(username="root", password="") as ssh:
-        result = execute_command(ssh, "ls -la /tmp")
+        exit_code = ssh.execute_command("ls -la /tmp")
+        assert exit_code == 0
+
+def test_ssh_with_output(target):
+    with target.ssh(username="root", password="") as ssh:
+        exit_code, stdout_lines, stderr_lines = ssh.execute_command_output("ls -la /tmp")
+        assert exit_code == 0
 ```
 
+> **Note:** For Docker targets, `target.ssh()` connects to the container via SSH on port 2222. Your Docker image must have an SSH server installed and running (e.g. `linuxserver/openssh-server`). If you only need to run commands in a Docker container, use `target.execute()` instead — it uses Docker's native exec API and works with any image.
+
 ### SFTP File Transfer
+
+SFTP is available on QEMU targets via `target.sftp()`:
 
 ```python
 def test_file_transfer(target):
     with target.sftp() as sftp:
-        sftp.put("local_file.txt", "/tmp/remote_file.txt")
-        sftp.get("/tmp/remote_file.txt", "downloaded_file.txt")
+        sftp.upload("local_file.txt", "/tmp/remote_file.txt")
+        sftp.download("/tmp/remote_file.txt", "downloaded_file.txt")
 ```
 
+> **Note:** `target.sftp()` is only available on QEMU targets. For Docker targets, use `target.upload()` and `target.download()` instead, which use the Docker API directly.
+
 ### Network Testing
+
+Network testing methods are available on QEMU targets:
 
 ```python
 def test_ping(target):
     # Check if target is reachable
     assert target.ping(timeout=5)
-    
-    # Wait until target becomes unreachable
+
+    # Wait until target becomes unreachable (e.g. after restart)
     target.ping_lost(timeout=30, interval=1)
 ```
+
+> **Note:** `target.ping()` and `target.ping_lost()` are only available on QEMU targets.
 
 ## DLT Support
 
@@ -251,7 +304,7 @@ def test_with_dlt_capture(target, dlt_config):
     ) as window:
         # Perform operations that generate DLT messages
         with target.ssh() as ssh:
-            execute_command(ssh, "my_application")
+            ssh.execute_command("my_application")
         
         # Access the recorded DLT data
         record = window.record()
@@ -319,7 +372,7 @@ py_itf_test(
         "--dlt-config=$(location dlt_config.json)",
     ],
     data = ["dlt_config.json"],
-    plugins = [dlt, docker],
+    plugins = ["@score_itf//score/itf/plugins:dlt_plugin", "@score_itf//score/itf/plugins:docker_plugin"],
 )
 ```
 
@@ -339,7 +392,7 @@ bazel test //test:my_test
 
 ### Custom Docker Configuration
 
-Override Docker settings in tests:
+Override Docker settings in tests by implementing the `docker_configuration` fixture. Supported keys: `environment`, `command`, `init`, `shm_size`, `volumes`.
 
 ```python
 import pytest
@@ -349,7 +402,9 @@ def docker_configuration():
     return {
         "environment": {"MY_VAR": "value"},
         "command": "my-custom-command",
-        "ports": {"8080/tcp": 8080},
+        "init": True,
+        "shm_size": "2G",
+        "volumes": {"/host/path": {"bind": "/container/path", "mode": "rw"}},
     }
 
 def test_with_custom_docker(target):
@@ -452,7 +507,7 @@ bazel test //test/... \
 
 ## Creating Custom Plugins
 
-Create a custom plugin by implementing the pytest hooks:
+Create a custom plugin by implementing the `Target` abstract class and a `target_init` fixture:
 
 ```python
 # my_plugin.py
@@ -464,9 +519,25 @@ MY_CAPABILITIES = ["custom_feature"]
 class MyTarget(Target):
     def __init__(self):
         super().__init__(capabilities=MY_CAPABILITIES)
-    
-    def custom_operation(self):
-        # Custom functionality
+
+    def execute(self, command):
+        # Implementation specific logic
+        pass
+
+    def execute_async(self, binary_path, args=None, cwd="/"):
+        # Implementation specific logic
+        pass
+
+    def upload(self, local_path, remote_path):
+        # Implementation specific logic
+        pass
+
+    def download(self, remote_path, local_path):
+        # Implementation specific logic
+        pass
+
+    def restart(self):
+        # Implementation specific logic
         pass
 
 @pytest.fixture(scope=determine_target_scope)
@@ -474,18 +545,16 @@ def target_init():
     yield MyTarget()
 ```
 
-Register the plugin in `plugins.bzl`:
+Register the plugin in a BUILD file using `py_itf_plugin`:
 
 ```starlark
-load("//bazel:py_itf_plugin.bzl", "py_itf_plugin")
+load("@score_itf//bazel:py_itf_plugin.bzl", "py_itf_plugin")
 
-my_plugin = py_itf_plugin(
-    py_library = "//path/to:my_plugin",
+py_itf_plugin(
+    name = "my_plugin",
     enabled_plugins = ["my_plugin"],
-    args = [],
-    data = [],
-    data_as_exec = [],
-    tags = [],
+    py_library = "//path/to:my_plugin_lib",
+    visibility = ["//visibility:public"],
 )
 ```
 
@@ -495,7 +564,7 @@ Use in tests:
 py_itf_test(
     name = "test_custom",
     srcs = ["test.py"],
-    plugins = [my_plugin],
+    plugins = ["//path/to:my_plugin"],
 )
 ```
 
