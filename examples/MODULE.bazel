@@ -123,7 +123,7 @@ register_toolchains("@toolchains_qnx_ifs//:ifs_x86_64")
 # ITF dependency
 #
 ###############################################################################
-bazel_dep(name = "score_itf", version = "0.1")
+bazel_dep(name = "score_itf")
 local_path_override(
     module_name = "score_itf",
     path = "../",

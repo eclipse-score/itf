@@ -132,13 +132,16 @@ def _itf_test_impl(ctx):
         transitive_files = depset(transitive = transitive),
     )
 
-    # Add plugin runfiles (carries plugin data files + py_library runfiles)
+    # Merge plugin runfiles (carries plugin data files + py_library runfiles) and envs
+    env = {}
     for plugin_target in ctx.attr.plugins:
         info = plugin_target[PyItfPluginInfo]
         runfiles = runfiles.merge(info.plugin_runfiles)
 
         # Also merge the DefaultInfo runfiles forwarded from py_library
         runfiles = runfiles.merge(plugin_target[DefaultInfo].default_runfiles)
+        env.update(info.env)
+    env.update(ctx.attr.env)
 
     return [
         DefaultInfo(
@@ -146,7 +149,7 @@ def _itf_test_impl(ctx):
             runfiles = runfiles,
         ),
         RunEnvironmentInfo(
-            environment = ctx.attr.env,
+            environment = env,
         ),
     ]
 
@@ -206,7 +209,7 @@ _itf_test = rule(
 # Symbolic macro: the public API, creates the py_test + _itf_test pair.
 # =============================================================================
 
-def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins, deps, tags, pytest_config, **kwargs):
+def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins, deps, tags, pytest_config, env, **kwargs):
     """Symbolic macro implementation for ITF tests."""
     pytest_bootstrap = Label("@score_itf//:main.py")
 
@@ -228,6 +231,8 @@ def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins,
     )
 
     # Wrapper test rule: resolves plugin providers and launches the py_test.
+    # Test attrs (timeout, size, etc.) and common attrs (testonly, etc.) are
+    # inherited from _itf_test via inherit_attrs and forwarded via **kwargs.
     _itf_test(
         name = name,
         test_binary = name + ".test_binary",
@@ -239,14 +244,16 @@ def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins,
         extra_args = args,
         env = {
             "PYTHONDONOTWRITEBYTECODE": "1",
-        },
+        } | env,
         tags = tags,
         visibility = visibility,
+        **kwargs
     )
 
 py_itf_test = macro(
     doc = "Symbolic macro for running ITF tests with pytest.",
     implementation = _py_itf_test_impl,
+    inherit_attrs = _itf_test,
     attrs = {
         "srcs": attr.label_list(mandatory = True, allow_files = [".py"]),
         "args": attr.string_list(default = []),
@@ -255,6 +262,9 @@ py_itf_test = macro(
         "plugins": attr.label_list(default = [], providers = [PyItfPluginInfo]),
         "deps": attr.label_list(default = [], providers = [PyInfo]),
         "pytest_config": attr.label(default = None, allow_single_file = True, doc = "Custom pytest configuration file. If not specified, uses the default from @score_itf//:pytest.ini."),
+        "env": attr.string_dict(default = {}, doc = "Environment variables for the test."),
+        # Suppress internal _itf_test attrs that are not part of the public API.
+        "test_binary": None,
+        "extra_args": None,
     },
-    inherit_attrs = "common",
 )
