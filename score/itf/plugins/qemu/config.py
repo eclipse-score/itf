@@ -67,7 +67,6 @@ from pydantic import (
 logger = logging.getLogger(__name__)
 
 
-
 class PortForwarding(BaseModel):
     """A single port-forwarding rule inside ``host_qemu_network``."""
 
@@ -133,8 +132,6 @@ class QemuNetwork(BaseModel):
         if ip.version != 4:
             raise ValueError("must be a valid IPv4 address")
         return value
-
-
 
 
 class QemuConfigModel(BaseModel):
@@ -206,10 +203,7 @@ def load_configuration(config_file: str) -> QemuConfigModel:
         raw = json.load(f)
 
     if "qemu" not in raw:
-        raise ValueError(
-            f"Invalid QEMU configuration in '{config_file}': "
-            "missing top-level 'qemu' key"
-        )
+        raise ValueError(f"Invalid QEMU configuration in '{config_file}': missing top-level 'qemu' key")
 
     try:
         return QemuConfigModel.model_validate(raw["qemu"])

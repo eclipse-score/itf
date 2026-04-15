@@ -56,5 +56,5 @@ def config(request):
 def target_init(config, request, dlt):
     logger.info(f"Starting tests on host: {socket.gethostname()}")
     with qemu_target(config) as qemu:
-        #pre_tests_phase(qemu)
+        # pre_tests_phase(qemu)
         yield qemu

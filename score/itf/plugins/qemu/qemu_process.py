@@ -20,7 +20,16 @@ logger = logging.getLogger(__name__)
 
 
 class QemuProcess:
-    def __init__(self, qemu_arch, path_to_qemu_image, qemu_disk, available_ram, available_cores, network_adapters=[], host_qemu_network=None):
+    def __init__(
+        self,
+        qemu_arch,
+        path_to_qemu_image,
+        qemu_disk,
+        available_ram,
+        available_cores,
+        network_adapters=[],
+        host_qemu_network=None,
+    ):
         self._path_to_qemu_image = path_to_qemu_image
         self._available_ram = available_ram
         self._available_cores = available_cores
