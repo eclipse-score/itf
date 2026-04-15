@@ -1,18 +1,18 @@
 {
-    "networks": [
-        {
-            "name": "lo",
+    "qemu": {
+        "ram_size": 1024,
+        "cpu_count": 2,
+        "host_qemu_network": {
+            "subnet": "127.0.0.0/8",
             "ip_address": "127.0.0.1",
-            "gateway": "127.0.0.1"
+            "mac_address": "52:54:00:12:34:56",
+            "port_forwarding": [
+                {
+                    "description": "SSH",
+                    "host_port": 2222,
+                    "target_port": 22
+                }
+            ]
         }
-    ],
-    "ssh_port": 2222,
-    "qemu_num_cores": 2,
-    "qemu_ram_size": "1G",
-    "port_forwarding": [
-        {
-            "host_port": 2222,
-            "guest_port": 22
-        }
-    ]
+    }
 }

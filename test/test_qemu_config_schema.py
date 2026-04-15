@@ -33,7 +33,7 @@ def test_sample_qemu_configs_validate() -> None:
 
 def test_invalid_qemu_config_is_rejected(tmp_path) -> None:
     invalid = {
-        # "networks" missing
+        # missing top-level "qemu" key
         "ssh_port": 22,
         "qemu_num_cores": 2,
         "qemu_ram_size": "1G",
