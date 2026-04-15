@@ -115,61 +115,32 @@ class Qemu:
                 sys.exit(-1)
 
     def __build_qemu_command(self):
-        if self.__qemu_arch == "x86_64":
-            return (
-                [
-                    f"{self.__qemu_path}",
-                    "-cpu", "max",
-                    "-accel", "tcg",
-                    "-smp",
-                    f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
-                    "-m",
-                    f"{self.__ram}",  # Specify RAM size
-                    "-kernel",
-                    f"{self.__path_to_image}",  # Specify kernel image
-                ]
-                + self.__disk_drive_args()
-                + self.__port_forwarding_args()
-                + [
-                    "-nographic",
-                    "-object",
-                    "rng-random,filename=/dev/urandom,id=rng0",
-                    "-device",
-                    "virtio-rng-pci,rng=rng0",
-                    "-serial",
-                    "mon:stdio",
-                ]
-                + self.__network_devices_args()
-            )
-        else:
-            return (
-                [
-                    f"{self.__qemu_path}",
-                    "-machine", "virt-4.2",
-                    "-cpu",
-                    f"{self.__cpu}",
-                    "-smp",
-                    f"{self.__cores}",
-                    "-m",
-                    f"{self.__ram}",
-                    "-kernel",
-                    f"{self.__path_to_image}",
-                ]
-                + self.__disk_drive_args()
-                + self.__port_forwarding_args()
-                + [
-                    "-nographic",
-                    "-object",
-                    "rng-random,filename=/dev/urandom,id=rng0",
-                    "-device",
-                    "virtio-rng-device,rng=rng0",
-                    "-serial",
-                    "mon:stdio",
-                ]
-                + self.__network_devices_args()
-            )
+        is_x86 = self.__qemu_arch == "x86_64"
 
-            
+        arch_args = (
+            ["-cpu", "max", "-accel", "tcg", "-smp", f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}"]
+            if is_x86
+            else ["-machine", "virt-4.2", "-cpu", self.__cpu, "-smp", str(self.__cores)]
+        )
+        rng_device = "virtio-rng-pci" if is_x86 else "virtio-rng-device"
+
+        return (
+            [self.__qemu_path]
+            + arch_args
+            + ["-m", str(self.__ram), "-kernel", str(self.__path_to_image)]
+            + self.__disk_drive_args()
+            + self.__port_forwarding_args()
+            + [
+                "-nographic",
+                "-object",
+                "rng-random,filename=/dev/urandom,id=rng0",
+                "-device",
+                f"{rng_device},rng=rng0",
+                "-serial",
+                "mon:stdio",
+            ]
+            + self.__network_devices_args()
+        )
 
     def __network_devices_args(self):
         def get_netdev_args(adapter, id):
@@ -210,7 +181,7 @@ class Qemu:
                 "-device",
                 "virtio-blk-pci,drive=drv0",
             ]
-            
+
     def __port_forwarding_args(self):
         """Build port-forwarding arguments.
 
@@ -229,26 +200,12 @@ class Qemu:
         subnet = self.__host_qemu_network.subnet
         mac = self.__host_qemu_network.mac_address
 
-        if self.__qemu_arch == "aarch64":
-            # Single -netdev user with all hostfwd entries
-            hostfwd_parts = ",".join(
-                f"hostfwd=tcp::{pf.host_port}-{guest_ip}:{pf.target_port}"
-                for pf in pf_rules
-            )
-            netdev = f"user,id=net0,net={subnet},{hostfwd_parts}"
-            return [
-                "-netdev", netdev,
-                "-device", f"virtio-net-device,mac={mac},netdev=net0",
-            ]
-        else:
-            # Single -netdev user with all hostfwd entries
-            hostfwd_parts = ",".join(
-                f"hostfwd=tcp::{pf.host_port}-{guest_ip}:{pf.target_port}"
-                for pf in pf_rules
-            )
-            netdev = f"user,id=net0,net={subnet},{hostfwd_parts}"
-            return [
-                "-netdev", netdev,
-                "-device", f"virtio-net-pci,mac={mac},netdev=net0",
-            ]
-
+        hostfwd_parts = ",".join(f"hostfwd=tcp::{pf.host_port}-{guest_ip}:{pf.target_port}" for pf in pf_rules)
+        netdev = f"user,id=net0,net={subnet},{hostfwd_parts}"
+        net_device = "virtio-net-device" if self.__qemu_arch == "aarch64" else "virtio-net-pci"
+        return [
+            "-netdev",
+            netdev,
+            "-device",
+            f"{net_device},mac={mac},netdev=net0",
+        ]

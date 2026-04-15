@@ -154,6 +154,13 @@ class QemuConfigModel(BaseModel):
     host_qemu_network: HostQemuNetwork
     qemu_network: Optional[QemuNetwork] = None
 
+    @field_validator("qemu_network", mode="before")
+    @classmethod
+    def _normalize_empty_qemu_network(cls, v: object) -> object:
+        if isinstance(v, dict) and not v:
+            return None
+        return v
+
     # ----- computed helpers (read-only properties) -----
 
     @property

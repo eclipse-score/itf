@@ -188,31 +188,80 @@ py_itf_test(
     name = "test_qemu",
     srcs = ["test_qemu.py"],
     args = [
-        "--qemu-image=$(location //path:qemu_image)",
         "--qemu-config=$(location qemu_config.json)",
+        "--qemu-image=$(location //path:qemu_image)",
+        "--qemu-arch=aarch64",  # or x86_64
     ],
     data = [
-        "//path:qemu_image",
         "qemu_config.json",
+        "//path:qemu_image",
     ],
     plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
 )
 ```
 
-QEMU targets are configured using a JSON configuration file that specifies network settings, resource allocation, and other parameters:
+QEMU targets are configured using a JSON configuration file passed via `--qemu-config`. The JSON must have a top-level `"qemu"` key. Unknown fields are rejected.
+
+**Bridge networking** (direct guest IP via TAP):
 
 ```json
 {
-    "networks": [
-        {
-            "name": "tap0",
+    "qemu": {
+        "ram_size": 1024,
+        "cpu_count": 2,
+        "host_qemu_network": {
+            "subnet": "169.254.0.0/16",
             "ip_address": "169.254.158.190",
-            "gateway": "169.254.21.88"
+            "mac_address": "52:54:00:12:34:56"
         }
-    ],
-    "ssh_port": 22,
-    "qemu_num_cores": 2,
-    "qemu_ram_size": "1G"
+    }
+}
+```
+
+**Port-forwarding** (user-mode networking via localhost):
+
+```json
+{
+    "qemu": {
+        "ram_size": 1024,
+        "cpu_count": 2,
+        "host_qemu_network": {
+            "subnet": "127.0.0.0/8",
+            "ip_address": "127.0.0.1",
+            "mac_address": "52:54:00:12:34:56",
+            "port_forwarding": [
+                {
+                    "description": "SSH",
+                    "host_port": 2222,
+                    "target_port": 22
+                }
+            ]
+        }
+    }
+}
+```
+
+With port-forwarding configured, ITF connects to `127.0.0.1` on the mapped host port for SSH. Without it, it connects directly to the guest IP.
+
+Optional fields (with their defaults):
+
+| Field | Default | Description |
+|---|---|---|
+| `enable_kvm` | `true` | Enable KVM (currently unused, see KVM section) |
+| `kernel_rootfs_folder` | `""` | Folder containing rootfs alongside the kernel |
+| `disk_image` | `""` | Path to a qcow2 disk image (created if absent) |
+| `startup_timeout` | `60` | Seconds to wait for the guest to boot |
+| `logfile` | `""` | Path for QEMU console log output |
+| `security_enabled` | `false` | Enable security features |
+| `qemu_network` | `null` | Inter-QEMU multicast network (see below) |
+
+The optional `qemu_network` block configures a secondary multicast network for communication between multiple QEMU instances:
+
+```json
+"qemu_network": {
+    "ip_address": "192.168.116.20",
+    "mcast_socket_port": 5432,
+    "mcast_socket_mac": "52:54:00:12:34:74"
 }
 ```
 
@@ -442,9 +491,10 @@ bazel test //test:test_docker \
 ### QEMU Tests
 
 ```bash
-# With pre-built QEMU image
 bazel test //test:test_qemu \
-    --test_arg="--qemu-image=/path/to/kernel.img"
+    --test_arg="--qemu-config=qemu_config.json" \
+    --test_arg="--qemu-image=/path/to/kernel.img" \
+    --test_arg="--qemu-arch=aarch64"
 ```
 
 ## QEMU Setup (Linux)
@@ -475,11 +525,14 @@ sudo login $(id -un)
 groups
 ```
 
-### KVM Acceleration
+### Acceleration
 
-ITF automatically detects KVM availability and uses:
-- **KVM acceleration** when `/dev/kvm` is accessible (fast)
-- **TCG emulation** as fallback (slower, no virtualization)
+| Architecture | Accelerator | Notes |
+|---|---|---|
+| `x86_64` | TCG (always) | KVM is not used even if `/dev/kvm` is present |
+| `aarch64` | QEMU default | No `-accel` flag is passed; QEMU selects TCG |
+
+If `/dev/kvm` exists but is not readable, QEMU startup will abort. Add your user to the `kvm` group to resolve this.
 
 ## Development
 
