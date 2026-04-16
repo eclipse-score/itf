@@ -108,10 +108,10 @@ class DockerAsyncProcess(AsyncProcess):
         return self.get_exit_code()
 
     def _terminate(self):
-        self._container.exec_run(f"kill {self._pid}")
+        self._container.exec_run(["/bin/bash", "-c", f"kill {self._pid}"])
 
     def _kill(self):
-        self._container.exec_run(f"kill -9 {self._pid}")
+        self._container.exec_run(["/bin/bash", "-c", f"kill -9 {self._pid}"])
 
     def get_output(self) -> str:
         """Return the captured stdout of the command."""

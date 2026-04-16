@@ -12,8 +12,8 @@
 # *******************************************************************************
 import os
 import shlex
-import sys
 import subprocess
+import sys
 import logging
 
 logger = logging.getLogger(__name__)
