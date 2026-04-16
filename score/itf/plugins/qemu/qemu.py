@@ -118,7 +118,14 @@ class Qemu:
         is_x86 = self.__qemu_arch == "x86_64"
 
         arch_args = (
-            ["-cpu", "max", "-accel", "tcg", "-smp", f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}"]
+            [
+                "-cpu",
+                "max",
+                "-accel",
+                "kvm" if self._accelerator_support == "kvm" else "tcg",
+                "-smp",
+                f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
+            ]
             if is_x86
             else ["-machine", "virt-4.2", "-cpu", self.__cpu, "-smp", str(self.__cores)]
         )
