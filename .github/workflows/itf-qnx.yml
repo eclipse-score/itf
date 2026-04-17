@@ -58,7 +58,7 @@ jobs:
           SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
           SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
         run: |
-          bazel test --config=qemu-integration //test:qnx_qemu_tests \
+          bazel test --lockfile_mode=error --config=qemu-integration //test:qnx_qemu_tests \
             --credential_helper=*.qnx.com=${{ github.workspace }}/tools/qnx_credential_helper.py
       - name: Cleanup QNX License
         if: always()
