@@ -21,7 +21,7 @@ module(
 # Python version
 #
 ###############################################################################
-bazel_dep(name = "rules_python", version = "1.8.5")
+bazel_dep(name = "rules_python", version = "1.6.3")
 
 PYTHON_VERSION = "3.12"
 
@@ -106,7 +106,7 @@ bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 # skylib dependency
 #
 ###############################################################################
-bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
 
 ###############################################################################
 #
