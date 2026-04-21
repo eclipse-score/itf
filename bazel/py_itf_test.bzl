@@ -122,15 +122,20 @@ def _itf_test_impl(ctx):
         [pytest_config, inner_bin] +
         ctx.files.test_binary
     )
-    transitive = (
-        [ctx.attr.test_binary[DefaultInfo].default_runfiles.files] +
-        [d[DefaultInfo].default_runfiles.files for d in ctx.attr.data] +
-        [d[DefaultInfo].default_runfiles.files for d in ctx.attr.data_as_exec]
-    )
     runfiles = ctx.runfiles(
         files = direct_files,
-        transitive_files = depset(transitive = transitive),
+        transitive_files = ctx.attr.test_binary[DefaultInfo].default_runfiles.files,
     )
+
+    # Use runfiles.merge() for data deps so that repo-name root symlinks
+    # (e.g. bazel_tools/) are preserved.  Collecting only .files loses
+    # these symlinks, which breaks executable data deps that use
+    # runfiles.bash / rlocation on Bazel 8+ where
+    # --legacy_external_runfiles is no longer available.
+    for d in ctx.attr.data:
+        runfiles = runfiles.merge(d[DefaultInfo].default_runfiles)
+    for d in ctx.attr.data_as_exec:
+        runfiles = runfiles.merge(d[DefaultInfo].default_runfiles)
 
     # Merge plugin runfiles (carries plugin data files + py_library runfiles) and envs
     env = {}
