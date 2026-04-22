@@ -380,6 +380,9 @@ def try_to_encode(data, encoding="ascii"):
 def try_to_decode(data, encoding="ascii"):
     if isinstance(data, bytes):
         data = re.sub(b"\r[^\n]", b"", data)
+        # Strip VT100 DEC Private Mode sequences (e.g. \e[?7l disabling auto-wrap)
+        # that corrupt the terminal when Bazel replays captured test output.
+        data = re.sub(b"\033\\[\\?[0-9;]*[hl]", b"", data)
         return data.decode(encoding, "replace").rstrip("\n").rstrip("\r")
     if isinstance(data, str):
         return data.rstrip("\n").rstrip("\r")

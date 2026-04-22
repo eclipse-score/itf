@@ -14,9 +14,6 @@
 
 set -euo pipefail
 
-# Restore terminal auto-margin setting, corrupted by QEMU output
-trap 'tput -T xterm smam 2>/dev/null || true' EXIT
-
 # Check if TEST_UNDECLARED_OUTPUTS_DIR is set
 CMD_UNDECLARED_OUTPUTS_DIR="true"
 if [[ -n "${TEST_UNDECLARED_OUTPUTS_DIR:-}" ]]; then
