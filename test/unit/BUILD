@@ -10,10 +10,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"""ITF public Bazel interface"""
+load("//:defs.bzl", "py_itf_unittest")
 
-load("@score_itf//bazel:py_itf_test.bzl", local_py_itf_test = "py_itf_test")
-load("@score_itf//bazel:py_itf_unittest.bzl", local_py_itf_unittest = "py_itf_unittest")
+py_itf_unittest(
+    name = "test_ping",
+    srcs = ["test_ping.py"],
+)
 
-py_itf_test = local_py_itf_test
-py_itf_unittest = local_py_itf_unittest
+py_itf_unittest(
+    name = "test_qemu_config_schema",
+    srcs = ["test_qemu_config_schema.py"],
+    deps = ["//score/itf/plugins/qemu:config"],
+)
+
+test_suite(
+    name = "unit",
+    tests = [
+        ":test_ping",
+        ":test_qemu_config_schema",
+    ],
+)
