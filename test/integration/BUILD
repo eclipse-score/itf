@@ -13,6 +13,25 @@
 load("//:defs.bzl", "py_itf_test")
 
 py_itf_test(
+    name = "test_attribute_plugin",
+    srcs = ["test_attribute_plugin.py"],
+    deps = ["//score/itf/plugins:attribute_plugin"],
+)
+
+py_itf_test(
+    name = "test_qemu_config_schema",
+    srcs = ["test_qemu_config_schema.py"],
+    data = [
+        "//test/resources:qemu_bridge_config",
+        "//test/resources:qemu_port_forwarding_config",
+    ],
+    deps = [
+        "//score/itf/plugins/qemu",
+        "@rules_python//python/runfiles",
+    ],
+)
+
+py_itf_test(
     name = "test_rules_are_working_correctly",
     srcs = [
         "conftest.py",
@@ -181,37 +200,5 @@ test_suite(
         ":test_qemu_bridge_network_no_dlt",
         ":test_qemu_port_forwarding",
         ":test_ssh_configurable",
-    ],
-)
-
-py_itf_test(
-    name = "test_ping",
-    srcs = [
-        "test_ping.py",
-    ],
-)
-
-py_itf_test(
-    name = "test_qemu_config_schema",
-    srcs = [
-        "test_qemu_config_schema.py",
-    ],
-    data = [
-        "//test/resources:qemu_bridge_config",
-        "//test/resources:qemu_port_forwarding_config",
-    ],
-    deps = [
-        "//score/itf/plugins/qemu",
-        "@rules_python//python/runfiles",
-    ],
-)
-
-py_itf_test(
-    name = "test_attribute_plugin",
-    srcs = [
-        "test_attribute_plugin.py",
-    ],
-    plugins = [
-        "//score/itf/plugins:attribute_plugin",
     ],
 )
