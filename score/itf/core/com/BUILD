@@ -22,6 +22,7 @@ py_library(
         "ssh.py",
         "ssh_command.py",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         requirement("paramiko"),
     ],
@@ -33,6 +34,7 @@ py_library(
         "__init__.py",
         "ping.py",
     ],
+    visibility = ["//visibility:public"],
 )
 
 py_library(

@@ -47,6 +47,21 @@ def pytest_addoption(parser):
         required=False,
         help="Docker image bootstrap command, that will be executed before referencing the container.",
     )
+    parser.addoption(
+        "--extract-coverage",
+        action="store_true",
+        default=False,
+        help="Extract coverage files (.gcda) from the container before teardown.",
+    )
+    parser.addoption(
+        "--coverage-output-dir",
+        default=os.path.join(
+            os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR", "/tmp"),
+            "sysroot",
+        ),
+        help="Directory to write extracted coverage files. "
+        "Defaults to $TEST_UNDECLARED_OUTPUTS_DIR/sysroot or /tmp/sysroot.",
+    )
 
 
 class DockerAsyncProcess(AsyncProcess):
@@ -108,10 +123,10 @@ class DockerAsyncProcess(AsyncProcess):
         return self.get_exit_code()
 
     def _terminate(self):
-        self._container.exec_run(f"kill {self._pid}")
+        self._container.exec_run(["/bin/bash", "-c", f"kill {self._pid}"])
 
     def _kill(self):
-        self._container.exec_run(f"kill -9 {self._pid}")
+        self._container.exec_run(["/bin/bash", "-c", f"kill -9 {self._pid}"])
 
     def get_output(self) -> str:
         """Return the captured stdout of the command."""
@@ -278,6 +293,24 @@ def _docker_configuration(docker_configuration):
     return merged_configuration
 
 
+def _extract_coverage_from_container(target, output_base):
+    """Extract .gcda coverage files created inside the container."""
+    diff = target.container.diff()
+    if not diff:
+        return
+    gcda_paths = [entry["Path"] for entry in diff if entry["Path"].endswith(".gcda") and entry["Kind"] in (0, 1)]
+    for remote_path in gcda_paths:
+        local_path = os.path.join(output_base, remote_path.lstrip("/"))
+        if not os.path.realpath(local_path).startswith(os.path.realpath(output_base)):
+            logger.warning(f"Skipping path traversal attempt: {remote_path}")
+            continue
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        try:
+            target.download(remote_path, local_path)
+        except Exception:
+            logger.warning(f"Failed to extract {remote_path}", exc_info=True)
+
+
 @pytest.fixture(scope=determine_target_scope)
 def target_init(request, _docker_configuration):
     print(_docker_configuration)
@@ -299,9 +332,19 @@ def target_init(request, _docker_configuration):
         volumes=_docker_configuration["volumes"],
         shm_size=_docker_configuration["shm_size"],
     )
+    target = None
     try:
-        yield DockerTarget(container)
+        target = DockerTarget(container)
+        yield target
     finally:
+        try:
+            if target is not None and request.config.getoption("extract_coverage"):
+                _extract_coverage_from_container(
+                    target,
+                    request.config.getoption("coverage_output_dir"),
+                )
+        except Exception:
+            logger.warning("Coverage extraction failed", exc_info=True)
         try:
             container.stop(timeout=1)
         finally:

@@ -272,21 +272,39 @@ def _read_output_with_timeout(stream, logger_in, log, max_exec_time, separate_st
                 continue
 
             if channel.exit_status_ready():
-                # Do not stop immediately on exit status; first ensure there is no
-                # more channel activity pending. This avoids truncating final output
-                # that may still be in-flight after process termination.
+                # The remote process has exited, but output may still be buffered
+                # in the SSH transport.  Keep draining until recv() returns empty
+                # bytes (true EOF) to avoid truncating large outputs.
                 remaining = deadline - now
-                wait_after_exit = 0 if remaining <= 0 else min(0.1, remaining)
-                ready, _, _ = select.select([channel], [], [], wait_after_exit)
-                has_stdout = channel.recv_ready()
-                has_stderr = separate_stderr and channel.recv_stderr_ready()
+                wait_after_exit = 0 if remaining <= 0 else min(0.5, remaining)
+                try:
+                    select.select([channel], [], [], wait_after_exit)
+                except Exception:
+                    time.sleep(min(0.05, remaining if remaining > 0 else 0))
 
-                if has_stdout or has_stderr:
+                drained = False
+                if channel.recv_ready():
+                    data = channel.recv(32768)
+                    if data:
+                        new_lines, stdout_partial = _iter_channel_lines_from_bytes(data, stdout_partial)
+                        stdout_lines.extend(new_lines)
+                        if log:
+                            for line in new_lines:
+                                logger_in.info(line.rstrip("\n"))
+                        drained = True
+
+                if separate_stderr and channel.recv_stderr_ready():
+                    data = channel.recv_stderr(32768)
+                    if data:
+                        new_lines, stderr_partial = _iter_channel_lines_from_bytes(data, stderr_partial)
+                        stderr_lines.extend(new_lines)
+                        if log:
+                            for line in new_lines:
+                                logger_in.info(line.rstrip("\n"))
+                        drained = True
+
+                if drained:
                     continue
-
-                # If select reports readiness but there is no buffered stdout/stderr,
-                # this typically indicates EOF/control-channel readiness, so capture
-                # can be completed safely.
                 break
 
             # Avoid busy-waiting. Paramiko Channel supports fileno() on POSIX, so we can

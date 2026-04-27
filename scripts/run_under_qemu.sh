@@ -1,3 +1,4 @@
+#!/bin/bash
 # *******************************************************************************
 # Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
@@ -11,7 +12,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-#!/bin/bash
 set -euo pipefail
 
 # Check if TEST_UNDECLARED_OUTPUTS_DIR is set
