@@ -15,6 +15,7 @@ import stat
 import logging
 
 from score.itf.core.com.ssh import Ssh
+from typing import Optional
 
 # Reduce the logging level of paramiko, from DEBUG to INFO
 logging.getLogger("paramiko").setLevel(logging.INFO)
@@ -28,9 +29,11 @@ class Sftp:
         target_ip: str,
         port: int = 22,
         timeout: int = 15,
+        channel_timeout: Optional[float] = None,
+        keep_alive_interval: Optional[int] = None,
         n_retries: int = 5,
         retry_interval: int = 1,
-        pkey_path: str = None,
+        pkey_path: Optional[str] = None,
         username: str = "root",
         password: str = "",
     ):
@@ -40,9 +43,12 @@ class Sftp:
         :param str target_ip: The IP address of the target SSH server.
         :param int port: The port number of the target SSH server. Default is 22.
         :param int timeout: The timeout duration (in seconds) for the SSH connection. Default is 15 seconds.
+        :param Optional[float] channel_timeout: The timeout duration (in seconds) for the SFTP channel. Default is None.
+        :param Optional[int] keep_alive_interval: The interval (in seconds) for sending keep-alive messages for
+         the SSH connection. Default is None.
         :param int n_retries: The number of retries to attempt for the SSH connection. Default is 5 retries.
         :param int retry_interval: The interval (in seconds) between retries. Default is 1 second.
-        :param str pkey_path: The file path to the private key for authentication. Default is None.
+        :param Optional[str] pkey_path: The file path to the private key for authentication. Default is None.
         :param str username: The username for SSH authentication. Default is "root".
         :param str password: The password for SSH authentication. Default is an empty string.
         """
@@ -50,7 +56,18 @@ class Sftp:
             self._new_ssh = True
         else:
             self._new_ssh = False
-        self._ssh = ssh or Ssh(target_ip, port, timeout, n_retries, retry_interval, pkey_path, username, password)
+        self._channel_timeout = channel_timeout
+        self._ssh = ssh or Ssh(
+            target_ip=target_ip,
+            port=port,
+            timeout=timeout,
+            keep_alive_interval=keep_alive_interval,
+            n_retries=n_retries,
+            retry_interval=retry_interval,
+            pkey_path=pkey_path,
+            username=username,
+            password=password,
+        )
         self._sftp = None
 
     def __enter__(self):
@@ -60,6 +77,8 @@ class Sftp:
         if self._new_ssh:
             self._ssh = self._ssh.__enter__()
         self._sftp = self._ssh.get_paramiko_client().open_sftp()
+        if self._channel_timeout is not None:
+            self._sftp.get_channel().settimeout(self._channel_timeout)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
