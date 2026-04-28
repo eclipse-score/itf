@@ -29,6 +29,15 @@ cc_library(
         "DLT_LIB_USE_UNIX_SOCKET_IPC",
         'DLT_USER_IPC_PATH=\\"/tmp\\"',
     ],
+    # Workaround: safe_size_to_int32 in dlt_user.c is defined outside a
+    # DLT_TRACE_LOAD_CTRL_ENABLE guard but only called inside it, triggering
+    # -Werror=unused-function with GCC.
+    # dlt_env_ll.c uses strlen() in an array size which Clang treats as a
+    # GNU extension (-Wgnu-folding-constant).
+    copts = [
+        "-Wno-unused-function",
+        "-Wno-gnu-folding-constant",
+    ],
     includes = [
         "include/dlt",
         "src/daemon",
