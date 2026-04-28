@@ -380,6 +380,10 @@ UseDNS no
 # Maximum authentication attempts
 MaxAuthTries 3
 
+# Increase concurrent unauthenticated connections to handle
+# bursts on slow QEMU-emulated targets (default 10:30:100)
+MaxStartups 50:30:100
+
 # Disable login grace time
 LoginGraceTime 30
 }
