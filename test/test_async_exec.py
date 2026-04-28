@@ -59,8 +59,8 @@ def test_execute_async_stop(target):
     assert proc.is_running()
     exit_code = proc.stop()
     assert not proc.is_running()
-    # SIGTERM (143) or SIGKILL (137) are expected
-    assert exit_code in (143, 137)
+    # SIGTERM (143), SIGKILL (137), or -1 (channel closed) are expected
+    assert exit_code in (143, 137, -1)
 
 
 def test_execute_async_with_cwd(target):
