@@ -86,8 +86,11 @@ class QemuAsyncProcess(AsyncProcess):
             if not self.is_running():
                 break
         if self.is_running():
-            self._logger.error(f"Process with PID [{self._pid}] did not terminate properly, closing SSH channel.")
-            self._channel.close()
+            self._logger.error(f"Process with PID [{self._pid}] did not terminate properly, sending SIGKILL.")
+            self._kill()
+            self.wait()
+            # Allow sshd-session to clean up after SIGKILL (SDP 8.0.3 / OpenSSH 9.9)
+            time.sleep(1)
         self._output_thread.join()
         exit_code = self.get_exit_code()
         self._close_ssh()
