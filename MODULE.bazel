@@ -29,6 +29,7 @@ python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     is_default = True,
     python_version = PYTHON_VERSION,
+    configure_coverage_tool = True,
 )
 
 ###############################################################################

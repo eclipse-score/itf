@@ -15,11 +15,18 @@ load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 
 py_library(
+    name = "config",
+    srcs = ["config.py"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [requirement("pydantic")],
+)
+
+py_library(
     name = "qemu",
     srcs = [
         "__init__.py",
         "checks.py",
-        "config.py",
         "qemu.py",
         "qemu_process.py",
         "qemu_target.py",
@@ -27,8 +34,8 @@ py_library(
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
+        ":config",
         "//score/itf/core/process",
         "//score/itf/core/utils",
-        requirement("pydantic"),
     ],
 )
