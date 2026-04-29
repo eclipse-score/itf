@@ -380,6 +380,16 @@ UseDNS no
 # Maximum authentication attempts
 MaxAuthTries 3
 
+# Raise concurrent-connection limit so rapid SSH reconnects
+# under QEMU SLiRP networking do not get dropped.
+MaxStartups 100:30:200
+
+# Disable per-source penalties (OpenSSH >= 9.8).  All test
+# connections originate from 127.0.0.1 via SLiRP port-forwarding
+# and SIGKILLed async processes can trigger crash penalties that
+# block all subsequent connections for 90 s.
+PerSourcePenalties no
+
 # Disable login grace time
 LoginGraceTime 30
 }
