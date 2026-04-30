@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 on:
+  workflow_call:
   pull_request:
     types: [opened, reopened, synchronize]
   merge_group:
