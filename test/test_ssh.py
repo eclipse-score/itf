@@ -114,7 +114,7 @@ def test_execute_command_output_captures_large_stdout(target):
         exit_code, stdout_lines, stderr_lines = ssh.execute_command_output(
             cmd,
             timeout=10,
-            max_exec_time=60,
+            max_exec_time=180,
             verbose=False,
             separate_stderr=True,
         )

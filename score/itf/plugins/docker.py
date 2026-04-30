@@ -322,6 +322,11 @@ def target_init(request, _docker_configuration):
 
     docker_image = request.config.getoption("docker_image")
     client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
+    known_keys = {"command", "init", "environment", "volumes", "shm_size", "detach", "auto_remove"}
+    reserved_overrides = {k for k in ("detach", "auto_remove") if k in _docker_configuration}
+    if reserved_overrides:
+        logger.warning(f"docker_configuration contains reserved keys {reserved_overrides} which will be ignored")
+    extra_kwargs = {k: v for k, v in _docker_configuration.items() if k not in known_keys}
     container = client.containers.run(
         docker_image,
         _docker_configuration["command"],
@@ -331,6 +336,7 @@ def target_init(request, _docker_configuration):
         environment=_docker_configuration["environment"],
         volumes=_docker_configuration["volumes"],
         shm_size=_docker_configuration["shm_size"],
+        **extra_kwargs,
     )
     target = None
     try:

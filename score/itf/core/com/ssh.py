@@ -16,6 +16,8 @@ import paramiko
 import shlex
 import select
 
+from typing import Optional
+
 # Reduce the logging level of paramiko, from DEBUG to INFO
 logging.getLogger("paramiko").setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,9 +29,10 @@ class Ssh:
         target_ip: str,
         port: int = 22,
         timeout: int = 15,
+        keep_alive_interval: Optional[int] = None,
         n_retries: int = 5,
         retry_interval: int = 1,
-        pkey_path: str = None,
+        pkey_path: Optional[str] = None,
         username: str = "root",
         password: str = "",
     ):
@@ -39,15 +42,17 @@ class Ssh:
         :param str target_ip: The IP address of the target SSH server.
         :param int port: The port number of the target SSH server. Default is 22.
         :param int timeout: The timeout duration (in seconds) for the SSH connection. Default is 15 seconds.
+        :param Optional[int] keep_alive_interval: The interval (in seconds) for sending keep-alive messages. Default is None.
         :param int n_retries: The number of retries to attempt for the SSH connection. Default is 5 retries.
         :param int retry_interval: The interval (in seconds) between retries. Default is 1 second.
-        :param str pkey_path: The file path to the private key for authentication. Default is None.
+        :param Optional[str] pkey_path: The file path to the private key for authentication. Default is None.
         :param str username: The username for SSH authentication. Default is "root".
         :param str password: The password for SSH authentication. Default is an empty string.
         """
         self._target_ip = target_ip
         self._port = port
         self._timeout = timeout
+        self._keep_alive_interval = keep_alive_interval
         self._retries = n_retries
         self._retry_interval = retry_interval
         self._username = username
@@ -103,10 +108,31 @@ class Ssh:
         else:
             raise Exception(f"SSH connection to {self._target_ip} failed")
 
+        if self._keep_alive_interval is not None:
+            transport = self._ssh.get_transport()
+            if transport:
+                transport.set_keepalive(self._keep_alive_interval)
+                logger.info(f"Keep-alive enabled for {self._target_ip} every {self._keep_alive_interval}s")
+            else:
+                logger.warning(
+                    f"Keep-alive cannot be enabled for {self._target_ip}"
+                    f" because SSH connection does not have an active transport"
+                )
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._ssh is not None:
+            if exc_type is not None:
+                logger.debug(f"SSH connection to {self._target_ip} failed unexpectedly: {exc_type.__name__}({exc_val})")
+            if self._keep_alive_interval is not None:
+                transport = self._ssh.get_transport()
+                if transport and not transport.is_active():
+                    logger.warning(f"SSH connection to {self._target_ip} was no longer alive at close time")
+                elif transport:
+                    logger.info(f"SSH connection to {self._target_ip} will be closed normally")
+                else:
+                    logger.warning(f"SSH connection to {self._target_ip} has no transport at close time")
             try:
                 self._ssh.close()
             finally:
