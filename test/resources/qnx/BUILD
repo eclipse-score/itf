@@ -11,11 +11,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@score_toolchains_qnx//rules/fs:ifs.bzl", "qnx_ifs")
+load("@score_rules_imagefs//rules/qnx:ifs.bzl", "qnx_ifs")
 
 qnx_ifs(
     name = "init",
+    srcs = [],
     build_file = "init.build",
+    extra_build_files = ["tools.build"],
     tags = ["manual"],
+    target_compatible_with = ["@platforms//os:qnx"],
     visibility = ["//visibility:public"],
 )
