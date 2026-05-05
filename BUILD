@@ -12,6 +12,7 @@
 # *******************************************************************************
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@score_docs_as_code//:docs.bzl", "docs")
 load("@score_tooling//:defs.bzl", "copyright_checker")
 
 compile_pip_requirements(
@@ -73,4 +74,8 @@ copyright_checker(
     config = "@score_tooling//cr_checker/resources:config",
     template = "@score_tooling//cr_checker/resources:templates",
     visibility = ["//visibility:public"],
+)
+
+docs(
+    source_dir = "docs",
 )
