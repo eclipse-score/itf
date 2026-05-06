@@ -12,3 +12,8 @@ build:x86_64-qnx --credential_helper=*.qnx.com=%workspace%/tools/qnx_credential_
 
 test:qemu-integration --config=x86_64-qnx
 test:qemu-integration --run_under=//scripts:run_under_qemu
+
+build --java_language_version=17
+build --java_runtime_version=remotejdk_17
+build --tool_java_language_version=17
+build --tool_java_runtime_version=remotejdk_17
