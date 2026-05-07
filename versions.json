@@ -6,5 +6,9 @@
   {
     "version": "gh-readonly-queue/main/pr-88-ebdf9c54f2f7443c923fbfeb47ef74faf0a93b76",
     "url": "https://eclipse-score.github.io/itf/gh-readonly-queue/main/pr-88-ebdf9c54f2f7443c923fbfeb47ef74faf0a93b76/"
+  },
+  {
+    "version": "docs_debug",
+    "url": "https://eclipse-score.github.io/itf/docs_debug/"
   }
 ]
