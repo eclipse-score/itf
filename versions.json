@@ -10,5 +10,9 @@
   {
     "version": "docs_debug",
     "url": "https://eclipse-score.github.io/itf/docs_debug/"
+  },
+  {
+    "version": "gh-readonly-queue/main/pr-103-be3ebbe05488d9badd361d44b479234a17507bfa",
+    "url": "https://eclipse-score.github.io/itf/gh-readonly-queue/main/pr-103-be3ebbe05488d9badd361d44b479234a17507bfa/"
   }
 ]
