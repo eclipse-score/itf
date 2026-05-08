@@ -6,7 +6,7 @@ This guide walks you through setting up ITF in a new Bazel workspace from scratc
 
 - [Bazel](https://bazel.build/install) 7.x or later
 - Docker (for Docker-based tests)
-- Python 3.12+
+- Python 3.10+
 
 ## 1. Add ITF to your workspace
 

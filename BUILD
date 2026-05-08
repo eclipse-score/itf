@@ -16,9 +16,15 @@ load("@score_docs_as_code//:docs.bzl", "docs")
 load("@score_tooling//:defs.bzl", "copyright_checker")
 
 compile_pip_requirements(
-    name = "requirements",
+    name = "requirements_3_12",
     src = "requirements.in",
-    requirements_txt = "requirements_lock.txt",
+    requirements_txt = "requirements_lock_3_12.txt",
+)
+
+compile_pip_requirements(
+    name = "requirements_3_10",
+    src = "requirements.in",
+    requirements_txt = "requirements_lock_3_10.txt",
 )
 
 exports_files([
