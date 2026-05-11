@@ -131,7 +131,7 @@ bazel_dep(name = "platforms", version = "1.0.0")
 # Documentation dependencies
 #
 ###############################################################################
-bazel_dep(name = "score_docs_as_code", version = "4.0.1")
+bazel_dep(name = "score_docs_as_code", version = "4.0.3")
 
 ################################################################################
 #
