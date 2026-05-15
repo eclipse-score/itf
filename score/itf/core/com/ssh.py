@@ -66,7 +66,6 @@ class Ssh:
             paramiko.RSAKey,
             paramiko.ECDSAKey,
             paramiko.Ed25519Key,
-            paramiko.DSSKey,
         ]
 
         load_errors = []
