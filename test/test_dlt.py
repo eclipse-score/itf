@@ -44,16 +44,6 @@ def test_dlt_custom_config(target, dlt_config):
         time.sleep(1)
 
 
-def get_container_ip(target):
-    target.reload()
-    return target.attrs["NetworkSettings"]["Networks"]["bridge"]["IPAddress"]
-
-
-def get_docker_network_gateway(target):
-    target.reload()
-    return target.attrs["NetworkSettings"]["Networks"]["bridge"]["Gateway"]
-
-
 def send_secret_dlt_message(target):
     for i in range(10):
         target.execute(f'/bin/sh -c "echo -n message{i} | /usr/bin/dlt-adaptor-stdin"')
@@ -65,19 +55,17 @@ def send_secret_dlt_message(target):
 
 
 def test_dlt_direct_tcp(target, dlt_config, caplog):
-    ipaddress = get_container_ip(target)
     target.execute(f"/usr/bin/dlt-daemon -d")
 
     with DltReceive(
         protocol=Protocol.TCP,
-        target_ip=ipaddress,
+        target_ip=target.get_ip(),
         print_to_stdout=True,
         logger_name="fixed_dlt_receive",
         binary_path=dlt_config.dlt_receive_path,
     ):
         send_secret_dlt_message(target)
 
-    captured_logs = []
     for record in caplog.records:
         if record.name == "fixed_dlt_receive":
             if "This is a secret message" in record.getMessage():
@@ -87,13 +75,11 @@ def test_dlt_direct_tcp(target, dlt_config, caplog):
 
 
 def test_dlt_multicast_udp(target, dlt_config, caplog):
-    ipaddress = get_container_ip(target)
-    gateway = get_docker_network_gateway(target)
     target.execute(f"/usr/bin/dlt-daemon -d")
 
     with DltReceive(
         protocol=Protocol.UDP,
-        host_ip=gateway,
+        host_ip=target.get_gateway(),
         multicast_ips=["224.0.0.1"],
         print_to_stdout=True,
         logger_name="fixed_dlt_receive",
@@ -101,7 +87,6 @@ def test_dlt_multicast_udp(target, dlt_config, caplog):
     ):
         send_secret_dlt_message(target)
 
-    captured_logs = []
     for record in caplog.records:
         if record.name == "fixed_dlt_receive":
             if "This is a secret message" in record.getMessage():
@@ -111,13 +96,11 @@ def test_dlt_multicast_udp(target, dlt_config, caplog):
 
 
 def test_dlt_window_no_stdout(target, dlt_config):
-    ipaddress = get_container_ip(target)
-    gateway = get_docker_network_gateway(target)
     target.execute(f"/usr/bin/dlt-daemon -d")
 
     with DltWindow(
         protocol=Protocol.UDP,
-        host_ip=gateway,
+        host_ip=target.get_gateway(),
         multicast_ips=["224.0.0.1"],
         print_to_stdout=False,
         binary_path=dlt_config.dlt_receive_path,
@@ -128,13 +111,11 @@ def test_dlt_window_no_stdout(target, dlt_config):
 
 
 def test_dlt_window_stdout(target, dlt_config):
-    ipaddress = get_container_ip(target)
-    gateway = get_docker_network_gateway(target)
     target.execute(f"/usr/bin/dlt-daemon -d")
 
     with DltWindow(
         protocol=Protocol.UDP,
-        host_ip=gateway,
+        host_ip=target.get_gateway(),
         multicast_ips=["224.0.0.1"],
         print_to_stdout=True,
         binary_path=dlt_config.dlt_receive_path,
@@ -146,13 +127,11 @@ def test_dlt_window_stdout(target, dlt_config):
 
 
 def test_dlt_window_with_filter(target, dlt_config):
-    ipaddress = get_container_ip(target)
-    gateway = get_docker_network_gateway(target)
     target.execute(f"/usr/bin/dlt-daemon -d")
 
     with DltWindow(
         protocol=Protocol.UDP,
-        host_ip=gateway,
+        host_ip=target.get_gateway(),
         multicast_ips=["224.0.0.1"],
         print_to_stdout=True,
         dlt_filter="SINA SINC",
@@ -165,13 +144,11 @@ def test_dlt_window_with_filter(target, dlt_config):
 
 
 def test_dlt_window_with_record(target, dlt_config):
-    ipaddress = get_container_ip(target)
-    gateway = get_docker_network_gateway(target)
     target.execute(f"/usr/bin/dlt-daemon -d")
 
     with DltWindow(
         protocol=Protocol.UDP,
-        host_ip=gateway,
+        host_ip=target.get_gateway(),
         multicast_ips=["224.0.0.1"],
         print_to_stdout=False,
         binary_path=dlt_config.dlt_receive_path,

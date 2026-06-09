@@ -134,9 +134,10 @@ class DockerAsyncProcess(AsyncProcess):
 
 
 class DockerTarget(Target):
-    def __init__(self, container):
+    def __init__(self, container, network=None):
         super().__init__()
         self.container = container
+        self.network = network
         self._client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
 
     def __getattr__(self, name):
@@ -248,13 +249,36 @@ class DockerTarget(Target):
     def restart(self) -> None:
         self.container.restart()
 
-    def get_ip(self):
-        self.container.reload()
-        return self.container.attrs["NetworkSettings"]["Networks"]["bridge"]["IPAddress"]
+    def _network_attr(self, key, network=None):
+        """Return a NetworkSettings attribute for the given Docker network.
 
-    def get_gateway(self):
+        If *network* is ``None`` and the target was created with a dedicated
+        network, that network is used.  Otherwise the value from the first
+        attached network that has a non-empty value for *key* is returned.
+        """
+        if network is None and self.network is not None:
+            network = self.network.name
         self.container.reload()
-        return self.container.attrs["NetworkSettings"]["Networks"]["bridge"]["Gateway"]
+        networks = self.container.attrs["NetworkSettings"]["Networks"]
+        if network is not None:
+            if network not in networks:
+                raise RuntimeError(f"Container {self.container.short_id} is not attached to network '{network}'")
+            return networks[network][key]
+        value = next(
+            (v.get(key) for v in networks.values() if v.get(key, "") != ""),
+            None,
+        )
+        if value is None:
+            raise RuntimeError(f"Container {self.container.short_id} has no {key} on any network")
+        return value
+
+    def get_ip(self, network=None):
+        """Return the container IP on the given Docker network."""
+        return self._network_attr("IPAddress", network)
+
+    def get_gateway(self, network=None):
+        """Return the gateway IP on the given Docker network."""
+        return self._network_attr("Gateway", network)
 
     def ssh(self, username="score", password="score", port=2222):
         return Ssh(target_ip=self.get_ip(), port=port, username=username, password=password)
@@ -322,25 +346,40 @@ def target_init(request, _docker_configuration):
 
     docker_image = request.config.getoption("docker_image")
     client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
+
     known_keys = {"command", "init", "environment", "volumes", "shm_size", "detach", "auto_remove"}
     reserved_overrides = {k for k in ("detach", "auto_remove") if k in _docker_configuration}
     if reserved_overrides:
         logger.warning(f"docker_configuration contains reserved keys {reserved_overrides} which will be ignored")
     extra_kwargs = {k: v for k, v in _docker_configuration.items() if k not in known_keys}
-    container = client.containers.run(
-        docker_image,
-        _docker_configuration["command"],
-        detach=True,
-        auto_remove=False,
-        init=_docker_configuration["init"],
-        environment=_docker_configuration["environment"],
-        volumes=_docker_configuration["volumes"],
-        shm_size=_docker_configuration["shm_size"],
-        **extra_kwargs,
+
+    # Create a per-container bridge network so that get_ip() / get_gateway()
+    # return addresses unique to this container.
+    network = client.networks.create(
+        f"score_itf_{os.urandom(8).hex()}",
+        driver="bridge",
     )
+
+    try:
+        container = client.containers.run(
+            docker_image,
+            _docker_configuration["command"],
+            detach=True,
+            auto_remove=False,
+            init=_docker_configuration["init"],
+            environment=_docker_configuration["environment"],
+            volumes=_docker_configuration["volumes"],
+            shm_size=_docker_configuration["shm_size"],
+            network=network.name,
+            **extra_kwargs,
+        )
+    except Exception:
+        network.remove()
+        raise
+
     target = None
     try:
-        target = DockerTarget(container)
+        target = DockerTarget(container, network=network)
         yield target
     finally:
         try:
@@ -352,7 +391,13 @@ def target_init(request, _docker_configuration):
         except Exception:
             logger.warning("Coverage extraction failed", exc_info=True)
         try:
-            container.stop(timeout=1)
+            try:
+                container.stop(timeout=1)
+            finally:
+                # Ensure restart() doesn't accidentally delete the container mid-test.
+                container.remove(force=True)
         finally:
-            # Ensure restart() doesn't accidentally delete the container mid-test.
-            container.remove(force=True)
+            try:
+                network.remove()
+            except Exception:
+                logger.warning(f"Failed to remove network {network.name}", exc_info=True)
