@@ -70,6 +70,22 @@ py_itf_test(
 )
 
 py_itf_test(
+    name = "test_dlt_on_target",
+    srcs = [
+        "test_dlt_on_target.py",
+    ],
+    args = [
+        "--docker-image-bootstrap=$(location //test/resources:image_load)",
+        "--docker-image=score_itf_examples:latest",
+    ],
+    data = ["//test/resources:image_load"],
+    plugins = [
+        "//score/itf/plugins:dlt_plugin",
+        "//score/itf/plugins:docker_plugin",
+    ],
+)
+
+py_itf_test(
     name = "test_ssh",
     srcs = [
         "test_ssh.py",
