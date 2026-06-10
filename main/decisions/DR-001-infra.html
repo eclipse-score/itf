@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Security Management &#8212; Score ITF  documentation</title>
+    <title>DR-001-Infra: Unit Test Infrastructure Design &#8212; Score ITF  documentation</title>
   
   
   
@@ -62,7 +62,7 @@
     <script src="../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
     <script src="../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
     <script src="../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=dca66431"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'security_mgt/index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'decisions/DR-001-infra';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://eclipse-score.github.io/itf/versions.json';
@@ -73,8 +73,8 @@
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Verification Report" href="../verification_report/index.html" />
-    <link rel="prev" title="Safety Management" href="../safety_mgt/index.html" />
+    <link rel="next" title="Manual" href="../manual/index.html" />
+    <link rel="prev" title="Decisions" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -178,8 +178,8 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../decisions/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     Decisions
   </a>
 </li>
@@ -213,8 +213,8 @@
 </li>
 
 
-<li class=" current active">
-  <a class="nav-link dropdown-item nav-internal" href="#">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../security_mgt/index.html">
     Security Management
   </a>
 </li>
@@ -359,8 +359,8 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../decisions/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     Decisions
   </a>
 </li>
@@ -387,8 +387,8 @@
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../security_mgt/index.html">
     Security Management
   </a>
 </li>
@@ -470,7 +470,10 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"></div>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">DR-001-Infra: Unit Test Infrastructure Design</a></li>
+</ul>
+</div>
 </nav></div>
     </div>
   
@@ -509,7 +512,10 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Security Management</span></li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Decisions</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">DR-001-Infra: Unit Test Infrastructure Design</span></li>
   </ul>
 </nav>
 </div>
@@ -526,19 +532,141 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="security-management">
-<span id="itf-security-mgt"></span><h1>Security Management<a class="headerlink" href="#security-management" title="Link to this heading">#</a></h1>
-<p>Security plans, packages, and bill of materials for ITF.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This section is not yet written. Planned content:</p>
-<ul class="simple">
-<li><p><strong>Security plan</strong> — scope, objectives, and activities for cybersecurity</p></li>
-<li><p><strong>Security package</strong> — evidence and arguments that ITF meets its security goals</p></li>
-<li><p><strong>Software Bill of Materials (SBOM)</strong> — inventory of all ITF components
-and their dependencies</p></li>
-</ul>
+  <!--
+*******************************************************************************
+Copyright (c) 2026 Contributors to the Eclipse Foundation
+
+See the NOTICE file(s) distributed with this work for additional
+information regarding copyright ownership.
+
+This program and the accompanying materials are made available under the
+terms of the Apache License Version 2.0 which is available at
+https://www.apache.org/licenses/LICENSE-2.0
+
+SPDX-License-Identifier: Apache-2.0
+*******************************************************************************
+-->
+<section id="dr-001-infra-unit-test-infrastructure-design">
+<h1>DR-001-Infra: Unit Test Infrastructure Design<a class="headerlink" href="#dr-001-infra-unit-test-infrastructure-design" title="Link to this heading">#</a></h1>
+<p><strong>Date:</strong> 2026-05-11
+<strong>Status:</strong> Accepted
+<strong>PR:</strong> <a class="reference external" href="https://github.com/eclipse-score/itf/pull/94">eclipse-score/itf#94</a>
+<strong>Discussion:</strong> <a class="reference external" href="https://github.com/orgs/eclipse-score/discussions/2867">eclipse-score/discussions#2867</a></p>
+<blockquote>
+<div><p>This record follows the Decision Record convention established by the
+Eclipse S-CORE project:
+<a class="reference external" href="https://github.com/eclipse-score/score/tree/main/docs/design_decisions">eclipse-score/score — docs/design_decisions</a>.</p>
+</div></blockquote>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>This decision record documents the infrastructure design for unit testing in
+ITF. It covers the Bazel macro, dependency scoping strategy, pytest bootstrap
+pattern, and mocking library choice, all accepted as part of PR #94.</p>
+</section>
+<section id="problem-statement">
+<h2>Problem Statement<a class="headerlink" href="#problem-statement" title="Link to this heading">#</a></h2>
+<p>ITF previously had only integration tests: tests that start a real target
+(Docker or QEMU) and exercise the system end-to-end. Adding unit tests raised
+four concrete questions that each had multiple viable answers:</p>
+<ol class="arabic simple">
+<li><p>Should unit tests reuse <code class="docutils literal notranslate"><span class="pre">py_itf_test</span></code> or have a dedicated macro?</p></li>
+<li><p>How should Bazel dependencies be scoped to keep tests atomic?</p></li>
+<li><p>How does pytest run inside Bazel, and what does that mean for test
+structure?</p></li>
+<li><p>Which mocking library should be used?</p></li>
+</ol>
+</section>
+<section id="options-evaluated">
+<h2>Options Evaluated<a class="headerlink" href="#options-evaluated" title="Link to this heading">#</a></h2>
+<section id="macro-design">
+<h3>Macro design<a class="headerlink" href="#macro-design" title="Link to this heading">#</a></h3>
+<p><strong>Option A — Reuse <code class="docutils literal notranslate"><span class="pre">py_itf_test</span></code> with empty <code class="docutils literal notranslate"><span class="pre">plugins</span></code>.</strong>
+The macro would not crash with an empty plugin list, but it would still
+generate the launcher script and resolve <code class="docutils literal notranslate"><span class="pre">PyItfPluginInfo</span></code> providers. The
+BUILD file would not communicate that no target is involved.</p>
+<p><strong>Option B — Dedicated <code class="docutils literal notranslate"><span class="pre">py_itf_unittest</span></code> macro (chosen).</strong>
+A thin wrapper around <code class="docutils literal notranslate"><span class="pre">py_test</span></code> with no plugin machinery. The name makes
+intent explicit. <code class="docutils literal notranslate"><span class="pre">pytest-mock</span></code> is included as a default dep. JUnit XML
+reporting is baked in via <code class="docutils literal notranslate"><span class="pre">$XML_OUTPUT_FILE</span></code>.</p>
+</section>
+<section id="dependency-scoping">
+<h3>Dependency scoping<a class="headerlink" href="#dependency-scoping" title="Link to this heading">#</a></h3>
+<p><strong>Option A — One large Bazel target per package.</strong>
+Simple to maintain, but pulls in all transitive dependencies as runfiles.
+Bazel measures coverage over all files in the runfiles tree, so the coverage
+denominator grows with every transitive dep, even ones not under test.</p>
+<p><strong>Option B — Surgical target splitting (chosen).</strong>
+Split Bazel targets along cohesion boundaries so each unit test can declare
+only the module it actually exercises. Example: <code class="docutils literal notranslate"><span class="pre">score/itf/plugins/qemu/BUILD</span></code>
+was split into <code class="docutils literal notranslate"><span class="pre">:config</span></code> (Pydantic schema only) and <code class="docutils literal notranslate"><span class="pre">:qemu</span></code> (full plugin). The
+unit test for schema validation depends only on <code class="docutils literal notranslate"><span class="pre">:config</span></code>, excluding process
+management, SSH, and QEMU binary wrappers from its runfiles tree.</p>
+</section>
+<section id="pytest-bootstrap">
+<h3>Pytest bootstrap<a class="headerlink" href="#pytest-bootstrap" title="Link to this heading">#</a></h3>
+<p><strong>Option A — <code class="docutils literal notranslate"><span class="pre">score_py_pytest</span></code> from <code class="docutils literal notranslate"><span class="pre">&#64;score_tooling</span></code>.</strong>
+The tooling repository provides a <code class="docutils literal notranslate"><span class="pre">score_py_pytest</span></code> rule, but it bundles a
+full Python development environment including <code class="docutils literal notranslate"><span class="pre">basedpyright</span></code> and
+<code class="docutils literal notranslate"><span class="pre">nodejs-wheel-binaries</span></code>. These are unrelated to the code under test and expand
+the runfiles tree significantly, inflating the coverage denominator and
+increasing build time.</p>
+<p><strong>Option B — Shared <code class="docutils literal notranslate"><span class="pre">main.py</span></code> entry point (chosen).</strong>
+<code class="docutils literal notranslate"><span class="pre">py_test</span></code> requires an executable Python module. A minimal <code class="docutils literal notranslate"><span class="pre">main.py</span></code> that calls
+<code class="docutils literal notranslate"><span class="pre">pytest.main(sys.argv[1:])</span></code> is the de facto standard for Bazel + pytest. The
+same bootstrap file is shared across integration and unit test rules, keeping
+the approach consistent. This was confirmed as the community standard in the
+GitHub discussion linked above.</p>
+</section>
+<section id="mocking-library">
+<h3>Mocking library<a class="headerlink" href="#mocking-library" title="Link to this heading">#</a></h3>
+<p><strong>Option A — <code class="docutils literal notranslate"><span class="pre">unittest.mock.patch</span></code> via context managers.</strong>
+Part of the standard library, no extra dep. Context manager nesting becomes
+verbose when multiple objects need patching.</p>
+<p><strong>Option B — <code class="docutils literal notranslate"><span class="pre">pytest-mock</span></code> via the <code class="docutils literal notranslate"><span class="pre">mocker</span></code> fixture (chosen).</strong>
+Patches are registered and torn down automatically through the pytest fixture
+lifecycle, removing context manager nesting. Cleaner for tests that mock
+several collaborators:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_ping_reachable</span><span class="p">(</span><span class="n">mocker</span><span class="p">):</span>
+    <span class="n">mocker</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="s2">&quot;score.itf.core.com.ping.shutil.which&quot;</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="s2">&quot;/usr/bin/ping&quot;</span><span class="p">)</span>
+    <span class="n">mocker</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="s2">&quot;score.itf.core.com.ping.os.system&quot;</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">ping</span><span class="p">(</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span>
+</pre></div>
 </div>
+</section>
+</section>
+<section id="decision-rationale">
+<h2>Decision &amp; Rationale<a class="headerlink" href="#decision-rationale" title="Link to this heading">#</a></h2>
+<p>All four decisions favour the option that minimises coupling and maximises
+clarity in the BUILD file:</p>
+<ul class="simple">
+<li><p><strong>Dedicated <code class="docutils literal notranslate"><span class="pre">py_itf_unittest</span></code> macro</strong> — the name signals “no target” and
+the macro carries no plugin machinery.</p></li>
+<li><p><strong>Surgical Bazel target splitting</strong> — dep declarations in BUILD files become
+a lightweight design signal: a test that can only list <code class="docutils literal notranslate"><span class="pre">:config</span></code> as a dep
+proves that the schema module is cohesive and has no hidden coupling.</p></li>
+<li><p><strong>Shared <code class="docutils literal notranslate"><span class="pre">main.py</span></code> bootstrap</strong> — consistent with integration tests and
+aligned with community practice.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pytest-mock</span></code></strong> — included as a default dep in <code class="docutils literal notranslate"><span class="pre">py_itf_unittest</span></code>; test
+authors get <code class="docutils literal notranslate"><span class="pre">mocker</span></code> without an explicit declaration.</p></li>
+</ul>
+<p>Coverage uses Bazel-native LCOV (<code class="docutils literal notranslate"><span class="pre">configure_coverage_tool</span> <span class="pre">=</span> <span class="pre">True</span></code> in
+<code class="docutils literal notranslate"><span class="pre">MODULE.bazel</span></code>) rather than <code class="docutils literal notranslate"><span class="pre">pytest-cov</span></code>, for consistency across all test
+types and compatibility with Bazel’s <code class="docutils literal notranslate"><span class="pre">--combined_report</span></code>.</p>
+</section>
+<section id="key-implications">
+<h2>Key Implications<a class="headerlink" href="#key-implications" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Unit tests live in <code class="docutils literal notranslate"><span class="pre">test/unit/</span></code> and integration tests in <code class="docutils literal notranslate"><span class="pre">test/integration/</span></code>.
+The split is enforced by directory layout and BUILD files, not just naming.</p></li>
+<li><p>Adding unit tests for a new module may require splitting its Bazel target if
+the current target has a large transitive dep set. This is intentional:
+splitting is a design signal that the module has a cohesion opportunity.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">py_itf_unittest</span></code> does not support the <code class="docutils literal notranslate"><span class="pre">plugins</span></code> attribute. A test that
+needs a real target belongs in <code class="docutils literal notranslate"><span class="pre">test/integration/</span></code> and uses <code class="docutils literal notranslate"><span class="pre">py_itf_test</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">mocker</span></code> fixture preference applies project-wide; <code class="docutils literal notranslate"><span class="pre">unittest.mock</span></code> context
+managers should not be introduced in new tests.</p></li>
+</ul>
+</section>
 </section>
 
 
@@ -552,20 +680,20 @@ and their dependencies</p></li>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../safety_mgt/index.html"
+       href="index.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Safety Management</p>
+        <p class="prev-next-title">Decisions</p>
       </div>
     </a>
     <a class="right-next"
-       href="../verification_report/index.html"
+       href="../manual/index.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Verification Report</p>
+        <p class="prev-next-title">Manual</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -581,10 +709,32 @@ and their dependencies</p></li>
 
 
   <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#problem-statement">Problem Statement</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#options-evaluated">Options Evaluated</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#macro-design">Macro design</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dependency-scoping">Dependency scoping</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytest-bootstrap">Pytest bootstrap</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mocking-library">Mocking library</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#decision-rationale">Decision &amp; Rationale</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-implications">Key Implications</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/eclipse-score/itf/edit/main/docs/security_mgt/index.rst">
+    <a href="https://github.com/eclipse-score/itf/edit/main/docs/decisions/DR-001-infra.md">
       <i class="fa-solid fa-pencil"></i>
       
       
