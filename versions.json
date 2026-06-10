@@ -30,5 +30,9 @@
   {
     "version": "v0.4.0",
     "url": "https://eclipse-score.github.io/itf/v0.4.0/"
+  },
+  {
+    "version": "gh-readonly-queue/main/pr-105-d1ff92b3930c83ddc4fd0dbbcfdc7bbce980f8af",
+    "url": "https://eclipse-score.github.io/itf/gh-readonly-queue/main/pr-105-d1ff92b3930c83ddc4fd0dbbcfdc7bbce980f8af/"
   }
 ]
