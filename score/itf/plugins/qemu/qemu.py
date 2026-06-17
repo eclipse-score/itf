@@ -107,12 +107,13 @@ class Qemu:
                 sys.exit(-1)
 
     def __build_qemu_command(self):
+        # Use hardware virtualization if available
+        accel = ["-enable-kvm"] if self._accelerator_support == "kvm" else ["-accel", "tcg"]
+
         return (
-            [
-                f"{self.__qemu_path}",
-                "--enable-kvm"
-                if self._accelerator_support == "kvm"
-                else " -accel tcg",  # Use hardware virtualization if available
+            [f"{self.__qemu_path}"]
+            + accel
+            + [
                 "-smp",
                 f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
                 "-cpu",
