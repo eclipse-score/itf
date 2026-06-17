@@ -133,6 +133,32 @@ class DockerAsyncProcess(AsyncProcess):
         return "\n".join(self._output_lines) + ("\n" if self._output_lines else "")
 
 
+class _LineAssembler:
+    """Buffer chunked stream data and emit only complete lines.
+
+    Docker streams exec output in byte chunks that do not align with
+    newlines, so a single line can arrive split across two chunks.  A
+    partial line is held until its terminating newline arrives; call
+    :meth:`flush` at end of stream to emit any unterminated remainder.
+    """
+
+    def __init__(self, emit):
+        self._emit = emit
+        self._pending = ""
+
+    def feed(self, text: str) -> None:
+        """Buffer *text* and emit each line completed by a newline."""
+        *lines, self._pending = (self._pending + text).split("\n")
+        for line in lines:
+            line = line.rstrip("\r")
+            if line:
+                self._emit(line)
+
+    def flush(self) -> None:
+        """Emit any buffered remainder that was not newline-terminated."""
+        self.feed("\n")
+
+
 class DockerTarget(Target):
     def __init__(self, container, network=None):
         super().__init__()
@@ -181,21 +207,27 @@ class DockerTarget(Target):
         cmd_logger = logging.getLogger(os.path.basename(command.split()[0]))
         output_lines = []
 
-        def _process_text(text):
-            for line in text.strip().split("\n"):
-                if line:
-                    cmd_logger.info(line)
-                    output_lines.append(line)
+        def _emit(line):
+            cmd_logger.info(line)
+            output_lines.append(line)
+
+        # Docker delivers stdout/stderr in chunks that do not align with line
+        # boundaries, so a single output line can arrive split across two
+        # chunks.  Buffer each stream separately so a partial line is only
+        # emitted once its terminating newline has been received, instead of
+        # being logged as two separate records.
+        stdout_assembler = _LineAssembler(_emit)
+        stderr_assembler = _LineAssembler(_emit)
 
         pid = None
         for stdout_chunk, stderr_chunk in stream:
             if stderr_chunk:
-                _process_text(stderr_chunk.decode())
+                stderr_assembler.feed(stderr_chunk.decode())
             if stdout_chunk:
                 pid_line, _, remainder = stdout_chunk.decode().partition("\n")
                 pid = int(pid_line.strip())
-                if remainder.strip():
-                    _process_text(remainder)
+                if remainder:
+                    stdout_assembler.feed(remainder)
                 break
 
         if pid is None:
@@ -204,9 +236,12 @@ class DockerTarget(Target):
         def _async_log(log_stream):
             for stdout_chunk, stderr_chunk in log_stream:
                 if stdout_chunk:
-                    _process_text(stdout_chunk.decode())
+                    stdout_assembler.feed(stdout_chunk.decode())
                 if stderr_chunk:
-                    _process_text(stderr_chunk.decode())
+                    stderr_assembler.feed(stderr_chunk.decode())
+            # Emit any trailing output that was not newline-terminated.
+            stdout_assembler.flush()
+            stderr_assembler.flush()
 
         output_thread = threading.Thread(target=_async_log, args=(stream,), daemon=True)
         output_thread.start()
