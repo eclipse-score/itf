@@ -44,7 +44,7 @@ def py_itf_unittest(name, srcs, deps = [], data = [], env = {}, pytest_config = 
             "--show-capture=no",
             "--junitxml=$$XML_OUTPUT_FILE",
         ] + ["$(location %s)" % x for x in srcs],
-        deps = ["@score_itf//:itf", "@itf_pip//pytest_mock"] + deps,
+        deps = [Label("@score_itf//:itf"), Label("@itf_pip//pytest_mock")] + deps,
         data = [pytest_config] + data,
         env = {"PYTHONDONOTWRITEBYTECODE": "1"} | env,
         **kwargs
