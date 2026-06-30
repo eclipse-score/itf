@@ -183,6 +183,7 @@ http_archive(
         "//third_party/dlt/custom:0001-Fix-offline-log-storage-global-init.patch",
         "//third_party/dlt/custom:0002-Add-mutlicast-config.patch",
         "//third_party/dlt/custom:0003-Add-force-flush-for-dlt-receive.patch",
+        "//third_party/dlt/custom:0004-fix-enum-int-mismatch.patch",
     ],
     sha256 = "1944197123c910d8926b5d2bc4e9eb436c1a2768f333834fae7b7386bc53eb97",
     strip_prefix = "dlt-daemon-%s" % DLT_DAEMON_CUSTOM_SHA,
