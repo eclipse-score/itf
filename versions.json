@@ -74,5 +74,9 @@
   {
     "version": "gh-readonly-queue/main/pr-121-b1e36eabbcc4bfdcac72d8b83550d870866b1d06",
     "url": "https://eclipse-score.github.io/itf/gh-readonly-queue/main/pr-121-b1e36eabbcc4bfdcac72d8b83550d870866b1d06/"
+  },
+  {
+    "version": "v0.5.0",
+    "url": "https://eclipse-score.github.io/itf/v0.5.0/"
   }
 ]
