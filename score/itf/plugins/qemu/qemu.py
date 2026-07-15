@@ -10,13 +10,30 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+import logging
 import os
-import shlex
 import subprocess
 import sys
-import logging
 
 logger = logging.getLogger(__name__)
+
+
+_SUPPORTED_ARCHITECTURES = {
+    "x86_64": {
+        "qemu_path": "/usr/bin/qemu-system-x86_64",
+        "cpu": "Cascadelake-Server-v5",
+        "network_device": "virtio-net-pci",
+        "machine": "pc",
+        "block_device": "virtio-blk-pci",
+    },
+    "aarch64": {
+        "qemu_path": "/usr/bin/qemu-system-aarch64",
+        "cpu": "cortex-a53",
+        "network_device": "virtio-net-device",
+        "machine": "virt,virtualization=true,gic-version=3",
+        "block_device": "virtio-blk-device",
+    },
+}
 
 
 class Qemu:
@@ -27,28 +44,35 @@ class Qemu:
     def __init__(
         self,
         path_to_image,
-        ram="1G",
-        cores="2",
-        cpu="Cascadelake-Server-v5",
-        network_adapters=[],
-        port_forwarding=[],
+        ram,
+        cores,
+        architecture,
+        network_adapters,
+        port_forwarding,
+        disk_image,
+        kernel_cmdline,
     ):
         """Create a QEMU instance with the specified parameters.
 
         :param str path_to_image: The path to the Qemu image file.
         :param str ram: The amount of RAM to allocate to the QEMU instance.
         :param str cores: The number of CPU cores to allocate to the QEMU instance.
-        :param str cpu: The CPU model to emulate.
-         Default is Cascadelake-Server-v5 used to emulate modern Intel CPU features.
-         For older Ubuntu versions change that to host in case of errors.
+        :param str architecture: The CPU architecture to emulate (x86_64 or aarch64).
+        :param list network_adapters: List of network adapter names.
+        :param list port_forwarding: List of port forwarding configurations.
+        :param str disk_image: Optional path to a qcow2 disk image.
+        :param str kernel_cmdline: Optional kernel command line string.
         """
-        self.__qemu_path = "/usr/bin/qemu-system-x86_64"
+        if architecture not in _SUPPORTED_ARCHITECTURES:
+            raise ValueError("architecture must be one of: " + ", ".join(sorted(_SUPPORTED_ARCHITECTURES)))
+        self.__arch_config = _SUPPORTED_ARCHITECTURES[architecture]
         self.__path_to_image = path_to_image
         self.__ram = ram
         self.__cores = cores
-        self.__cpu = cpu
         self.__network_adapters = network_adapters
         self.__port_forwarding = port_forwarding
+        self.__disk_image = disk_image
+        self.__kernel_cmdline = kernel_cmdline
 
         self.__check_qemu_is_installed()
         self.__find_available_kvm_support()
@@ -82,8 +106,9 @@ class Qemu:
             raise Exception(f"QEMU process returned: {ret}")
 
     def __check_qemu_is_installed(self):
-        if not os.path.isfile(self.__qemu_path):
-            logger.fatal(f"Qemu is not installed under {self.__qemu_path}")
+        qemu_path = self.__arch_config["qemu_path"]
+        if not os.path.isfile(qemu_path):
+            logger.fatal(f"Qemu is not installed under {qemu_path}")
             sys.exit(-1)
 
     def __find_available_kvm_support(self):
@@ -111,17 +136,15 @@ class Qemu:
         accel = ["-enable-kvm"] if self._accelerator_support == "kvm" else ["-accel", "tcg"]
 
         return (
-            [f"{self.__qemu_path}"]
+            [self.__arch_config["qemu_path"]]
             + accel
             + [
                 "-smp",
                 f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
                 "-cpu",
-                f"{self.__cpu}",  # Specify CPU to emulate
+                self.__arch_config["cpu"],  # Specify CPU to emulate
                 "-m",
                 f"{self.__ram}",  # Specify RAM size
-                "-kernel",
-                f"{self.__path_to_image}",  # Specify kernel image
                 "-nographic",  # Disable graphical display (console-only)
                 "-serial",
                 "mon:stdio",  # Redirect serial output to console
@@ -132,7 +155,27 @@ class Qemu:
             ]
             + self.__network_devices_args()
             + self.__port_forwarding_args()
+            + self.__kernel_args()
+            + self.__disk_image_args()
         )
+
+    def __kernel_args(self):
+        if not self.__path_to_image:
+            return []
+        args = ["-kernel", self.__path_to_image]
+        if self.__kernel_cmdline:
+            args.extend(["-append", self.__kernel_cmdline])
+        return args
+
+    def __disk_image_args(self):
+        if not self.__disk_image:
+            return []
+        return [
+            "-device",
+            f"{self.__arch_config['block_device']},drive=vd0",
+            "-drive",
+            f"if=none,format=qcow2,file={self.__disk_image},id=vd0",
+        ]
 
     def __network_devices_args(self):
         def get_netdev_args(adapter, id):
@@ -140,7 +183,7 @@ class Qemu:
                 "-netdev",
                 f"tap,id=t{id},ifname={adapter},script=no,downscript=no",
                 "-device",
-                f"virtio-net-pci,netdev=t{id},id=nic{id},guest_csum=off",
+                f"{self.__arch_config['network_device']},netdev=t{id},id=nic{id},guest_csum=off",
             ]
 
         result = []
@@ -157,7 +200,7 @@ class Qemu:
                     "-netdev",
                     f"user,id=net{id},hostfwd=tcp::{forwarding.host_port}-:{forwarding.guest_port}",
                     "-device",
-                    f"virtio-net-pci,netdev=net{id}",
+                    f"{self.__arch_config['network_device']},netdev=net{id}",
                 ]
             )
         return result
