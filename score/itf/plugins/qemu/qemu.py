@@ -106,6 +106,10 @@ class Qemu:
                 )
                 sys.exit(-1)
 
+    def _extra_qemu_args(self):
+        """Override in subclasses to inject additional QEMU flags (e.g. ivshmem devices)."""
+        return []
+
     def __build_qemu_command(self):
         # Use hardware virtualization if available
         accel = ["-enable-kvm"] if self._accelerator_support == "kvm" else ["-accel", "tcg"]
@@ -130,6 +134,7 @@ class Qemu:
                 "-device",
                 "virtio-rng-pci,rng=rng0",  # Provide hardware random number generation
             ]
+            + self._extra_qemu_args()
             + self.__network_devices_args()
             + self.__port_forwarding_args()
         )
