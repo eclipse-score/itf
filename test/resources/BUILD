@@ -81,6 +81,7 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@ubuntu_24_04",
+    target_compatible_with = ["@platforms//os:linux"],
     tars = [
         ":dlt-pkg",
     ],
@@ -90,6 +91,7 @@ oci_load(
     name = "image_load",
     image = ":image",
     repo_tags = ["score_itf_examples:latest"],
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = [
         "//test:__pkg__",
         # TODO: Should be only visible to examples
