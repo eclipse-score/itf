@@ -51,6 +51,7 @@ py_itf_test(
     plugins = [
         "//score/itf/plugins:docker_plugin",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -67,6 +68,7 @@ py_itf_test(
         "//score/itf/plugins:dlt_plugin",
         "//score/itf/plugins:docker_plugin",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -83,6 +85,7 @@ py_itf_test(
         "//score/itf/plugins:dlt_plugin",
         "//score/itf/plugins:docker_plugin",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -97,6 +100,7 @@ py_itf_test(
         "//score/itf/plugins:docker_plugin",
     ],
     pytest_config = "//:pyproject.toml",  # Optional same content as default pytest.ini
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(

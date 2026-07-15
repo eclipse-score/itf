@@ -15,11 +15,13 @@ load("//:defs.bzl", "py_itf_unittest")
 py_itf_unittest(
     name = "test_ping",
     srcs = ["test_ping.py"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_unittest(
     name = "test_qemu_config_schema",
     srcs = ["test_qemu_config_schema.py"],
+    target_compatible_with = ["@platforms//os:linux"],
     deps = ["//score/itf/plugins/qemu:config"],
 )
 
