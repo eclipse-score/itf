@@ -242,10 +242,10 @@ test_suite(
         "manual",
     ],
     tests = [
+        ":test_ebclfsa_ping",
         ":test_qemu_bridge_network",
         ":test_qemu_bridge_network_no_dlt",
         ":test_qemu_port_forwarding",
-        ":test_ebclfsa_ping",
         ":test_ssh_configurable",
     ],
 )
