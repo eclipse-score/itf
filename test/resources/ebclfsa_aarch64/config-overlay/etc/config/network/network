@@ -1,0 +1,12 @@
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config interface 'lan'
+	option device 'eth0'
+	option proto 'static'
+	option ipaddr '169.254.158.190'
+	option netmask '255.255.0.0'
+	option gateway '169.254.21.88'
