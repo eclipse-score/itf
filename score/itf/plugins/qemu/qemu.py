@@ -75,8 +75,6 @@ class Qemu:
         self.__kernel_cmdline = kernel_cmdline
 
         self.__check_qemu_is_installed()
-        self.__find_available_kvm_support()
-        self.__check_kvm_readable_when_necessary()
 
         self._subprocess = None
 
@@ -111,36 +109,19 @@ class Qemu:
             logger.fatal(f"Qemu is not installed under {qemu_path}")
             sys.exit(-1)
 
-    def __find_available_kvm_support(self):
-        self._accelerator_support = "kvm"
-        with open("/proc/cpuinfo") as cpuinfo:
-            cpu_options = str(cpuinfo.read())
-            if "vmx" not in cpu_options and "svm" not in cpu_options:
-                logger.error("No virtual capability on machine. We're using standard TCG accel on QEMU")
-                self._accelerator_support = "tcg"
-
-            if not os.path.exists("/dev/kvm"):
-                logger.error("No KVM available. We're using standard TCG accel on QEMU")
-                self._accelerator_support = "tcg"
-
-    def __check_kvm_readable_when_necessary(self):
-        if self._accelerator_support == "kvm":
-            if not os.access("/dev/kvm", os.R_OK):
-                logger.fatal(
-                    "You dont have access rights to /dev/kvm. Consider adding yourself to kvm group. Aborting."
-                )
-                sys.exit(-1)
-
     def __build_qemu_command(self):
-        # Use hardware virtualization if available
-        accel = ["-enable-kvm"] if self._accelerator_support == "kvm" else ["-accel", "tcg"]
-
         return (
-            [self.__arch_config["qemu_path"]]
-            + accel
-            + [
+            [
+                self.__arch_config["qemu_path"],
+                # Use hardware virtualization if available
+                "-accel",
+                "kvm",
+                "-accel",
+                "tcg",
                 "-smp",
                 f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
+                "-machine",
+                self.__arch_config["machine"],
                 "-cpu",
                 self.__arch_config["cpu"],  # Specify CPU to emulate
                 "-m",
