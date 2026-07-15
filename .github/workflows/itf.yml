@@ -20,14 +20,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v7
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.8.0
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
       - name: Run build
         run: |
           bazel build //...
       - name: Run test
         run: |
           bazel test //...
+
+  itf-qemu-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+      - name: Install qemu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-arm
+      - name: Enable KVM group perms
+        run: |
+          sudo chmod 666 /dev/kvm
+      - name: Allow unprivileged user namespaces
+        run: |
+          sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Run Linux QEMU integration tests
+        run: |
+          bazel test //test/integration:linux_qemu_tests --config=qemu-integration-linux

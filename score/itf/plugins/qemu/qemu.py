@@ -10,13 +10,34 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+import logging
 import os
-import shlex
 import subprocess
 import sys
-import logging
 
 logger = logging.getLogger(__name__)
+
+
+_SUPPORTED_MACHINES = {
+    "pc-x86_64": {
+        "architecture": "x86_64",
+        "cpu": "Cascadelake-Server-v5",
+        "network_device": "virtio-net-pci",
+        "machine": "pc",
+        "block_device": "virtio-blk-pci",
+    },
+    "virt-aarch64": {
+        "architecture": "aarch64",
+        "cpu": "cortex-a53",
+        "network_device": "virtio-net-device",
+        "machine": "virt,virtualization=true,gic-version=3",
+        "block_device": "virtio-blk-device",
+    },
+}
+
+
+def _get_qemu_path(architecture):
+    return f"/usr/bin/qemu-system-{architecture}"
 
 
 class Qemu:
@@ -26,33 +47,39 @@ class Qemu:
 
     def __init__(
         self,
-        path_to_image,
-        ram="1G",
-        cores="2",
-        cpu="Cascadelake-Server-v5",
-        network_adapters=[],
-        port_forwarding=[],
+        path_to_kernel_image,
+        ram,
+        cores,
+        machine,
+        network_adapters,
+        port_forwarding,
+        rootfs,
+        kernel_cmdline,
     ):
         """Create a QEMU instance with the specified parameters.
 
-        :param str path_to_image: The path to the Qemu image file.
+        :param str path_to_kernel_image: The path to the Qemu kernel image file.
         :param str ram: The amount of RAM to allocate to the QEMU instance.
         :param str cores: The number of CPU cores to allocate to the QEMU instance.
-        :param str cpu: The CPU model to emulate.
-         Default is Cascadelake-Server-v5 used to emulate modern Intel CPU features.
-         For older Ubuntu versions change that to host in case of errors.
+        :param str machine: The QEMU machine to emulate (pc-x86_64 or virt-aarch64). The CPU
+            architecture and thus the QEMU binary is derived from the machine.
+        :param list network_adapters: List of network adapter names.
+        :param list port_forwarding: List of port forwarding configurations.
+        :param str rootfs: Optional path to a qcow2 disk image.
+        :param str kernel_cmdline: Optional kernel command line string.
         """
-        self.__qemu_path = "/usr/bin/qemu-system-x86_64"
-        self.__path_to_image = path_to_image
+        if machine not in _SUPPORTED_MACHINES:
+            raise ValueError("machine must be one of: " + ", ".join(sorted(_SUPPORTED_MACHINES)))
+        self.__arch_config = _SUPPORTED_MACHINES[machine]
+        self.__path_to_kernel_image = path_to_kernel_image
         self.__ram = ram
         self.__cores = cores
-        self.__cpu = cpu
         self.__network_adapters = network_adapters
         self.__port_forwarding = port_forwarding
+        self.__rootfs = rootfs
+        self.__kernel_cmdline = kernel_cmdline
 
         self.__check_qemu_is_installed()
-        self.__find_available_kvm_support()
-        self.__check_kvm_readable_when_necessary()
 
         self._subprocess = None
 
@@ -82,50 +109,32 @@ class Qemu:
             raise Exception(f"QEMU process returned: {ret}")
 
     def __check_qemu_is_installed(self):
-        if not os.path.isfile(self.__qemu_path):
-            logger.fatal(f"Qemu is not installed under {self.__qemu_path}")
+        qemu_path = _get_qemu_path(self.__arch_config["architecture"])
+        if not os.path.isfile(qemu_path):
+            logger.fatal(f"Qemu is not installed under {qemu_path}")
             sys.exit(-1)
-
-    def __find_available_kvm_support(self):
-        self._accelerator_support = "kvm"
-        with open("/proc/cpuinfo") as cpuinfo:
-            cpu_options = str(cpuinfo.read())
-            if "vmx" not in cpu_options and "svm" not in cpu_options:
-                logger.error("No virtual capability on machine. We're using standard TCG accel on QEMU")
-                self._accelerator_support = "tcg"
-
-            if not os.path.exists("/dev/kvm"):
-                logger.error("No KVM available. We're using standard TCG accel on QEMU")
-                self._accelerator_support = "tcg"
-
-    def __check_kvm_readable_when_necessary(self):
-        if self._accelerator_support == "kvm":
-            if not os.access("/dev/kvm", os.R_OK):
-                logger.fatal(
-                    "You dont have access rights to /dev/kvm. Consider adding yourself to kvm group. Aborting."
-                )
-                sys.exit(-1)
 
     def _extra_qemu_args(self):
         """Override in subclasses to inject additional QEMU flags (e.g. ivshmem devices)."""
         return []
 
     def __build_qemu_command(self):
-        # Use hardware virtualization if available
-        accel = ["-enable-kvm"] if self._accelerator_support == "kvm" else ["-accel", "tcg"]
-
         return (
-            [f"{self.__qemu_path}"]
-            + accel
-            + [
+            [
+                _get_qemu_path(self.__arch_config["architecture"]),
+                # Use hardware virtualization if available
+                "-accel",
+                "kvm",
+                "-accel",
+                "tcg",
                 "-smp",
                 f"{self.__cores},maxcpus={self.__cores},cores={self.__cores}",
+                "-machine",
+                self.__arch_config["machine"],
                 "-cpu",
-                f"{self.__cpu}",  # Specify CPU to emulate
+                self.__arch_config["cpu"],  # Specify CPU to emulate
                 "-m",
                 f"{self.__ram}",  # Specify RAM size
-                "-kernel",
-                f"{self.__path_to_image}",  # Specify kernel image
                 "-nographic",  # Disable graphical display (console-only)
                 "-serial",
                 "mon:stdio",  # Redirect serial output to console
@@ -137,7 +146,27 @@ class Qemu:
             + self._extra_qemu_args()
             + self.__network_devices_args()
             + self.__port_forwarding_args()
+            + self.__kernel_args()
+            + self.__rootfs_args()
         )
+
+    def __kernel_args(self):
+        if not self.__path_to_kernel_image:
+            return []
+        args = ["-kernel", self.__path_to_kernel_image]
+        if self.__kernel_cmdline:
+            args.extend(["-append", self.__kernel_cmdline])
+        return args
+
+    def __rootfs_args(self):
+        if not self.__rootfs:
+            return []
+        return [
+            "-device",
+            f"{self.__arch_config['block_device']},drive=vd0",
+            "-drive",
+            f"if=none,format=qcow2,file={self.__rootfs},id=vd0",
+        ]
 
     def __network_devices_args(self):
         def get_netdev_args(adapter, id):
@@ -145,7 +174,7 @@ class Qemu:
                 "-netdev",
                 f"tap,id=t{id},ifname={adapter},script=no,downscript=no",
                 "-device",
-                f"virtio-net-pci,netdev=t{id},id=nic{id},guest_csum=off",
+                f"{self.__arch_config['network_device']},netdev=t{id},id=nic{id},guest_csum=off",
             ]
 
         result = []
@@ -162,7 +191,7 @@ class Qemu:
                     "-netdev",
                     f"user,id=net{id},hostfwd=tcp::{forwarding.host_port}-:{forwarding.guest_port}",
                     "-device",
-                    f"virtio-net-pci,netdev=net{id}",
+                    f"{self.__arch_config['network_device']},netdev=net{id}",
                 ]
             )
         return result

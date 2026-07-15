@@ -40,6 +40,31 @@ def test_valid_port_forwarding_config():
     QemuConfigModel.model_validate(_VALID_PORT_FORWARDING_CONFIG)
 
 
+@pytest.mark.parametrize("machine", ["pc-x86_64", "virt-aarch64"])
+def test_valid_qemu_machine_values(machine):
+    config = {**_VALID_BRIDGE_CONFIG, "qemu_machine": machine}
+    model = QemuConfigModel.model_validate(config)
+    assert model.qemu_machine == machine
+
+
+def test_default_qemu_machine_value_is_applied():
+    model = QemuConfigModel.model_validate(_VALID_BRIDGE_CONFIG)
+    assert model.qemu_machine == "pc-x86_64"
+
+
+def test_invalid_qemu_machine_value_is_rejected():
+    config = {**_VALID_BRIDGE_CONFIG, "qemu_machine": "virt-riscv64"}
+    with pytest.raises(Exception):
+        QemuConfigModel.model_validate(config)
+
+
+def test_qemu_kernel_cmdline_is_accepted():
+    cmdline = "root=/dev/vda1 rw console=ttyS0"
+    config = {**_VALID_BRIDGE_CONFIG, "qemu_kernel_cmdline": cmdline}
+    model = QemuConfigModel.model_validate(config)
+    assert model.qemu_kernel_cmdline == cmdline
+
+
 def test_missing_networks_is_rejected():
     config = {**_VALID_BRIDGE_CONFIG}
     del config["networks"]

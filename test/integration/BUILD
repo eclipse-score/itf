@@ -210,6 +210,39 @@ py_itf_test(
     ],
 )
 
+py_itf_test(
+    name = "test_ebclfsa_ping",
+    srcs = [
+        "test_ebclfsa_ping.py",
+    ],
+    args = [
+        "--qemu-config=$(location //test/resources/ebclfsa_aarch64:qemu_config)",
+        "--qemu-kernel=$(location //test/resources/ebclfsa_aarch64:kernel)",
+        "--qemu-rootfs=$(location //test/resources/ebclfsa_aarch64:image)",
+    ],
+    data = [
+        "//test/resources/ebclfsa_aarch64:image",
+        "//test/resources/ebclfsa_aarch64:kernel",
+        "//test/resources/ebclfsa_aarch64:qemu_config",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+)
+
+test_suite(
+    name = "linux_qemu_tests",
+    tags = [
+        "manual",
+    ],
+    tests = [
+        ":test_ebclfsa_ping",
+    ],
+)
+
 test_suite(
     name = "qnx_qemu_tests",
     tags = [
