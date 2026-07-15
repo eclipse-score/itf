@@ -63,7 +63,7 @@ py_itf_test(
         "--docker-image-bootstrap=$(location //test/resources:image_load)",
         "--docker-image=score_itf_examples:latest",
     ],
-    data_as_exec = ["//test/resources:image_load"],
+    data = ["//test/resources:image_load"],
     plugins = [
         "//score/itf/plugins:dlt_plugin",
         "//score/itf/plugins:docker_plugin",
@@ -80,7 +80,7 @@ py_itf_test(
         "--docker-image-bootstrap=$(location //test/resources:image_load)",
         "--docker-image=score_itf_examples:latest",
     ],
-    data_as_exec = ["//test/resources:image_load"],
+    data = ["//test/resources:image_load"],
     plugins = [
         "//score/itf/plugins:dlt_plugin",
         "//score/itf/plugins:docker_plugin",
