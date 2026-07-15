@@ -68,7 +68,12 @@ def pytest_addoption(parser):
         required=True,
         help="Path to json file with target configurations.",
     )
-    parser.addoption("--qemu-image", action="store", help="Path to a QEMU image")
+    parser.addoption(
+        "--qemu-image",
+        action="store",
+        default=None,
+        help="Path to a QEMU kernel image",
+    )
     parser.addoption(
         "--qemu-disk-image",
         action="store",
