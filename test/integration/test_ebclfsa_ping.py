@@ -10,25 +10,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("//:defs.bzl", "py_itf_unittest")
 
-py_itf_unittest(
-    name = "test_ping",
-    srcs = ["test_ping.py"],
-    target_compatible_with = ["@platforms//os:linux"],
-)
 
-py_itf_unittest(
-    name = "test_qemu_config_schema",
-    srcs = ["test_qemu_config_schema.py"],
-    target_compatible_with = ["@platforms//os:linux"],
-    deps = ["//score/itf/plugins/qemu:config"],
-)
+def test_ping_from_host_to_target(target):
+    assert target.ping(timeout=10)
 
-test_suite(
-    name = "unit",
-    tests = [
-        ":test_ping",
-        ":test_qemu_config_schema",
-    ],
-)
+
+def test_ping_from_target_to_host(target):
+    cmd = """
+        gw=$(ip route | awk '/default/ {print $3; exit}')
+        if [ -z \"$gw\" ]; then
+            echo \"No default gateway found\" >&2
+            exit 1
+        fi
+        ping -c 1 -W 5 \"$gw\"
+    """
+    exit_code, _ = target.execute(cmd)
+    assert exit_code == 0
