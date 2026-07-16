@@ -29,7 +29,7 @@ pkg_tar(
     srcs = [
         "config-overlay/etc/config/network/network",
     ],
-    mode = "0755",
+    mode = "0644",
     package_dir = "/etc/config/network",
 )
 

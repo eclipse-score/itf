@@ -12,7 +12,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-set -uoex pipefail
+set -euxo pipefail
 
 if [[ $# -lt 4 ]]; then
     echo "Error: Expected at least 4 arguments (working directory, image source location, image target location, and one or more tar files to deploy relative to the root of the image)" >&2
@@ -45,8 +45,8 @@ if ! find "${IMAGE_SOURCE}" -maxdepth 1 \( -name "*vmlinux" -type f -o -name "*v
     exit 1
 fi
 
-if [[ ! -d "${IMAGE_TARGET}" ]]; then
-    echo "Error: Image target location is not a directory: ${IMAGE_TARGET}" >&2
+if [[ -e "${IMAGE_TARGET}" && ! -d "${IMAGE_TARGET}" ]]; then
+    echo "Error: Image target location exists but is not a directory: ${IMAGE_TARGET}" >&2
     exit 1
 fi
 
@@ -71,7 +71,7 @@ KERNEL=$(find "${IMAGE_TARGET}" -maxdepth 1 \( -name "*vmlinux" -type f -o -name
 # The image file must be writable for qemu overlay handling.
 chmod +w "${IMAGE}"
 
-qemu-system-aarch64 -m 2048 -cpu cortex-a53 -machine virt \
+qemu-system-aarch64 -m 2048 -cpu cortex-a53 \
     -kernel "${KERNEL}" \
     -machine "virt,virtualization=true,gic-version=3" \
     -smp 8 \
