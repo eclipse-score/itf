@@ -66,7 +66,7 @@ def pytest_addoption(parser):
         "--extract-core",
         action="store_true",
         default=False,
-        help="Extract core dump files from the container before teardown.",
+        help="Copy core dump files from the container to the host before teardown.",
     )
     parser.addoption(
         "--core-output-dir",
@@ -353,9 +353,14 @@ def _extract_coverage_from_container(target, output_base):
 def _extract_core_from_container(target, output_base):
     """Extract core dump files created inside the container."""
     logger.info(f"Attempting core extraction to {output_base}")
+    if not os.path.isdir(output_base):
+        logger.warning(f"Core output directory does not exist, skipping extraction: {output_base}")
+        return
     # Look for core files in typical locations, being specific to avoid false positives
-    exit_code, output = target.execute("(ls -1 /core* 2>/dev/null || true) && (ls -1 /opt/*/core* 2>/dev/null || true) && (ls -1 /root/core* 2>/dev/null || true) && (ls -1 /tmp/core* 2>/dev/null || true)")
-    
+    exit_code, output = target.execute(
+        "(ls -1 /core* 2>/dev/null || true) && (ls -1 /opt/*/core* 2>/dev/null || true) && (ls -1 /root/core* 2>/dev/null || true) && (ls -1 /tmp/core* 2>/dev/null || true)"
+    )
+
     core_paths = [line.strip() for line in output.decode().splitlines() if line.strip()]
     logger.info(f"Found {len(core_paths)} core files: {core_paths}")
     if not core_paths:
