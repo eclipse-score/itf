@@ -62,6 +62,21 @@ def pytest_addoption(parser):
         help="Directory to write extracted coverage files. "
         "Defaults to $TEST_UNDECLARED_OUTPUTS_DIR/sysroot or /tmp/sysroot.",
     )
+    parser.addoption(
+        "--extract-core",
+        action="store_true",
+        default=False,
+        help="Extract core dump files from the container before teardown.",
+    )
+    parser.addoption(
+        "--core-output-dir",
+        default=os.path.join(
+            os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR", "/tmp"),
+            "cores",
+        ),
+        help="Directory to write extracted core dump files. "
+        "Defaults to $TEST_UNDECLARED_OUTPUTS_DIR/cores or /tmp/cores.",
+    )
 
 
 class DockerAsyncProcess(AsyncProcess):
@@ -335,6 +350,31 @@ def _extract_coverage_from_container(target, output_base):
             logger.warning(f"Failed to extract {remote_path}", exc_info=True)
 
 
+def _extract_core_from_container(target, output_base):
+    """Extract core dump files created inside the container."""
+    logger.info(f"Attempting core extraction to {output_base}")
+    # Look for core files in typical locations, being specific to avoid false positives
+    exit_code, output = target.execute("(ls -1 /core* 2>/dev/null || true) && (ls -1 /opt/*/core* 2>/dev/null || true) && (ls -1 /root/core* 2>/dev/null || true) && (ls -1 /tmp/core* 2>/dev/null || true)")
+    
+    core_paths = [line.strip() for line in output.decode().splitlines() if line.strip()]
+    logger.info(f"Found {len(core_paths)} core files: {core_paths}")
+    if not core_paths:
+        return
+
+    for remote_path in core_paths:
+        local_path = os.path.join(output_base, remote_path.lstrip("/"))
+        if not os.path.realpath(local_path).startswith(os.path.realpath(output_base)):
+            logger.warning(f"Skipping path traversal attempt: {remote_path}")
+            continue
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        try:
+            logger.info(f"Extracting core from {remote_path} to {local_path}")
+            target.download(remote_path, local_path)
+            logger.info(f"Successfully extracted {remote_path}")
+        except Exception:
+            logger.warning(f"Failed to extract core file {remote_path}", exc_info=True)
+
+
 @pytest.fixture(scope=determine_target_scope)
 def target_init(request, _docker_configuration):
     print(_docker_configuration)
@@ -397,6 +437,17 @@ def target_init(request, _docker_configuration):
                 )
         except Exception:
             logger.warning("Coverage extraction failed", exc_info=True)
+        try:
+            extract_core_enabled = request.config.getoption("extract_core")
+            logger.info(f"Core extraction enabled: {extract_core_enabled}")
+            if target is not None and extract_core_enabled:
+                logger.info(f"Extracting cores to {request.config.getoption('core_output_dir')}")
+                _extract_core_from_container(
+                    target,
+                    request.config.getoption("core_output_dir"),
+                )
+        except Exception:
+            logger.warning("Core extraction failed", exc_info=True)
         try:
             try:
                 container.stop(timeout=1)
