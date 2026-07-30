@@ -173,9 +173,7 @@ class QemuTarget(Target):
             transport = ssh_ctx.get_paramiko_client().get_transport()
             channel = transport.open_session()
             channel.set_combine_stderr(True)
-            inner = (
-                f"[ -r /etc/profile ] && . /etc/profile >/dev/null 2>&1; echo $$; cd {shlex.quote(cwd)} && {command}"
-            )
+            inner = f"[ -r /etc/profile ] && . /etc/profile >/dev/null 2>&1; echo $$; cd {shlex.quote(cwd)} && exec {command}"
             channel.exec_command(f"sh -lc {shlex.quote(inner)}")
 
             # Read the PID from the first line of output.
