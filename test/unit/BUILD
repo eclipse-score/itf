@@ -23,9 +23,16 @@ py_itf_unittest(
     deps = ["//score/itf/plugins/qemu:config"],
 )
 
+py_itf_unittest(
+    name = "test_docker_line_assembler",
+    srcs = ["test_docker_line_assembler.py"],
+    deps = ["//score/itf/plugins:docker"],
+)
+
 test_suite(
     name = "unit",
     tests = [
+        ":test_docker_line_assembler",
         ":test_ping",
         ":test_qemu_config_schema",
     ],
