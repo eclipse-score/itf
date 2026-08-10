@@ -213,7 +213,7 @@ py_itf_test(
 py_itf_test(
     name = "test_ebclfsa_ping",
     srcs = [
-        "test_ebclfsa_ping.py",
+        "test_ping.py",
     ],
     args = [
         "--qemu-config=$(location //test/resources/ebclfsa_aarch64:qemu_config)",
@@ -233,6 +233,27 @@ py_itf_test(
     ],
 )
 
+py_itf_test(
+    name = "test_ubuntu_ping",
+    srcs = [
+        "test_ping.py",
+    ],
+    args = [
+        "--qemu-config=$(location //test/resources/ubuntu_x86_64:qemu_config)",
+        "--qemu-rootfs=$(location //test/resources/ubuntu_x86_64:image)",
+    ],
+    data = [
+        "//test/resources/ubuntu_x86_64:image",
+        "//test/resources/ubuntu_x86_64:qemu_config",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+)
+
 test_suite(
     name = "linux_qemu_tests",
     tags = [
@@ -240,6 +261,7 @@ test_suite(
     ],
     tests = [
         ":test_ebclfsa_ping",
+        ":test_ubuntu_ping",
     ],
 )
 

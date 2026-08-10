@@ -19,3 +19,10 @@ sh_binary(
     ],
     visibility = ["//visibility:public"],
 )
+
+exports_files(
+    [
+        "render_user_data.py",
+    ],
+    visibility = ["//visibility:public"],
+)
