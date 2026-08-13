@@ -15,7 +15,7 @@ genrule(
     name = "itf-image",
     srcs = [
         "@ubuntu_noble_minimal_cloudimg_amd64//file",
-        "build_image.sh",
+        "//scripts:build_ubuntu_x86_64_image.sh",
         "//scripts:render_user_data.py",
         "cloud-init/user-data",
         "cloud-init/meta-data",
@@ -23,7 +23,7 @@ genrule(
     ],
     outs = ["ubuntu-x86_64-itf/ubuntu-24.04-minimal-cloudimg-amd64.img"],
     cmd = """
-        bash $(location build_image.sh) \
+        bash $(location //scripts:build_ubuntu_x86_64_image.sh) \
             $(RULEDIR) \
             $(location @ubuntu_noble_minimal_cloudimg_amd64//file) \
             $(RULEDIR)/ubuntu-x86_64-itf/ubuntu-24.04-minimal-cloudimg-amd64.img \

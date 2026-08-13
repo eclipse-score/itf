@@ -216,6 +216,51 @@ QEMU targets are configured using a JSON configuration file that specifies netwo
 }
 ```
 
+#### Linux QEMU images
+
+The repository includes two image build flows that are meant to be consumed by QEMU tests.
+These take a base image and customize it for ITF testing. The resulting images are stored in the Bazel cache and can be used in tests.
+
+For Ubuntu image building take a look at `test/resources/ubuntu_x86_64/BUILD` and for Ebclfsa image building take a look at `test/resources/ebclfsa_aarch64/BUILD`.
+Using the prepared images, run your ITF tests.
+
+Ubuntu:
+
+```starlark
+py_itf_test(
+    name = "test_qemu_ubuntu",
+    srcs = ["test_qemu_ubuntu.py"],
+    args = [
+        "--qemu-rootfs=$(location //test/resources/ubuntu_x86_64:image)",
+        "--qemu-config=$(location //test/resources/ubuntu_x86_64:qemu_config)",
+    ],
+    data = [
+        "//test/resources/ubuntu_x86_64:image",
+        "//test/resources/ubuntu_x86_64:qemu_config",
+    ],
+    plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
+)
+```
+
+Ebclfsa:
+
+```starlark
+py_itf_test(
+    name = "test_qemu_ebclfsa",
+    srcs = ["test_qemu_ebclfsa.py"],
+    args = [
+        "--qemu-rootfs=$(location //test/resources/ebclfsa_aarch64:image)",
+        "--qemu-kernel=$(location //test/resources/ebclfsa_aarch64:kernel)",
+        "--qemu-config=$(location //test/resources/ebclfsa_aarch64:qemu_config)",
+    ],
+    data = [
+        "//test/resources/ebclfsa_aarch64:image",
+        "//test/resources/ebclfsa_aarch64:kernel",
+        "//test/resources/ebclfsa_aarch64:qemu_config",
+    ],
+    plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
+)
+```
 
 ### Capability-Based Tests
 
@@ -442,9 +487,9 @@ bazel test //test:test_docker \
 ### QEMU Tests
 
 ```bash
-# With pre-built QEMU image
+# With a pre-built QEMU root filesystem image
 bazel test //test:test_qemu \
-    --test_arg="--qemu-image=/path/to/kernel.img"
+    --test_arg="--qemu-rootfs=/path/to/rootfs.img"
 ```
 
 ## QEMU Setup (Linux)

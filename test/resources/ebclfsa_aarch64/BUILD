@@ -41,14 +41,14 @@ genrule(
     srcs = [
         ":extract-fastdev-image",
         ":network_config_tar",
-        "build_image.sh",
+        "//scripts:build_ebclfsa_aarch64_image.sh",
     ],
     outs = [
         "ebcl-qemuarm64-itf/fastdev-ubuntu-ebclfsa-ebcl-qemuarm64.wic",
         "ebcl-qemuarm64-itf/fastdev-ubuntu-ebclfsa-ebcl-qemuarm64-vmlinux",
     ],
     cmd = """
-        bash $(location build_image.sh) \
+        bash $(location //scripts:build_ebclfsa_aarch64_image.sh) \
             $(RULEDIR) \
             $(RULEDIR)/ebcl-qemuarm64 \
             $(RULEDIR)/ebcl-qemuarm64-itf \
