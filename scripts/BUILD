@@ -19,12 +19,3 @@ sh_binary(
     ],
     visibility = ["//visibility:public"],
 )
-
-exports_files(
-    [
-        "build_ebclfsa_aarch64_image.sh",
-        "build_ubuntu_x86_64_image.sh",
-        "render_user_data.py",
-    ],
-    visibility = ["//visibility:public"],
-)

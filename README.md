@@ -218,11 +218,7 @@ QEMU targets are configured using a JSON configuration file that specifies netwo
 
 #### Linux QEMU images
 
-The repository includes two image build flows that are meant to be consumed by QEMU tests.
-These take a base image and customize it for ITF testing. The resulting images are stored in the Bazel cache and can be used in tests.
-
-For Ubuntu image building take a look at `test/resources/ubuntu_x86_64/BUILD` and for Ebclfsa image building take a look at `test/resources/ebclfsa_aarch64/BUILD`.
-Using the prepared images, run your ITF tests.
+Running tests with Linux is supported:
 
 Ubuntu:
 

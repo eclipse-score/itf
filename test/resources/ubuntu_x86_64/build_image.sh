@@ -20,7 +20,7 @@
 # derived from qemu_config.json, then powers the machine off again, so this
 # script simply has to wait for QEMU to exit.
 #
-# Usage: build_ubuntu_x86_64_image.sh <working dir> <source image> <target image> <user-data> <meta-data> <qemu-config> <user-data-renderer>
+# Usage: build_image.sh <working dir> <source image> <target image> <user-data> <meta-data> <qemu-config> <user-data-renderer>
 
 set -euxo pipefail
 

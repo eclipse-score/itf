@@ -15,22 +15,22 @@ genrule(
     name = "itf-image",
     srcs = [
         "@ubuntu_noble_minimal_cloudimg_amd64//file",
-        "//scripts:build_ubuntu_x86_64_image.sh",
-        "//scripts:render_user_data.py",
+        "build_image.sh",
+        "render_user_data.py",
         "cloud-init/user-data",
         "cloud-init/meta-data",
         "qemu_config.json",
     ],
     outs = ["ubuntu-x86_64-itf/ubuntu-24.04-minimal-cloudimg-amd64.img"],
     cmd = """
-        bash $(location //scripts:build_ubuntu_x86_64_image.sh) \
+        bash $(location build_image.sh) \
             $(RULEDIR) \
             $(location @ubuntu_noble_minimal_cloudimg_amd64//file) \
             $(RULEDIR)/ubuntu-x86_64-itf/ubuntu-24.04-minimal-cloudimg-amd64.img \
             $(location cloud-init/user-data) \
             $(location cloud-init/meta-data) \
                 $(location qemu_config.json) \
-                $(location //scripts:render_user_data.py)
+                $(location render_user_data.py)
     """,
     tags = [
         "manual",
