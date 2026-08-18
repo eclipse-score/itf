@@ -226,7 +226,7 @@ use_repo(imagefs, "score_qnx_x86_64_ifs_toolchain")
 # Linux QEMU images from the dedicated os_images repository
 #
 ###############################################################################
-bazel_dep(name = "os_images", version = "0.0.0")
+bazel_dep(name = "os_images", version = "0.0.0", dev_dependency = True)
 
 git_override(
     module_name = "os_images",
