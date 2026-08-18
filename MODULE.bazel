@@ -229,6 +229,6 @@ use_repo(imagefs, "score_qnx_x86_64_ifs_toolchain")
 bazel_dep(name = "os_images", version = "0.0.0", dev_dependency = True)
 git_override(
     module_name = "os_images",
-    commit = "b58e764aded6f5afeb13e612913ce8753eae2aac",
+    commit = "a024787e2ddb4ceed6ac6fe63b3847ab937c0b5d",
     remote = "https://github.com/eclipse-score/os_images.git",
 )
