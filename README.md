@@ -227,12 +227,12 @@ py_itf_test(
     name = "test_qemu_ubuntu",
     srcs = ["test_qemu_ubuntu.py"],
     args = [
-        "--qemu-rootfs=$(location //test/resources/ubuntu_x86_64:image)",
-        "--qemu-config=$(location //test/resources/ubuntu_x86_64:qemu_config)",
+        "--qemu-rootfs=$(location @os_images//ubuntu_x86_64:image)",
+        "--qemu-config=$(location @os_images//ubuntu_x86_64:qemu_config)",
     ],
     data = [
-        "//test/resources/ubuntu_x86_64:image",
-        "//test/resources/ubuntu_x86_64:qemu_config",
+        "@os_images//ubuntu_x86_64:image",
+        "@os_images//ubuntu_x86_64:qemu_config",
     ],
     plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
 )
@@ -245,14 +245,14 @@ py_itf_test(
     name = "test_qemu_ebclfsa",
     srcs = ["test_qemu_ebclfsa.py"],
     args = [
-        "--qemu-rootfs=$(location //test/resources/ebclfsa_aarch64:image)",
-        "--qemu-kernel=$(location //test/resources/ebclfsa_aarch64:kernel)",
-        "--qemu-config=$(location //test/resources/ebclfsa_aarch64:qemu_config)",
+        "--qemu-rootfs=$(location @os_images//ebclfsa_aarch64:image)",
+        "--qemu-kernel=$(location @os_images//ebclfsa_aarch64:kernel)",
+        "--qemu-config=$(location @os_images//ebclfsa_aarch64:qemu_config)",
     ],
     data = [
-        "//test/resources/ebclfsa_aarch64:image",
-        "//test/resources/ebclfsa_aarch64:kernel",
-        "//test/resources/ebclfsa_aarch64:qemu_config",
+        "@os_images//ebclfsa_aarch64:image",
+        "@os_images//ebclfsa_aarch64:kernel",
+        "@os_images//ebclfsa_aarch64:qemu_config",
     ],
     plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
 )
