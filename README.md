@@ -216,6 +216,47 @@ QEMU targets are configured using a JSON configuration file that specifies netwo
 }
 ```
 
+#### Linux QEMU images
+
+Running tests with Linux is supported:
+
+Ubuntu:
+
+```starlark
+py_itf_test(
+    name = "test_qemu_ubuntu",
+    srcs = ["test_qemu_ubuntu.py"],
+    args = [
+        "--qemu-rootfs=$(location @os_images//ubuntu_x86_64:image)",
+        "--qemu-config=$(location @os_images//ubuntu_x86_64:qemu_config)",
+    ],
+    data = [
+        "@os_images//ubuntu_x86_64:image",
+        "@os_images//ubuntu_x86_64:qemu_config",
+    ],
+    plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
+)
+```
+
+Ebclfsa:
+
+```starlark
+py_itf_test(
+    name = "test_qemu_ebclfsa",
+    srcs = ["test_qemu_ebclfsa.py"],
+    args = [
+        "--qemu-rootfs=$(location @os_images//ebclfsa_aarch64:image)",
+        "--qemu-kernel=$(location @os_images//ebclfsa_aarch64:kernel)",
+        "--qemu-config=$(location @os_images//ebclfsa_aarch64:qemu_config)",
+    ],
+    data = [
+        "@os_images//ebclfsa_aarch64:image",
+        "@os_images//ebclfsa_aarch64:kernel",
+        "@os_images//ebclfsa_aarch64:qemu_config",
+    ],
+    plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
+)
+```
 
 ### Capability-Based Tests
 
@@ -442,9 +483,9 @@ bazel test //test:test_docker \
 ### QEMU Tests
 
 ```bash
-# With pre-built QEMU image
+# With a pre-built QEMU root filesystem image
 bazel test //test:test_qemu \
-    --test_arg="--qemu-image=/path/to/kernel.img"
+    --test_arg="--qemu-rootfs=/path/to/rootfs.img"
 ```
 
 ## QEMU Setup (Linux)

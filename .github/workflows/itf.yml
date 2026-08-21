@@ -42,7 +42,7 @@ jobs:
       - name: Install qemu
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-system-arm
+          sudo apt-get install -y qemu-system-arm qemu-system-x86 cloud-image-utils
       - name: Enable KVM group perms
         run: |
           sudo chmod 666 /dev/kvm

@@ -213,17 +213,38 @@ py_itf_test(
 py_itf_test(
     name = "test_ebclfsa_ping",
     srcs = [
-        "test_ebclfsa_ping.py",
+        "test_ping.py",
     ],
     args = [
-        "--qemu-config=$(location //test/resources/ebclfsa_aarch64:qemu_config)",
-        "--qemu-kernel=$(location //test/resources/ebclfsa_aarch64:kernel)",
-        "--qemu-rootfs=$(location //test/resources/ebclfsa_aarch64:image)",
+        "--qemu-config=$(location @os_images//ebclfsa_aarch64:qemu_config)",
+        "--qemu-kernel=$(location @os_images//ebclfsa_aarch64:kernel)",
+        "--qemu-rootfs=$(location @os_images//ebclfsa_aarch64:image)",
     ],
     data = [
-        "//test/resources/ebclfsa_aarch64:image",
-        "//test/resources/ebclfsa_aarch64:kernel",
-        "//test/resources/ebclfsa_aarch64:qemu_config",
+        "@os_images//ebclfsa_aarch64:image",
+        "@os_images//ebclfsa_aarch64:kernel",
+        "@os_images//ebclfsa_aarch64:qemu_config",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+)
+
+py_itf_test(
+    name = "test_ubuntu_ping",
+    srcs = [
+        "test_ping.py",
+    ],
+    args = [
+        "--qemu-config=$(location @os_images//ubuntu_x86_64:qemu_config)",
+        "--qemu-rootfs=$(location @os_images//ubuntu_x86_64:image)",
+    ],
+    data = [
+        "@os_images//ubuntu_x86_64:image",
+        "@os_images//ubuntu_x86_64:qemu_config",
     ],
     plugins = [
         "//score/itf/plugins:qemu_plugin",
@@ -240,6 +261,7 @@ test_suite(
     ],
     tests = [
         ":test_ebclfsa_ping",
+        ":test_ubuntu_ping",
     ],
 )
 
