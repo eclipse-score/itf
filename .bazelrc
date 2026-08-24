@@ -17,6 +17,7 @@ test:qemu-integration --config=x86_64-qnx
 test:qemu-integration --run_under=//scripts:run_under_qemu
 test:qemu-integration --build_tests_only
 
+build:qemu-integration-linux --extra_toolchains=@score_qnx_x86_64_ext4_toolchain//:ext4-x86_64-linux
 test:qemu-integration-linux --run_under=//scripts:run_under_qemu
 test:qemu-integration-linux --build_tests_only
 

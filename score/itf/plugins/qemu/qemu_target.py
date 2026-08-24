@@ -293,6 +293,7 @@ def qemu_target(test_config):
             machine=test_config.qemu_config.qemu_machine,
             rootfs=test_config.qemu_rootfs,
             kernel_cmdline=test_config.qemu_config.qemu_kernel_cmdline,
+            disk=test_config.qemu_disk,
         )
     else:
         process_ctx = nullcontext()
