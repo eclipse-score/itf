@@ -12,6 +12,7 @@
 # *******************************************************************************
 """Bazel rule for defining ITF test plugins."""
 
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_python//python:defs.bzl", "PyInfo")
 
 PyItfPluginInfo = provider(
@@ -33,6 +34,15 @@ def _py_itf_plugin_impl(ctx):
     for arg in ctx.attr.plugin_args:
         arg = arg.replace("$(location ", "$(rootpath ").replace("$(locations ", "$(rootpaths ")
         resolved_args.append(ctx.expand_location(arg, targets = all_data_targets))
+
+    # Append args driven by string_flag build settings. Each mapped flag emits
+    # its arg template (with '{}' replaced by the flag value) only when the
+    # value is non-empty. This lets a value be set via `--//path/to:flag=/dir`
+    # instead of a hard-coded macro attribute at each call site.
+    for flag_target, arg_template in ctx.attr.string_flag_args.items():
+        value = flag_target[BuildSettingInfo].value
+        if value:
+            resolved_args.append(arg_template.format(value))
 
     # Collect all plugin files and runfiles
     plugin_file_depsets = []
@@ -82,6 +92,13 @@ py_itf_plugin = rule(
         "plugin_args": attr.string_list(
             doc = "Additional CLI arguments. Supports $(location ...) referencing plugin_data targets.",
             default = [],
+        ),
+        "string_flag_args": attr.label_keyed_string_dict(
+            doc = "Maps a string_flag build setting to a CLI arg template. " +
+                  "'{}' is substituted with the flag value and the arg is " +
+                  "emitted only when the value is non-empty.",
+            default = {},
+            providers = [BuildSettingInfo],
         ),
         "plugin_data": attr.label_list(
             doc = "Data files built for target configuration.",

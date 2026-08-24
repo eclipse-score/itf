@@ -99,7 +99,63 @@ ITF supports modular plugins that extend functionality:
 - **`core`**: Basic functionality that is the entry point for plugin extensions and hooks
 - **`docker`**: Docker container targets with `exec`, `file_transfer`, and `restart` capabilities
 - **`qemu`**: QEMU virtual machine targets with `ssh`, `sftp`, `exec`, `file_transfer`, and `restart` capabilities
+- **`core_dump`**: Target-agnostic core dump extraction for targets with `exec` and `file_transfer` capabilities
 - **`dlt`**: DLT (Diagnostic Log and Trace) message capture and analysis
+
+### Core Dump Extraction
+
+Core dump extraction is provided by the standalone `core_dump_plugin`. It can be composed with both Docker and QEMU targets instead of being embedded in a target-specific plugin.
+
+Example with Docker:
+
+```starlark
+py_itf_test(
+    name = "test_with_core_extraction",
+    srcs = ["test_with_core_extraction.py"],
+    args = ["--docker-image=ubuntu:24.04"],
+    plugins = [
+        "@score_itf//score/itf/plugins:docker_plugin",
+        "@score_itf//score/itf/plugins:core_dump_plugin",
+    ],
+)
+```
+
+Example with QEMU:
+
+```starlark
+py_itf_test(
+    name = "test_qemu_with_core_extraction",
+    srcs = ["test_qemu_with_core_extraction.py"],
+    args = [
+        "--qemu-image=$(location //path:qemu_image)",
+        "--qemu-config=$(location qemu_config.json)",
+    ],
+    data = [
+        "//path:qemu_image",
+        "qemu_config.json",
+    ],
+    plugins = [
+        "@score_itf//score/itf/plugins:qemu_plugin",
+        "@score_itf//score/itf/plugins:core_dump_plugin",
+    ],
+)
+```
+
+Enable extraction during the test run with:
+
+```bash
+bazel test //path/to:test --@score_itf//score/itf/plugins:extract_core_dumps=true
+```
+
+Optionally override the host output directory for extracted files:
+
+```bash
+bazel test //path/to:test \
+    --@score_itf//score/itf/plugins:extract_core_dumps=true \
+    --@score_itf//score/itf/plugins:core_dumps_output_dir=/abs/path/to/coredumps
+```
+
+By default, extracted files are written to `$TEST_UNDECLARED_OUTPUTS_DIR/coredumps`. Under Bazel test runs this usually places them under the target's `bazel-testlogs/.../test.outputs/coredumps` directory.
 
 ## Writing Tests
 
