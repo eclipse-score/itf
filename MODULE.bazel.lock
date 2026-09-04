@@ -2581,7 +2581,7 @@
     "@@score_rules_imagefs+//extensions:imagefs.bzl%imagefs": {
       "general": {
         "bzlTransitiveDigest": "AhldzzceHQweCskTyocFKGDFKZfW2t5IdpfsFJV4S9g=",
-        "usagesDigest": "BCZ++xZkfqLELCnyXPxhCQyptuLgGhNRgOzGykcI8hs=",
+        "usagesDigest": "rvePbK74MbNcQLgmiJ6PcIOcLxli5RcnYZlpoE7btnE=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -2597,55 +2597,55 @@
               "coreutils_pkg_repo": ""
             }
           },
-          "score_qnx_x86_64_ext4_toolchain_coreutils_darwin_amd64": {
+          "score_linux_x86_64_ext4_toolchain_coreutils_darwin_amd64": {
             "repoRuleId": "@@bazel_lib+//lib/private:coreutils_toolchain.bzl%coreutils_platform_repo",
             "attributes": {
               "platform": "darwin_amd64",
               "version": "0.5.0"
             }
           },
-          "score_qnx_x86_64_ext4_toolchain_coreutils_darwin_arm64": {
+          "score_linux_x86_64_ext4_toolchain_coreutils_darwin_arm64": {
             "repoRuleId": "@@bazel_lib+//lib/private:coreutils_toolchain.bzl%coreutils_platform_repo",
             "attributes": {
               "platform": "darwin_arm64",
               "version": "0.5.0"
             }
           },
-          "score_qnx_x86_64_ext4_toolchain_coreutils_linux_amd64": {
+          "score_linux_x86_64_ext4_toolchain_coreutils_linux_amd64": {
             "repoRuleId": "@@bazel_lib+//lib/private:coreutils_toolchain.bzl%coreutils_platform_repo",
             "attributes": {
               "platform": "linux_amd64",
               "version": "0.5.0"
             }
           },
-          "score_qnx_x86_64_ext4_toolchain_coreutils_linux_arm64": {
+          "score_linux_x86_64_ext4_toolchain_coreutils_linux_arm64": {
             "repoRuleId": "@@bazel_lib+//lib/private:coreutils_toolchain.bzl%coreutils_platform_repo",
             "attributes": {
               "platform": "linux_arm64",
               "version": "0.5.0"
             }
           },
-          "score_qnx_x86_64_ext4_toolchain_coreutils_windows_amd64": {
+          "score_linux_x86_64_ext4_toolchain_coreutils_windows_amd64": {
             "repoRuleId": "@@bazel_lib+//lib/private:coreutils_toolchain.bzl%coreutils_platform_repo",
             "attributes": {
               "platform": "windows_amd64",
               "version": "0.5.0"
             }
           },
-          "score_qnx_x86_64_ext4_toolchain_coreutils_windows_arm64": {
+          "score_linux_x86_64_ext4_toolchain_coreutils_windows_arm64": {
             "repoRuleId": "@@bazel_lib+//lib/private:coreutils_toolchain.bzl%coreutils_platform_repo",
             "attributes": {
               "platform": "windows_arm64",
               "version": "0.5.0"
             }
           },
-          "score_qnx_x86_64_ext4_toolchain_coreutils_toolchains": {
+          "score_linux_x86_64_ext4_toolchain_coreutils_toolchains": {
             "repoRuleId": "@@bazel_lib+//lib/private:coreutils_toolchain.bzl%coreutils_toolchains_repo",
             "attributes": {
-              "user_repository_name": "score_qnx_x86_64_ext4_toolchain_coreutils"
+              "user_repository_name": "score_linux_x86_64_ext4_toolchain_coreutils"
             }
           },
-          "score_qnx_x86_64_ext4_toolchain": {
+          "score_linux_x86_64_ext4_toolchain": {
             "repoRuleId": "@@score_rules_imagefs+//rules:imagefs_toolchain.bzl%imagefs_toolchain",
             "attributes": {
               "tc_cpu": "x86_64",
@@ -2653,7 +2653,7 @@
               "tc_pkg_repo": "",
               "sdp_version": "8.0.0",
               "tc_type": "ext4",
-              "coreutils_pkg_repo": "@score_qnx_x86_64_ext4_toolchain_coreutils_linux_amd64"
+              "coreutils_pkg_repo": "@score_linux_x86_64_ext4_toolchain_coreutils_linux_amd64"
             }
           }
         },

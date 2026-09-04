@@ -220,12 +220,12 @@ imagefs.toolchain(
     type = "ifs",
 )
 imagefs.toolchain(
-    name = "score_qnx_x86_64_ext4_toolchain",
+    name = "score_linux_x86_64_ext4_toolchain",
     target_cpu = "x86_64",
     target_os = "linux",
     type = "ext4",
 )
-use_repo(imagefs, "score_qnx_x86_64_ext4_toolchain", "score_qnx_x86_64_ifs_toolchain")
+use_repo(imagefs, "score_linux_x86_64_ext4_toolchain", "score_qnx_x86_64_ifs_toolchain")
 
 ###############################################################################
 #
