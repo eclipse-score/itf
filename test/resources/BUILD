@@ -11,7 +11,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@score_rules_imagefs//rules/linux:ext4.bzl", "ext4")
 
 filegroup(
     name = "dlt_config",
@@ -97,5 +99,22 @@ oci_load(
         # TODO: Should be only visible to examples
         "//visibility:public",
         #"@score_itf_examples//:__subpackages__",
+    ],
+)
+
+pkg_files(
+    name = "qemu_disk_files",
+    srcs = ["qemu_disk_content.txt"],
+    prefix = "",
+)
+
+ext4(
+    name = "qemu_disk_image",
+    srcs = [":qemu_disk_files"],
+    out = "qemu_disk.ext4",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//test:__subpackages__",
     ],
 )
