@@ -25,6 +25,7 @@ def _build_qemu(
     path_to_kernel_image=None,
     kernel_cmdline=None,
     rootfs=None,
+    disk=None,
     network_adapters=None,
     port_forwarding=None,
 ):
@@ -44,6 +45,7 @@ def _build_qemu(
         port_forwarding=port_forwarding,
         rootfs=rootfs,
         kernel_cmdline=kernel_cmdline,
+        disk=disk,
     )
 
 
@@ -59,6 +61,7 @@ def test_invalid_machine_is_rejected(mocker):
             port_forwarding=[],
             rootfs=None,
             kernel_cmdline=None,
+            disk=None,
         )
 
 
@@ -99,7 +102,7 @@ def test_kernel_args_are_empty_without_kernel_image(mocker):
 def test_rootfs_args_include_arch_specific_block_device(mocker):
     qemu = _build_qemu(mocker, machine="virt-aarch64", rootfs="/tmp/rootfs.qcow2")
 
-    assert qemu._Qemu__rootfs_args() == [
+    assert qemu._Qemu__disk_args("/tmp/rootfs.qcow2", 0) == [
         "-device",
         "virtio-blk-device,drive=vd0",
         "-drive",
@@ -110,7 +113,41 @@ def test_rootfs_args_include_arch_specific_block_device(mocker):
 def test_rootfs_args_are_empty_without_rootfs(mocker):
     qemu = _build_qemu(mocker)
 
-    assert qemu._Qemu__rootfs_args() == []
+    assert qemu._Qemu__disk_args(None, 0) == []
+
+
+def test_disk_args_include_arch_specific_block_device(mocker):
+    qemu = _build_qemu(mocker, machine="virt-aarch64", disk="/tmp/disk.qcow2")
+
+    assert qemu._Qemu__disk_args("/tmp/disk.qcow2", 1) == [
+        "-device",
+        "virtio-blk-device,drive=vd1",
+        "-drive",
+        "if=none,format=qcow2,file=/tmp/disk.qcow2,id=vd1",
+    ]
+
+
+def test_disk_args_are_empty_without_disk(mocker):
+    qemu = _build_qemu(mocker)
+
+    assert qemu._Qemu__disk_args(None, 0) == []
+
+
+def test_rootfs_and_disk_can_be_combined(mocker):
+    qemu = _build_qemu(mocker, rootfs="/tmp/rootfs.qcow2", disk="/tmp/disk.qcow2")
+
+    assert qemu._Qemu__disk_args("/tmp/rootfs.qcow2", 0) == [
+        "-device",
+        "virtio-blk-pci,drive=vd0",
+        "-drive",
+        "if=none,format=qcow2,file=/tmp/rootfs.qcow2,id=vd0",
+    ]
+    assert qemu._Qemu__disk_args("/tmp/disk.qcow2", 1) == [
+        "-device",
+        "virtio-blk-pci,drive=vd1",
+        "-drive",
+        "if=none,format=qcow2,file=/tmp/disk.qcow2,id=vd1",
+    ]
 
 
 def test_network_args_skip_loopback_and_use_machine_specific_device(mocker):

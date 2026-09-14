@@ -285,10 +285,13 @@ py_itf_test(
     args = [
         "--qemu-rootfs=$(location @os_images//ubuntu_x86_64:image)",
         "--qemu-config=$(location @os_images//ubuntu_x86_64:qemu_config)",
+        # optional disk image with test data
+        "--qemu-disk=$(location @os_images//ubuntu_x86_64:qemu_disk_image)",
     ],
     data = [
         "@os_images//ubuntu_x86_64:image",
         "@os_images//ubuntu_x86_64:qemu_config",
+        "@os_images//ubuntu_x86_64:qemu_disk_image",
     ],
     plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
 )
@@ -304,11 +307,14 @@ py_itf_test(
         "--qemu-rootfs=$(location @os_images//ebclfsa_aarch64:image)",
         "--qemu-kernel=$(location @os_images//ebclfsa_aarch64:kernel)",
         "--qemu-config=$(location @os_images//ebclfsa_aarch64:qemu_config)",
+        # optional disk image with test data
+        "--qemu-disk=$(location @os_images//ebclfsa_aarch64:qemu_disk_image)",
     ],
     data = [
         "@os_images//ebclfsa_aarch64:image",
         "@os_images//ebclfsa_aarch64:kernel",
         "@os_images//ebclfsa_aarch64:qemu_config",
+        "@os_images//ebclfsa_aarch64:qemu_disk_image",
     ],
     plugins = ["@score_itf//score/itf/plugins:qemu_plugin"],
 )

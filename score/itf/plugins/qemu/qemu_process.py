@@ -30,6 +30,7 @@ class QemuProcess:
         machine,
         rootfs,
         kernel_cmdline,
+        disk,
     ):
         self._path_to_qemu_kernel_image = path_to_qemu_kernel_image
         self._available_ram = available_ram
@@ -39,6 +40,7 @@ class QemuProcess:
         self._machine = machine
         self._rootfs = rootfs
         self._kernel_cmdline = kernel_cmdline
+        self._disk = disk
         self._qemu = Qemu(
             self._path_to_qemu_kernel_image,
             self._available_ram,
@@ -48,6 +50,7 @@ class QemuProcess:
             machine=self._machine,
             rootfs=self._rootfs,
             kernel_cmdline=self._kernel_cmdline,
+            disk=self._disk,
         )
         self._console = None
 
@@ -65,6 +68,8 @@ class QemuProcess:
             logger.info(f"Using QEMU kernel command line: {self._kernel_cmdline}")
         if self._rootfs is not None:
             logger.info(f"Using QEMU root filesystem image: {self._rootfs}")
+        if self._disk is not None:
+            logger.info(f"Using QEMU additional disk image: {self._disk}")
         subprocess_params = {
             "stdin": subprocess.PIPE,
             "stdout": subprocess.PIPE,

@@ -208,7 +208,7 @@ use_repo(
     "score_qcc_x86_64_toolchain_pkg",
 )
 
-bazel_dep(name = "score_rules_imagefs", version = "0.0.3", dev_dependency = True)
+bazel_dep(name = "score_rules_imagefs", version = "0.1.0", dev_dependency = True)
 
 imagefs = use_extension("@score_rules_imagefs//extensions:imagefs.bzl", "imagefs", dev_dependency = True)
 imagefs.toolchain(
@@ -219,7 +219,13 @@ imagefs.toolchain(
     target_os = "qnx",
     type = "ifs",
 )
-use_repo(imagefs, "score_qnx_x86_64_ifs_toolchain")
+imagefs.toolchain(
+    name = "score_linux_x86_64_ext4_toolchain",
+    target_cpu = "x86_64",
+    target_os = "linux",
+    type = "ext4",
+)
+use_repo(imagefs, "score_linux_x86_64_ext4_toolchain", "score_qnx_x86_64_ifs_toolchain")
 
 ###############################################################################
 #

@@ -80,6 +80,13 @@ def pytest_addoption(parser):
         help="Path to a QEMU disk image (qcow2, wic, or img). "
         "An ephemeral overlay is created so the original image is not modified.",
     )
+    parser.addoption(
+        "--qemu-disk",
+        action="store",
+        default=None,
+        help="Path to an additional disk image to attach to the target as a second block device. "
+        "A qcow2 overlay is created so the original image is not modified.",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -96,6 +103,7 @@ def config(request):
     qemu_kernel = request.config.getoption("qemu_kernel")
     qemu_image = request.config.getoption("qemu_image")
     rootfs = request.config.getoption("qemu_rootfs")
+    disk = request.config.getoption("qemu_disk")
 
     if qemu_image:
         logger.warning(
@@ -108,6 +116,7 @@ def config(request):
         qemu_config=load_configuration(qemu_config),
         qemu_kernel=qemu_kernel,
         qemu_rootfs=rootfs,
+        qemu_disk=disk,
     )
 
 
@@ -115,14 +124,18 @@ def config(request):
 def target_init(config, request, dlt):
     logger.info(f"Starting tests on host: {socket.gethostname()}")
     overlay_path = None
-    if config.qemu_rootfs:
-        overlay_path = _create_overlay(os.path.abspath(config.qemu_rootfs))
+    disk_overlay_path = None
     try:
+        if config.qemu_rootfs:
+            overlay_path = _create_overlay(os.path.abspath(config.qemu_rootfs))
+        if config.qemu_disk:
+            disk_overlay_path = _create_overlay(os.path.abspath(config.qemu_disk))
         with qemu_target(
             Bunch(
                 qemu_config=config.qemu_config,
                 qemu_kernel=config.qemu_kernel,
                 qemu_rootfs=overlay_path,
+                qemu_disk=disk_overlay_path,
             )
         ) as qemu:
             pre_tests_phase(qemu)
@@ -130,3 +143,5 @@ def target_init(config, request, dlt):
     finally:
         if overlay_path and os.path.exists(overlay_path):
             os.unlink(overlay_path)
+        if disk_overlay_path and os.path.exists(disk_overlay_path):
+            os.unlink(disk_overlay_path)

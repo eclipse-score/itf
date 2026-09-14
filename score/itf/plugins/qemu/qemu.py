@@ -25,6 +25,9 @@ _SUPPORTED_MACHINES = {
         "network_device": "virtio-net-pci",
         "machine": "pc",
         "block_device": "virtio-blk-pci",
+        # virtio-blk-pci is probed by the guest in the same order the devices are
+        # specified on the command line.
+        "block_device_order": "ascending",
     },
     "virt-aarch64": {
         "architecture": "aarch64",
@@ -32,6 +35,9 @@ _SUPPORTED_MACHINES = {
         "network_device": "virtio-net-device",
         "machine": "virt,virtualization=true,gic-version=3",
         "block_device": "virtio-blk-device",
+        # virtio-blk-device (virtio-mmio) is probed by the guest in the reverse order
+        # the devices are specified on the command line.
+        "block_device_order": "descending",
     },
 }
 
@@ -55,6 +61,7 @@ class Qemu:
         port_forwarding,
         rootfs,
         kernel_cmdline,
+        disk,
     ):
         """Create a QEMU instance with the specified parameters.
 
@@ -67,6 +74,7 @@ class Qemu:
         :param list port_forwarding: List of port forwarding configurations.
         :param str rootfs: Optional path to a qcow2 disk image.
         :param str kernel_cmdline: Optional kernel command line string.
+        :param str disk: Optional path to an additional qcow2 disk image.
         """
         if machine not in _SUPPORTED_MACHINES:
             raise ValueError("machine must be one of: " + ", ".join(sorted(_SUPPORTED_MACHINES)))
@@ -78,6 +86,7 @@ class Qemu:
         self.__port_forwarding = port_forwarding
         self.__rootfs = rootfs
         self.__kernel_cmdline = kernel_cmdline
+        self.__disk = disk
 
         self.__check_qemu_is_installed()
 
@@ -147,10 +156,10 @@ class Qemu:
             + self.__network_devices_args()
             + self.__port_forwarding_args()
             + self.__kernel_args()
-            + self.__rootfs_args()
+            + self.__disks_args()
         )
 
-    def __kernel_args(self):
+    def __kernel_args(self) -> list[str]:
         if not self.__path_to_kernel_image:
             return []
         args = ["-kernel", self.__path_to_kernel_image]
@@ -158,14 +167,25 @@ class Qemu:
             args.extend(["-append", self.__kernel_cmdline])
         return args
 
-    def __rootfs_args(self):
-        if not self.__rootfs:
+    def __disks_args(self) -> list[str]:
+        # Order the disks so that, regardless of the guest's probing order, the rootfs
+        # always ends up as the first block device (/dev/vda) in the guest.
+        disks = [self.__rootfs, self.__disk]
+        if self.__arch_config["block_device_order"] == "descending":
+            disks = list(reversed(disks))
+        args = []
+        for id, disk in enumerate(disks):
+            args += self.__disk_args(disk, id)
+        return args
+
+    def __disk_args(self, disk: str, id: int) -> list[str]:
+        if not disk:
             return []
         return [
             "-device",
-            f"{self.__arch_config['block_device']},drive=vd0",
+            f"{self.__arch_config['block_device']},drive=vd{id}",
             "-drive",
-            f"if=none,format=qcow2,file={self.__rootfs},id=vd0",
+            f"if=none,format=qcow2,file={disk},id=vd{id}",
         ]
 
     def __network_devices_args(self):
