@@ -27,6 +27,7 @@ py_library(
     srcs = [
         "__init__.py",
         "checks.py",
+        "image_format.py",
         "qemu.py",
         "qemu_process.py",
         "qemu_target.py",

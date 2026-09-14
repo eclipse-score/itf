@@ -20,18 +20,37 @@ logger = logging.getLogger(__name__)
 
 
 class QemuProcess:
-    def __init__(self, path_to_qemu_image, available_ram, available_cores, network_adapters=[], port_forwarding=[]):
-        self._path_to_qemu_image = path_to_qemu_image
+    def __init__(
+        self,
+        path_to_qemu_kernel_image,
+        available_ram,
+        available_cores,
+        network_adapters,
+        port_forwarding,
+        machine,
+        rootfs,
+        kernel_cmdline,
+        disk,
+    ):
+        self._path_to_qemu_kernel_image = path_to_qemu_kernel_image
         self._available_ram = available_ram
         self._available_cores = available_cores
         self._network_adapters = network_adapters
         self._port_forwarding = port_forwarding
+        self._machine = machine
+        self._rootfs = rootfs
+        self._kernel_cmdline = kernel_cmdline
+        self._disk = disk
         self._qemu = Qemu(
-            self._path_to_qemu_image,
+            self._path_to_qemu_kernel_image,
             self._available_ram,
             self._available_cores,
             network_adapters=self._network_adapters,
             port_forwarding=self._port_forwarding,
+            machine=self._machine,
+            rootfs=self._rootfs,
+            kernel_cmdline=self._kernel_cmdline,
+            disk=self._disk,
         )
         self._console = None
 
@@ -43,7 +62,14 @@ class QemuProcess:
 
     def start(self):
         logger.info("Starting Qemu...")
-        logger.info(f"Using QEMU image: {self._path_to_qemu_image}")
+        if self._path_to_qemu_kernel_image is not None:
+            logger.info(f"Using QEMU kernel image: {self._path_to_qemu_kernel_image}")
+        if self._kernel_cmdline is not None:
+            logger.info(f"Using QEMU kernel command line: {self._kernel_cmdline}")
+        if self._rootfs is not None:
+            logger.info(f"Using QEMU root filesystem image: {self._rootfs}")
+        if self._disk is not None:
+            logger.info(f"Using QEMU additional disk image: {self._disk}")
         subprocess_params = {
             "stdin": subprocess.PIPE,
             "stdout": subprocess.PIPE,

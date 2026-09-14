@@ -51,6 +51,7 @@ py_itf_test(
     plugins = [
         "//score/itf/plugins:docker_plugin",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -67,6 +68,7 @@ py_itf_test(
         "//score/itf/plugins:dlt_plugin",
         "//score/itf/plugins:docker_plugin",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -83,6 +85,7 @@ py_itf_test(
         "//score/itf/plugins:dlt_plugin",
         "//score/itf/plugins:docker_plugin",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -97,6 +100,7 @@ py_itf_test(
         "//score/itf/plugins:docker_plugin",
     ],
     pytest_config = "//:pyproject.toml",  # Optional same content as default pytest.ini
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -203,6 +207,69 @@ py_itf_test(
     ],
     tags = [
         "manual",
+    ],
+)
+
+py_itf_test(
+    name = "test_ebclfsa",
+    srcs = [
+        "test_ping.py",
+        "test_qemu_disk.py",
+    ],
+    args = [
+        "--qemu-config=$(location @os_images//ebclfsa_aarch64:qemu_config)",
+        "--qemu-kernel=$(location @os_images//ebclfsa_aarch64:kernel)",
+        "--qemu-rootfs=$(location @os_images//ebclfsa_aarch64:image)",
+        "--qemu-disk=$(location //test/resources:qemu_disk_image)",
+    ],
+    data = [
+        "//test/resources:qemu_disk_image",
+        "@os_images//ebclfsa_aarch64:image",
+        "@os_images//ebclfsa_aarch64:kernel",
+        "@os_images//ebclfsa_aarch64:qemu_config",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+py_itf_test(
+    name = "test_ubuntu",
+    srcs = [
+        "test_ping.py",
+        "test_qemu_disk.py",
+    ],
+    args = [
+        "--qemu-config=$(location @os_images//ubuntu_x86_64:qemu_config)",
+        "--qemu-rootfs=$(location @os_images//ubuntu_x86_64:image)",
+        "--qemu-disk=$(location //test/resources:qemu_disk_image)",
+    ],
+    data = [
+        "//test/resources:qemu_disk_image",
+        "@os_images//ubuntu_x86_64:image",
+        "@os_images//ubuntu_x86_64:qemu_config",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+test_suite(
+    name = "linux_qemu_tests",
+    tags = [
+        "manual",
+    ],
+    tests = [
+        ":test_ebclfsa",
+        ":test_ubuntu",
     ],
 )
 
