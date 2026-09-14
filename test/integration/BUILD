@@ -13,6 +13,25 @@
 load("//:defs.bzl", "py_itf_test")
 
 py_itf_test(
+    name = "test_attribute_plugin",
+    srcs = ["test_attribute_plugin.py"],
+    deps = ["//score/itf/plugins:attribute_plugin"],
+)
+
+py_itf_test(
+    name = "test_qemu_config_schema",
+    srcs = ["test_qemu_config_schema.py"],
+    data = [
+        "//test/resources:qemu_bridge_config",
+        "//test/resources:qemu_port_forwarding_config",
+    ],
+    deps = [
+        "//score/itf/plugins/qemu",
+        "@rules_python//python/runfiles",
+    ],
+)
+
+py_itf_test(
     name = "test_rules_are_working_correctly",
     srcs = [
         "conftest.py",
@@ -32,6 +51,7 @@ py_itf_test(
     plugins = [
         "//score/itf/plugins:docker_plugin",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -48,6 +68,7 @@ py_itf_test(
         "//score/itf/plugins:dlt_plugin",
         "//score/itf/plugins:docker_plugin",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -64,6 +85,7 @@ py_itf_test(
         "//score/itf/plugins:dlt_plugin",
         "//score/itf/plugins:docker_plugin",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -78,6 +100,7 @@ py_itf_test(
         "//score/itf/plugins:docker_plugin",
     ],
     pytest_config = "//:pyproject.toml",  # Optional same content as default pytest.ini
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 py_itf_test(
@@ -187,6 +210,69 @@ py_itf_test(
     ],
 )
 
+py_itf_test(
+    name = "test_ebclfsa",
+    srcs = [
+        "test_ping.py",
+        "test_qemu_disk.py",
+    ],
+    args = [
+        "--qemu-config=$(location @os_images//ebclfsa_aarch64:qemu_config)",
+        "--qemu-kernel=$(location @os_images//ebclfsa_aarch64:kernel)",
+        "--qemu-rootfs=$(location @os_images//ebclfsa_aarch64:image)",
+        "--qemu-disk=$(location //test/resources:qemu_disk_image)",
+    ],
+    data = [
+        "//test/resources:qemu_disk_image",
+        "@os_images//ebclfsa_aarch64:image",
+        "@os_images//ebclfsa_aarch64:kernel",
+        "@os_images//ebclfsa_aarch64:qemu_config",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+py_itf_test(
+    name = "test_ubuntu",
+    srcs = [
+        "test_ping.py",
+        "test_qemu_disk.py",
+    ],
+    args = [
+        "--qemu-config=$(location @os_images//ubuntu_x86_64:qemu_config)",
+        "--qemu-rootfs=$(location @os_images//ubuntu_x86_64:image)",
+        "--qemu-disk=$(location //test/resources:qemu_disk_image)",
+    ],
+    data = [
+        "//test/resources:qemu_disk_image",
+        "@os_images//ubuntu_x86_64:image",
+        "@os_images//ubuntu_x86_64:qemu_config",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+test_suite(
+    name = "linux_qemu_tests",
+    tags = [
+        "manual",
+    ],
+    tests = [
+        ":test_ebclfsa",
+        ":test_ubuntu",
+    ],
+)
+
 test_suite(
     name = "qnx_qemu_tests",
     tags = [
@@ -197,37 +283,5 @@ test_suite(
         ":test_qemu_bridge_network_no_dlt",
         ":test_qemu_port_forwarding",
         ":test_ssh_configurable",
-    ],
-)
-
-py_itf_test(
-    name = "test_ping",
-    srcs = [
-        "test_ping.py",
-    ],
-)
-
-py_itf_test(
-    name = "test_qemu_config_schema",
-    srcs = [
-        "test_qemu_config_schema.py",
-    ],
-    data = [
-        "//test/resources:qemu_bridge_config",
-        "//test/resources:qemu_port_forwarding_config",
-    ],
-    deps = [
-        "//score/itf/plugins/qemu",
-        "@rules_python//python/runfiles",
-    ],
-)
-
-py_itf_test(
-    name = "test_attribute_plugin",
-    srcs = [
-        "test_attribute_plugin.py",
-    ],
-    plugins = [
-        "//score/itf/plugins:attribute_plugin",
     ],
 )

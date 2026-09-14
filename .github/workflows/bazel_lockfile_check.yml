@@ -10,10 +10,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"""ITF public Bazel interface"""
 
-load("@score_itf//bazel:py_itf_test.bzl", local_py_itf_test = "py_itf_test")
-load("@score_itf//bazel:py_itf_unittest.bzl", local_py_itf_unittest = "py_itf_unittest")
+name: Bazel lockfile check
 
-py_itf_test = local_py_itf_test
-py_itf_unittest = local_py_itf_unittest
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+
+jobs:
+
+  check_bazel_lockfile:
+    uses: eclipse-score/cicd-workflows/.github/workflows/bzlmod-lock-check.yml@65257a460783684ba9310d5cdd6001bceb2343d7
+    permissions:
+      contents: read

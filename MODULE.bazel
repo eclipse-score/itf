@@ -10,11 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-module(
-    name = "score_itf",
-    version = "0.2.0",
-    compatibility_level = 0,
-)
+module(name = "score_itf")
 
 ###############################################################################
 #
@@ -34,6 +30,7 @@ python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.defaults(python_version = DEFAULT_PYTHON_VERSION)
 
 [python.toolchain(
+    configure_coverage_tool = True,
     is_default = version == DEFAULT_PYTHON_VERSION,
     python_version = version,
 ) for version in PYTHON_VERSIONS]
@@ -131,7 +128,7 @@ bazel_dep(name = "platforms", version = "1.0.0")
 # Documentation dependencies
 #
 ###############################################################################
-bazel_dep(name = "score_docs_as_code", version = "4.0.3")
+bazel_dep(name = "score_docs_as_code", version = "6.0.0")
 
 ################################################################################
 #
@@ -182,6 +179,7 @@ http_archive(
         "//third_party/dlt/custom:0001-Fix-offline-log-storage-global-init.patch",
         "//third_party/dlt/custom:0002-Add-mutlicast-config.patch",
         "//third_party/dlt/custom:0003-Add-force-flush-for-dlt-receive.patch",
+        "//third_party/dlt/custom:0004-fix-enum-int-mismatch.patch",
     ],
     sha256 = "1944197123c910d8926b5d2bc4e9eb436c1a2768f333834fae7b7386bc53eb97",
     strip_prefix = "dlt-daemon-%s" % DLT_DAEMON_CUSTOM_SHA,
@@ -210,7 +208,7 @@ use_repo(
     "score_qcc_x86_64_toolchain_pkg",
 )
 
-bazel_dep(name = "score_rules_imagefs", version = "0.0.3", dev_dependency = True)
+bazel_dep(name = "score_rules_imagefs", version = "0.1.0", dev_dependency = True)
 
 imagefs = use_extension("@score_rules_imagefs//extensions:imagefs.bzl", "imagefs", dev_dependency = True)
 imagefs.toolchain(
@@ -221,4 +219,22 @@ imagefs.toolchain(
     target_os = "qnx",
     type = "ifs",
 )
-use_repo(imagefs, "score_qnx_x86_64_ifs_toolchain")
+imagefs.toolchain(
+    name = "score_linux_x86_64_ext4_toolchain",
+    target_cpu = "x86_64",
+    target_os = "linux",
+    type = "ext4",
+)
+use_repo(imagefs, "score_linux_x86_64_ext4_toolchain", "score_qnx_x86_64_ifs_toolchain")
+
+###############################################################################
+#
+# Linux QEMU images from the dedicated os_images repository
+#
+###############################################################################
+bazel_dep(name = "os_images", version = "0.0.0", dev_dependency = True)
+git_override(
+    module_name = "os_images",
+    commit = "a024787e2ddb4ceed6ac6fe63b3847ab937c0b5d",
+    remote = "https://github.com/eclipse-score/os_images.git",
+)

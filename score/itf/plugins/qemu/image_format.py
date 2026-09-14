@@ -10,10 +10,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"""ITF public Bazel interface"""
 
-load("@score_itf//bazel:py_itf_test.bzl", local_py_itf_test = "py_itf_test")
-load("@score_itf//bazel:py_itf_unittest.bzl", local_py_itf_unittest = "py_itf_unittest")
+import json
+import subprocess
 
-py_itf_test = local_py_itf_test
-py_itf_unittest = local_py_itf_unittest
+
+def get_image_format(path_to_image: str) -> str:
+    """Determine the disk image format by probing image metadata."""
+    result = subprocess.run(
+        ["qemu-img", "info", "--output=json", path_to_image],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(result.stdout)["format"]

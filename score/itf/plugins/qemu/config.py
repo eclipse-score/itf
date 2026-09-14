@@ -26,6 +26,8 @@ Required top-level keys:
     - `qemu_ram_size` (string like "512M" or "1G")
 
 Optional top-level keys:
+        - `qemu_machine` (`pc-x86_64` or `virt-aarch64`, default `pc-x86_64`)
+        - `qemu_kernel_cmdline` (string)
     - `port_forwarding` (array of objects with `host_port` and `guest_port`)
 
 Each entry in `networks` must contain:
@@ -45,7 +47,9 @@ Example: bridge/tap networking
             ],
             "ssh_port": 22,
             "qemu_num_cores": 2,
-            "qemu_ram_size": "1G"
+            "qemu_ram_size": "1G",
+            "qemu_machine": "virt-aarch64",
+            "qemu_kernel_cmdline": "root=/dev/vda1 sdk_enable lisa_syscall_whitelist=2026 rw sharedmem.enable_sharedmem=0 init=/usr/bin/ebclfsa-cflinit"
         }
 
 Example: port-forwarding networking
@@ -73,6 +77,7 @@ Example: port-forwarding networking
 import json
 import logging
 import ipaddress
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
@@ -116,6 +121,8 @@ class QemuConfigModel(BaseModel):
     ssh_port: int = Field(ge=1, le=65535)
     qemu_num_cores: int = Field(ge=1)
     qemu_ram_size: str = Field(pattern=_RAM_SIZE_PATTERN)
+    qemu_machine: Literal["pc-x86_64", "virt-aarch64"] = "pc-x86_64"
+    qemu_kernel_cmdline: str | None = None
     port_forwarding: list[PortForwarding] = Field(default_factory=list)
 
 

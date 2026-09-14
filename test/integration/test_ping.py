@@ -10,10 +10,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"""ITF public Bazel interface"""
 
-load("@score_itf//bazel:py_itf_test.bzl", local_py_itf_test = "py_itf_test")
-load("@score_itf//bazel:py_itf_unittest.bzl", local_py_itf_unittest = "py_itf_unittest")
 
-py_itf_test = local_py_itf_test
-py_itf_unittest = local_py_itf_unittest
+def test_ping_from_host_to_target(target):
+    assert target.ping(timeout=10)
+
+
+def test_ping_from_target_to_host(target):
+    cmd = """
+        gw=$(ip route | awk '/default/ {print $3; exit}')
+        if [ -z \"$gw\" ]; then
+            echo \"No default gateway found\" >&2
+            exit 1
+        fi
+        ping -c 1 -W 5 \"$gw\"
+    """
+    exit_code, _ = target.execute(cmd)
+    assert exit_code == 0

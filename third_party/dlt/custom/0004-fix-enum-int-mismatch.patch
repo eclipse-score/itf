@@ -1,0 +1,72 @@
+From 972fbd3dd1e1f4cdaccdb181373932f1b68fc23b Mon Sep 17 00:00:00 2001
+From: Leonardo Rossetti <lrossett@redhat.com>
+Date: Tue, 30 Jun 2026 04:35:02 -0300
+Subject: [PATCH 4/4] fix enum-int-mismatch
+
+Signed-off-by: Leonardo Rossetti <lrossett@redhat.com>
+---
+ src/lib/dlt_client.c    | 4 ++--
+ src/shared/dlt_common.c | 2 +-
+ src/shared/dlt_shm.c    | 4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/lib/dlt_client.c b/src/lib/dlt_client.c
+index 720aa27..7013ccf 100644
+--- a/src/lib/dlt_client.c
++++ b/src/lib/dlt_client.c
+@@ -107,7 +107,7 @@ void dlt_client_register_message_callback(int (*registerd_callback)(DltMessage*
+     message_callback_function = registerd_callback;
+ }
+ 
+-DltReturnValue dlt_client_init_port(DltClient* client, int port, int verbose)
++int dlt_client_init_port(DltClient* client, int port, int verbose)
+ {
+     if (verbose && port != DLT_DAEMON_TCP_PORT)
+     {
+@@ -792,7 +792,7 @@ DltReturnValue dlt_client_send_default_log_level(DltClient* client, uint8_t defa
+     return DLT_RETURN_OK;
+ }
+ 
+-DltReturnValue dlt_client_send_all_log_level(DltClient* client, uint8_t LogLevel)
++int dlt_client_send_all_log_level(DltClient* client, uint8_t LogLevel)
+ {
+     DltServiceSetDefaultLogLevel* req;
+     uint8_t* payload;
+diff --git a/src/shared/dlt_common.c b/src/shared/dlt_common.c
+index 4b70300..322fdd6 100644
+--- a/src/shared/dlt_common.c
++++ b/src/shared/dlt_common.c
+@@ -2720,7 +2720,7 @@ DltReturnValue dlt_buffer_push(DltBuffer *buf,const unsigned char *data,unsigned
+     return dlt_buffer_push3(buf, data, size, 0, 0, 0, 0);
+ }
+ 
+-int dlt_buffer_push3(DltBuffer *buf, const unsigned char *data1, unsigned int size1, const unsigned char *data2, unsigned int size2, const unsigned char *data3, unsigned int size3)
++DltReturnValue dlt_buffer_push3(DltBuffer *buf, const unsigned char *data1, unsigned int size1, const unsigned char *data2, unsigned int size2, const unsigned char *data3, unsigned int size3)
+ {
+     int free_size;
+     int write, read, count;
+diff --git a/src/shared/dlt_shm.c b/src/shared/dlt_shm.c
+index 78e5951..700ffaa 100644
+--- a/src/shared/dlt_shm.c
++++ b/src/shared/dlt_shm.c
+@@ -96,7 +96,7 @@ void dlt_shm_pv(int id,int operation)
+     }
+ }
+ 
+-int dlt_shm_init_server(DltShm *buf,int key,int size) {
++DltReturnValue dlt_shm_init_server(DltShm *buf,int key,int size) {
+     struct shmid_ds shm_buf;
+     unsigned char *ptr;
+ 
+@@ -275,7 +275,7 @@ int dlt_shm_remove(DltShm *buf)
+     return ret;
+ }
+ 
+-DltReturnValue dlt_shm_free_server(DltShm *buf) {
++int dlt_shm_free_server(DltShm *buf) {
+ 
+     if(shmdt(buf->buffer.shm)) {
+         dlt_log(LOG_WARNING,"SHM: shmdt() failed");
+-- 
+2.54.0
+

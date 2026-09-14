@@ -1,1 +1,1 @@
-../../../test/test_docker.py
+../../../test/integration/test_docker.py

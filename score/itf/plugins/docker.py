@@ -342,7 +342,14 @@ def target_init(request, _docker_configuration):
     docker_image_bootstrap = request.config.getoption("docker_image_bootstrap")
     if docker_image_bootstrap:
         logger.info(f"Executing custom image bootstrap command: {docker_image_bootstrap}")
-        subprocess.run([docker_image_bootstrap], check=True)
+        result = subprocess.run([docker_image_bootstrap], capture_output=True, text=True)
+        if result.stdout:
+            logger.info(f"Bootstrap stdout: {result.stdout}")
+        if result.stderr:
+            logger.error(f"Bootstrap stderr: {result.stderr}")
+        if result.returncode != 0:
+            logger.error(f"Bootstrap failed with exit code {result.returncode}")
+            raise subprocess.CalledProcessError(result.returncode, docker_image_bootstrap)
 
     docker_image = request.config.getoption("docker_image")
     client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
