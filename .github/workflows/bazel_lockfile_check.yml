@@ -27,6 +27,6 @@ on:
 jobs:
 
   check_bazel_lockfile:
-    uses: eclipse-score/cicd-workflows/.github/workflows/bzlmod-lock-check.yml@65257a460783684ba9310d5cdd6001bceb2343d7
+    uses: eclipse-score/cicd-workflows/.github/workflows/bzlmod-lock-check.yml@8d80e8df150cae21d53cbc8031d0f970648f7a67 # v0.0.3
     permissions:
       contents: read
