@@ -220,47 +220,94 @@ class QemuTarget(Target):
             ssh_ctx.__exit__(None, None, None)
             raise
 
+    def _resolve_ssh_auth(
+        self, username: str, password: str | None = None, pkey_path: str | None = None
+    ) -> dict[str, str]:
+        """Identify the SSH authentication method defined by the user.
+
+        :param str username: SSH username.
+        :param str password: SSH password (optional)
+        :param str pkey_path: SSH private key path (optional)
+        :return: keyword arguments for :class:`~score.itf.core.com.ssh.Ssh`.
+        :rtype: dict
+        :raises ValueError: if no authentication method can be determined.
+        """
+        if not username:
+            raise ValueError("Missing or invalid SSH username value")
+
+        output = {"username": username}
+
+        if pkey_path:
+            output["pkey_path"] = pkey_path
+
+        if password is not None:
+            output["password"] = password
+
+        return output
+
     def ssh(
         self,
         timeout: int = 15,
         port: int = None,
         n_retries: int = 5,
         retry_interval: int = 1,
-        pkey_path: str = "",
-        username: str = "root",
-        password: str = "",
+        username: str | None = None,
+        password: str | None = None,
+        pkey_path: str | None = None,
         ext_ip: bool = False,
     ):
         """Create SSH connection to target.
+
+        Authentication defaults to the `ssh_auth` section of the configuration.
+        The ``pkey_path``, ``username`` and ``password`` arguments override the
+        configured values when provided (non-``None``).
 
         :param int timeout: Connection timeout in seconds. Default is 15 seconds.
         :param int port: SSH port, if None use default port from config.
         :param int n_retries: Number of retries to connect. Default is 5 retries.
         :param int retry_interval: Interval between retries in seconds. Default is 1 second.
-        :param str pkey_path: Path to private key file. If empty, password authentication is used.
-        :param str username: SSH username. Default is 'root'.
-        :param str password: SSH password.
+        :param str username: SSH username. Overrides the configured username.
+        :param str password: SSH password. Overrides the configured password.
+        :param str pkey_path: Path to private key file. Overrides the configured key.
         :param bool ext_ip: Use external IP address if True, otherwise use internal IP address.
         :return: Ssh connection object.
         :rtype: Ssh
         """
         ssh_ip = self._config.networks[0].ip_address
         ssh_port = port if port else self._config.ssh_port
+
+        ssh_auth = self._config.ssh_auth
+        ssh_username = username or ssh_auth.username
+        ssh_password = password if password is not None else ssh_auth.password  # accept empty string as a valid value
+        ssh_pkey_path = pkey_path or ssh_auth.pkey_path
+        ssh_auth_kwargs = self._resolve_ssh_auth(ssh_username, password=ssh_password, pkey_path=ssh_pkey_path)
+
         return Ssh(
             target_ip=ssh_ip,
             port=ssh_port,
             timeout=timeout,
             n_retries=n_retries,
             retry_interval=retry_interval,
-            pkey_path=pkey_path,
-            username=username,
-            password=password,
+            **ssh_auth_kwargs,
         )
 
-    def sftp(self, ssh_connection=None):
+    def sftp(
+        self,
+        ssh_connection=None,
+        username: str | None = None,
+        password: str | None = None,
+        pkey_path: str | None = None,
+    ):
         ssh_ip = self._config.networks[0].ip_address
         ssh_port = self._config.ssh_port
-        return Sftp(ssh_connection, ssh_ip, ssh_port)
+
+        ssh_auth = self._config.ssh_auth
+        ssh_username = username or ssh_auth.username
+        ssh_password = password if password is not None else ssh_auth.password  # accept empty string as a valid value
+        ssh_pkey_path = pkey_path or ssh_auth.pkey_path
+        ssh_auth_kwargs = self._resolve_ssh_auth(ssh_username, password=ssh_password, pkey_path=ssh_pkey_path)
+
+        return Sftp(ssh_connection, ssh_ip, ssh_port, **ssh_auth_kwargs)
 
     def ping(self, timeout, wait_ms_precision=None):
         return ping(

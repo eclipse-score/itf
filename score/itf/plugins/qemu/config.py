@@ -29,6 +29,8 @@ Optional top-level keys:
         - `qemu_machine` (`pc-x86_64` or `virt-aarch64`, default `pc-x86_64`)
         - `qemu_kernel_cmdline` (string)
     - `port_forwarding` (array of objects with `host_port` and `guest_port`)
+    - `ssh_auth` (object selecting the SSH authentication method; see `SshAuth`.
+      If omitted, login defaults to user `root` with an empty password.)
 
 Each entry in `networks` must contain:
     - `name` (string)
@@ -72,6 +74,22 @@ Example: port-forwarding networking
                 }
             ]
         }
+
+Example: Custom SSH Authentication (username + password)
+    {
+        "ssh_auth": {
+            "username": "root",
+            "password": "password"
+        }
+    }
+
+Example: Custom SSH Authentication (username + SSH private key)
+    {
+        "ssh_auth": {
+            "username": "root",
+            "pkey_path": "/path/to/some/key"
+        }
+    }
 """
 
 import json
@@ -107,6 +125,16 @@ class Network(BaseModel):
         return value
 
 
+class SshAuth(BaseModel):
+    """SSH Authentication Configuration"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    username: str | None = "root"
+    password: str | None = None
+    pkey_path: str | None = None
+
+
 class PortForwarding(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -124,6 +152,7 @@ class QemuConfigModel(BaseModel):
     qemu_machine: Literal["pc-x86_64", "virt-aarch64"] = "pc-x86_64"
     qemu_kernel_cmdline: str | None = None
     port_forwarding: list[PortForwarding] = Field(default_factory=list)
+    ssh_auth: SshAuth = Field(default_factory=SshAuth)
 
 
 def load_configuration(config_file: str) -> QemuConfigModel:

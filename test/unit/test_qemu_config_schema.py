@@ -13,7 +13,7 @@
 
 import pytest
 
-from score.itf.plugins.qemu.config import QemuConfigModel
+from score.itf.plugins.qemu.config import QemuConfigModel, SshAuth
 
 
 _VALID_BRIDGE_CONFIG = {
@@ -102,4 +102,33 @@ def test_invalid_ram_size_is_rejected():
 def test_unknown_keys_are_rejected():
     config = {**_VALID_BRIDGE_CONFIG, "unknown_key": "value"}
     with pytest.raises(Exception):
+        QemuConfigModel.model_validate(config)
+
+
+def test_default_ssh_auth_is_empty_root_password():
+    model = QemuConfigModel.model_validate(_VALID_BRIDGE_CONFIG)
+    assert model.ssh_auth.username == "root", "failed to validate model's ssh user"
+    assert model.ssh_auth.password is None, "failed to validate the model's ssh password as empty"
+    assert model.ssh_auth.pkey_path is None, "failed to validate the model's ssh pkey_path as empty"
+
+
+def test_ssh_auth_user_and_password_is_accepted():
+    config = {**_VALID_BRIDGE_CONFIG, "ssh_auth": {"username": "qnxuser", "password": "qnxuser"}}
+    model = QemuConfigModel.model_validate(config)
+    assert model.ssh_auth.username == "qnxuser", "failed to validate the model's ssh username"
+    assert model.ssh_auth.password == "qnxuser", "failed to validate the model's ssh password"
+
+
+def test_ssh_auth_key_is_accepted():
+    config = {
+        **_VALID_BRIDGE_CONFIG,
+        "ssh_auth": {"username": "root", "pkey_path": "/home/user/.ssh/id_ed25519"},
+    }
+    model = QemuConfigModel.model_validate(config)
+    assert model.ssh_auth.pkey_path == "/home/user/.ssh/id_ed25519", "failed to validate the model's ssh pkey_path"
+
+
+def test_ssh_auth_unknown_keys_are_rejected():
+    config = {**_VALID_BRIDGE_CONFIG, "ssh_auth": {"ldap": "ldap://localhost"}}
+    with pytest.raises(ValueError):
         QemuConfigModel.model_validate(config)
