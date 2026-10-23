@@ -68,7 +68,7 @@ copyright_checker(
         ".github",
         "bazel",
         "examples",
-        "itf",
+        "score",
         "scripts",
         "test",
         "third_party",
