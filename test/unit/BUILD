@@ -39,11 +39,19 @@ py_itf_unittest(
     deps = ["//score/itf/plugins/qemu"],
 )
 
+py_itf_unittest(
+    name = "test_qemu_auth",
+    srcs = ["test_qemu_auth.py"],
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = ["//score/itf/plugins/qemu"],
+)
+
 test_suite(
     name = "unit",
     tests = [
         ":test_ping",
         ":test_qemu",
+        ":test_qemu_auth",
         ":test_qemu_config_schema",
         ":test_qemu_image_format",
     ],

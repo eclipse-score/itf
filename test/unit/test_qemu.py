@@ -15,7 +15,9 @@ from types import SimpleNamespace
 
 import pytest
 
+from score.itf.plugins.qemu.config import SshAuth
 from score.itf.plugins.qemu.qemu import Qemu
+from score.itf.plugins.qemu.qemu_target import QemuTarget
 
 
 def _build_qemu(
