@@ -126,6 +126,11 @@ class QemuTarget(Target):
     def restart(self) -> None:
         self.restart_process()
 
+    @property
+    def guest_panicked(self) -> bool:
+        """True if the guest kernel panicked since the last (re)start of QEMU."""
+        return bool(self._process and self._process.guest_panicked)
+
     def execute(self, command: str):
         timeout = 30
         max_exec_time = 180
