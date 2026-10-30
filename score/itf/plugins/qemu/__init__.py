@@ -54,7 +54,30 @@ def _create_overlay(base_image: str) -> str:
     return overlay_path
 
 
+def _boot_until_ready(target, max_attempts: int):
+    """Run the pre-test checks, rebooting the guest if its kernel panicked while booting.
+
+    Only guest kernel panics are retried. Any other failure is raised immediately.
+    """
+    for attempt in range(1, max_attempts + 1):
+        try:
+            pre_tests_phase(target)
+            return
+        except Exception:
+            if not target.guest_panicked or attempt == max_attempts:
+                raise
+            logger.warning(f"Guest kernel panicked during boot (attempt {attempt}/{max_attempts}), restarting QEMU")
+            target.restart()
+
+
 def pytest_addoption(parser):
+    parser.addoption(
+        "--qemu-boot-attempts",
+        action="store",
+        type=int,
+        default=3,
+        help="Maximum number of times the guest is booted if its kernel panics during boot.",
+    )
     parser.addoption(
         "--qemu-config",
         action="store",
@@ -138,7 +161,7 @@ def target_init(config, request, dlt):
                 qemu_disk=disk_overlay_path,
             )
         ) as qemu:
-            pre_tests_phase(qemu)
+            _boot_until_ready(qemu, request.config.getoption("qemu_boot_attempts"))
             yield qemu
     finally:
         if overlay_path and os.path.exists(overlay_path):

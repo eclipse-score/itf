@@ -12,11 +12,16 @@
 # *******************************************************************************
 import logging
 import subprocess
+import threading
 
 from score.itf.core.process.console import PipeConsole
 from score.itf.plugins.qemu.qemu import Qemu
 
 logger = logging.getLogger(__name__)
+
+# Printed by the QNX kernel on a fatal kernel error, e.g.
+# "Shutdown[1] S/C/F=5/4/3 ...". The guest does not recover afterwards.
+GUEST_PANIC_MARKER = "Shutdown["
 
 
 class QemuProcess:
@@ -53,6 +58,7 @@ class QemuProcess:
             disk=self._disk,
         )
         self._console = None
+        self._guest_panicked = threading.Event()
 
     def __enter__(self):
         return self.start()
@@ -76,9 +82,27 @@ class QemuProcess:
             "stderr": subprocess.STDOUT,
         }
         # pylint: disable=too-many-function-args
+        self._guest_panicked.clear()
         qemu_subprocess = self._qemu.start(subprocess_params)
-        self._console = PipeConsole("QEMU", qemu_subprocess)
+        self._console = PipeConsole(
+            "QEMU",
+            qemu_subprocess,
+            expr_cbks=[(GUEST_PANIC_MARKER, lambda: self._on_guest_panic(qemu_subprocess))],
+        )
         return self
+
+    def _on_guest_panic(self, qemu_subprocess):
+        logger.error("Guest kernel panic detected on the serial console")
+        self._guest_panicked.set()
+        # The halted guest never recovers. Terminating QEMU makes any pending SSH
+        # connection fail immediately instead of waiting for a banner that never arrives.
+        if qemu_subprocess.poll() is None:
+            qemu_subprocess.terminate()
+
+    @property
+    def guest_panicked(self) -> bool:
+        """True if the guest kernel reported a panic since the last (re)start."""
+        return self._guest_panicked.is_set()
 
     def stop(self):
         logger.info("Stopping Qemu...")
