@@ -44,6 +44,7 @@ py_itf_test(
     srcs = [
         "test_async_exec.py",
         "test_docker.py",
+        "test_exec_output_not_lost.py",
     ],
     args = [
         "--docker-image=ubuntu:24.04",

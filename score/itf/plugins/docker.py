@@ -15,11 +15,13 @@ import subprocess
 import io
 import os
 import shlex
+import struct
 import tarfile
 import threading
 import time
 import docker as pypi_docker
 import pytest
+from docker.utils.socket import consume_socket_output, demux_adaptor
 
 from score.itf.core.com.ssh import Ssh
 from score.itf.core.process.async_process import AsyncProcess
@@ -62,6 +64,61 @@ def pytest_addoption(parser):
         help="Directory to write extracted coverage files. "
         "Defaults to $TEST_UNDECLARED_OUTPUTS_DIR/sysroot or /tmp/sysroot.",
     )
+
+
+_STDOUT = 1
+_FRAME_HEADER_SIZE = 8
+
+
+def _read_frames(buffered_reader, tty):
+    """Yield ``(stream_id, data)`` frames from the exec response body.
+
+    docker-py reads exec output from the raw socket, but http.client has already
+    pulled everything that arrived together with the HTTP response headers into
+    its buffered reader. Output produced right after the exec started (e.g. the
+    first line a command prints) is therefore silently dropped whenever the client
+    reads the reply late. Reading through the buffered reader keeps that data.
+    """
+    if tty:
+        while True:
+            data = buffered_reader.read1(65536)
+            if not data:
+                return
+            yield _STDOUT, data
+    while True:
+        header = buffered_reader.read(_FRAME_HEADER_SIZE)
+        if len(header) < _FRAME_HEADER_SIZE:
+            return
+        stream_id, size = struct.unpack(">BxxxL", header)
+        data = buffered_reader.read(size) if size else b""
+        if data:
+            yield stream_id, data
+        if len(data) < size:
+            return
+
+
+class _ExecAPIClient(pypi_docker.APIClient):
+    """APIClient that does not lose early exec output (see :func:`_read_frames`)."""
+
+    def _read_from_socket(self, response, stream, tty=True, demux=False):
+        sock = self._get_raw_response_socket(response)
+        self._disable_socket_timeout(sock)
+        frames = _read_frames(response.raw._fp.fp, tty)
+        if demux:
+            frames = (demux_adaptor(*frame) for frame in frames)
+        else:
+            frames = (data for (_, data) in frames)
+        if stream:
+            return frames
+        try:
+            return consume_socket_output(frames, demux=demux)
+        finally:
+            response.close()
+
+
+class _ExecDockerClient(pypi_docker.DockerClient):
+    def __init__(self, *args, **kwargs):  # pylint: disable=super-init-not-called
+        self.api = _ExecAPIClient(*args, **kwargs)
 
 
 class DockerAsyncProcess(AsyncProcess):
@@ -138,7 +195,7 @@ class DockerTarget(Target):
         super().__init__()
         self.container = container
         self.network = network
-        self._client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
+        self._client = _ExecDockerClient.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
 
     def __getattr__(self, name):
         return getattr(self.container, name)
@@ -352,7 +409,7 @@ def target_init(request, _docker_configuration):
             raise subprocess.CalledProcessError(result.returncode, docker_image_bootstrap)
 
     docker_image = request.config.getoption("docker_image")
-    client = pypi_docker.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
+    client = _ExecDockerClient.from_env(timeout=DOCKER_CLIENT_TIMEOUT)
 
     known_keys = {"command", "init", "environment", "volumes", "shm_size", "detach", "auto_remove"}
     reserved_overrides = {k for k in ("detach", "auto_remove") if k in _docker_configuration}
