@@ -40,43 +40,40 @@ class FakeTarget:
 
 
 @pytest.fixture
-def target(monkeypatch):
+def target():
     def make(panics_on_attempts):
-        fake = FakeTarget(panics_on_attempts)
-        monkeypatch.setattr(qemu_plugin, "pre_tests_phase", lambda _target: fake.run_checks())
-        return fake
+        return FakeTarget(panics_on_attempts)
 
     return make
 
 
 def test_no_restart_when_boot_succeeds(target):
     fake = target(panics_on_attempts=[])
-    qemu_plugin._boot_until_ready(fake, max_attempts=3)
+    qemu_plugin._boot_until_ready(fake, max_attempts=3, run_checks=lambda t: t.run_checks())
     assert fake.restarts == 0
 
 
 def test_restarts_after_guest_panic(target):
     fake = target(panics_on_attempts=[1, 2])
-    qemu_plugin._boot_until_ready(fake, max_attempts=3)
+    qemu_plugin._boot_until_ready(fake, max_attempts=3, run_checks=lambda t: t.run_checks())
     assert fake.restarts == 2
 
 
 def test_raises_when_every_attempt_panics(target):
     fake = target(panics_on_attempts=[1, 2, 3])
     with pytest.raises(AssertionError):
-        qemu_plugin._boot_until_ready(fake, max_attempts=3)
+        qemu_plugin._boot_until_ready(fake, max_attempts=3, run_checks=lambda t: t.run_checks())
     assert fake.restarts == 2
 
 
-def test_failure_without_panic_is_not_retried(monkeypatch):
+def test_failure_without_panic_is_not_retried():
     fake = FakeTarget(panics_on_attempts=[])
 
     def failing_checks(_target):
         raise AssertionError("not a panic")
 
-    monkeypatch.setattr(qemu_plugin, "pre_tests_phase", failing_checks)
     with pytest.raises(AssertionError):
-        qemu_plugin._boot_until_ready(fake, max_attempts=3)
+        qemu_plugin._boot_until_ready(fake, max_attempts=3, run_checks=failing_checks)
     assert fake.restarts == 0
 
 

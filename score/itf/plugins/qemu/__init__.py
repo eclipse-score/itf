@@ -54,14 +54,14 @@ def _create_overlay(base_image: str) -> str:
     return overlay_path
 
 
-def _boot_until_ready(target, max_attempts: int):
+def _boot_until_ready(target, max_attempts: int, run_checks=pre_tests_phase):
     """Run the pre-test checks, rebooting the guest if its kernel panicked while booting.
 
     Only guest kernel panics are retried. Any other failure is raised immediately.
     """
     for attempt in range(1, max_attempts + 1):
         try:
-            pre_tests_phase(target)
+            run_checks(target)
             return
         except Exception:
             if not target.guest_panicked or attempt == max_attempts:
