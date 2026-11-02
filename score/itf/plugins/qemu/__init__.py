@@ -18,6 +18,7 @@ import tempfile
 import pytest
 
 from score.itf.plugins.qemu.qemu_target import qemu_target
+from score.itf.plugins.qemu.boot import boot_until_ready
 from score.itf.plugins.qemu.checks import pre_tests_phase
 from score.itf.plugins.qemu.image_format import get_image_format
 from score.itf.core.utils import padder
@@ -52,22 +53,6 @@ def _create_overlay(base_image: str) -> str:
     )
     logger.info(f"Created qcow2 overlay: {overlay_path} (backing: {base_image})")
     return overlay_path
-
-
-def _boot_until_ready(target, max_attempts: int, run_checks=pre_tests_phase):
-    """Run the pre-test checks, rebooting the guest if its kernel panicked while booting.
-
-    Only guest kernel panics are retried. Any other failure is raised immediately.
-    """
-    for attempt in range(1, max_attempts + 1):
-        try:
-            run_checks(target)
-            return
-        except Exception:
-            if not target.guest_panicked or attempt == max_attempts:
-                raise
-            logger.warning(f"Guest kernel panicked during boot (attempt {attempt}/{max_attempts}), restarting QEMU")
-            target.restart()
 
 
 def pytest_addoption(parser):
@@ -161,7 +146,7 @@ def target_init(config, request, dlt):
                 qemu_disk=disk_overlay_path,
             )
         ) as qemu:
-            _boot_until_ready(qemu, request.config.getoption("qemu_boot_attempts"))
+            boot_until_ready(qemu, request.config.getoption("qemu_boot_attempts"), pre_tests_phase)
             yield qemu
     finally:
         if overlay_path and os.path.exists(overlay_path):

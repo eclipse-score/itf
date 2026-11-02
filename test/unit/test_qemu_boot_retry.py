@@ -17,7 +17,7 @@ import time
 
 import pytest
 
-import score.itf.plugins.qemu as qemu_plugin
+from score.itf.plugins.qemu.boot import boot_until_ready
 from score.itf.plugins.qemu.qemu_process import QemuProcess
 
 
@@ -49,20 +49,20 @@ def target():
 
 def test_no_restart_when_boot_succeeds(target):
     fake = target(panics_on_attempts=[])
-    qemu_plugin._boot_until_ready(fake, max_attempts=3, run_checks=lambda t: t.run_checks())
+    boot_until_ready(fake, max_attempts=3, run_checks=lambda t: t.run_checks())
     assert fake.restarts == 0
 
 
 def test_restarts_after_guest_panic(target):
     fake = target(panics_on_attempts=[1, 2])
-    qemu_plugin._boot_until_ready(fake, max_attempts=3, run_checks=lambda t: t.run_checks())
+    boot_until_ready(fake, max_attempts=3, run_checks=lambda t: t.run_checks())
     assert fake.restarts == 2
 
 
 def test_raises_when_every_attempt_panics(target):
     fake = target(panics_on_attempts=[1, 2, 3])
     with pytest.raises(AssertionError):
-        qemu_plugin._boot_until_ready(fake, max_attempts=3, run_checks=lambda t: t.run_checks())
+        boot_until_ready(fake, max_attempts=3, run_checks=lambda t: t.run_checks())
     assert fake.restarts == 2
 
 
@@ -73,7 +73,7 @@ def test_failure_without_panic_is_not_retried():
         raise AssertionError("not a panic")
 
     with pytest.raises(AssertionError):
-        qemu_plugin._boot_until_ready(fake, max_attempts=3, run_checks=failing_checks)
+        boot_until_ready(fake, max_attempts=3, run_checks=failing_checks)
     assert fake.restarts == 0
 
 
