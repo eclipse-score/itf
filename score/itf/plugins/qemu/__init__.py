@@ -18,6 +18,7 @@ import tempfile
 import pytest
 
 from score.itf.plugins.qemu.qemu_target import qemu_target
+from score.itf.plugins.qemu.boot import boot_until_ready
 from score.itf.plugins.qemu.checks import pre_tests_phase
 from score.itf.plugins.qemu.image_format import get_image_format
 from score.itf.core.utils import padder
@@ -55,6 +56,13 @@ def _create_overlay(base_image: str) -> str:
 
 
 def pytest_addoption(parser):
+    parser.addoption(
+        "--qemu-boot-attempts",
+        action="store",
+        type=int,
+        default=3,
+        help="Maximum number of times the guest is booted if its kernel panics during boot.",
+    )
     parser.addoption(
         "--qemu-config",
         action="store",
@@ -138,7 +146,7 @@ def target_init(config, request, dlt):
                 qemu_disk=disk_overlay_path,
             )
         ) as qemu:
-            pre_tests_phase(qemu)
+            boot_until_ready(qemu, request.config.getoption("qemu_boot_attempts"), pre_tests_phase)
             yield qemu
     finally:
         if overlay_path and os.path.exists(overlay_path):

@@ -24,7 +24,7 @@ from typing import Optional
 
 
 class Console:
-    def __init__(self, name, reader, writer, print_logger=True, logfile=None):
+    def __init__(self, name, reader, writer, print_logger=True, logfile=None, expr_cbks=None):
         """Initializes the Console instance.
 
         :param str name: Name of the console.
@@ -32,6 +32,8 @@ class Console:
         :param callable writer: Function to write commands to the console.
         :param bool print_logger: Flag to enable or disable logging to the console. Defaults to True.
         :param str logfile: Path to the log file for logging output. Defaults to None.
+        :param expr_cbks: Optional list of ``(expr, callback)`` pairs registered before the reader
+            thread starts, so that no output line can be missed.
         """
         self.name = name
         self.writer = writer
@@ -41,6 +43,8 @@ class Console:
             print_logger=print_logger,
             logfile=logfile,
         )
+        for expr, cbk in expr_cbks or []:
+            self.line_reader.add_expr_cbk(expr, cbk)
         self.line_reader.start()
 
     @property
@@ -148,6 +152,7 @@ class PipeConsole(Console):
         linefeed: str = "\n",
         logfile: Optional[str] = None,
         print_logger: bool = True,
+        expr_cbks=None,
     ) -> None:
         """Initializes the PipeConsole instance.
 
@@ -157,6 +162,7 @@ class PipeConsole(Console):
         :param str linefeed: Linefeed character(s) to use when sending commands. Defaults to '\n'.
         :param Optional[str] logfile: Path to the log file for logging output. Defaults to None.
         :param bool print_logger: Flag to enable or disable logging to the console. Defaults to True.
+        :param expr_cbks: Optional list of ``(expr, callback)`` pairs, see :class:`Console`.
         """
         self._timeout = timeout
         self._linefeed = linefeed
@@ -195,7 +201,7 @@ class PipeConsole(Console):
                 self._process.stdin.write(try_to_encode(command + "\n"))
                 self._process.stdin.flush()
 
-        super().__init__(name, reader, writer)
+        super().__init__(name, reader, writer, expr_cbks=expr_cbks)
 
 
 class LineReader(threading.Thread):

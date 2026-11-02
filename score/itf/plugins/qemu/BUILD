@@ -26,6 +26,7 @@ py_library(
     name = "qemu",
     srcs = [
         "__init__.py",
+        "boot.py",
         "checks.py",
         "image_format.py",
         "qemu.py",
