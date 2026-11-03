@@ -116,6 +116,10 @@ class _ExecAPIClient(pypi_docker.APIClient):
             response.close()
 
 
+# Workaround for docker-py losing exec output (reimplements `_read_from_socket` without the timeout
+# and without dropping early frames). See https://github.com/docker/docker-py/issues/3332 and
+# https://github.com/docker/docker-py/issues/2042; open fixes: docker-py PRs #3333 and #3438.
+# Remove this once the upstream issues/PRs are resolved.
 class _ExecDockerClient(pypi_docker.DockerClient):
     def __init__(self, *args, **kwargs):  # pylint: disable=super-init-not-called
         self.api = _ExecAPIClient(*args, **kwargs)
