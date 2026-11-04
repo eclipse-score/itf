@@ -16,7 +16,42 @@ on:
   merge_group:
     types: [checks_requested]
 jobs:
-  itf-build-all:
+  # Every job runs on a pinned image: ubuntu-latest moves to a new release under a running pull request.
+  itf-targets:
+    # Every target file compiles on its own, before and without any test: an itf_target runs both gates, the
+    # strict shapes and the contract definitions in a build action and constructs nothing, so a wrong target
+    # file fails here without a container or a machine. `itf validate` is the same check from the command line.
+    # The QEMU targets are manual: their kernels and images need the QNX SDP or downloaded OS images.
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+      - name: Compile every target file
+        run: |
+          bazel build $(bazel query 'kind(_itf_target, //...) except attr(tags, manual, //...)')
+  itf-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+      - name: Run build
+        run: |
+          bazel build //...
+      - name: Check the contract rules
+        run: |
+          bazel run //score/itf/cli:itf -- contracts check --rules tools/contract_rules.yaml
+      - name: Check version declarations
+        run: |
+          bazel run //score/itf/cli:itf -- versions check --rules tools/contract_rules.yaml --tests test
+  itf-test:
+    # Every test that needs no QEMU machine, with coverage: the unit tests, the new-style integration suite
+    # (test/integration) on every target file, its conformance runs, and ITF's original tests unchanged on the
+    # compatibility layer (test/integration/legacy) with main's BUILD. `bazel coverage` runs the tests and
+    # measures score/itf in the same pass (.bazelrc: --instrumentation_filter, --combined_report=lcov).
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -25,14 +60,23 @@ jobs:
         uses: docker/setup-buildx-action@v4.4.1
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
-      - name: Run build
+      - name: Run the tests, with coverage
         run: |
-          bazel build //...
-      - name: Run test
+          bazel coverage --test_output=errors //...
+      - name: Summarize coverage
+        if: ${{ !cancelled() }}
         run: |
-          bazel test //...
-
+          python3 tools/coverage_summary.py bazel-out/_coverage/_coverage_report.dat >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: bazel-out/_coverage/_coverage_report.dat
   itf-qemu-linux:
+    # Pinned like every job, and this one must stay so: the os_images genrules deploy into the image over ssh inside
+    # Bazel's sandbox, and on ubuntu-26.04 OpenSSH refuses to start there (systemd's ssh_config.d file shows a
+    # foreign owner in the sandbox).
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -51,4 +95,6 @@ jobs:
           sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
       - name: Run Linux QEMU integration tests
         run: |
-          bazel test //test/integration:linux_qemu_tests --config=qemu-integration-linux
+          bazel test --config=qemu-integration-linux --keep_going -- \
+            //test/integration:linux_qemu_tests \
+            //test/integration/legacy:linux_qemu_tests

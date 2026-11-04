@@ -125,6 +125,25 @@ so they catch pathological target files and regressions, not machine noise:
 
 ## Reference numbers
 
+The [2026-11-10 native QEMU report](native-qemu-2026-11-10.md) measures the current policy-aware
+target composition plus scopes/chain/deep/wide sizes 10, 50 and 100. All 15 cases pass the existing
+thresholds. On that development host, the observable QNX target has 12 roles and six steps, a warm
+median of 8.82 ms, a cold plan of 0.34 s and 0.57 MiB peak traced memory. These are measurements of
+that environment, not a before/after regression comparison or a guest-boot benchmark.
+
+Grouped preflight was measured separately on the localhost target with one API family, two exact
+Protocol profiles (one compatible and one incompatible), artifacts disabled and logging disabled.
+After one warm-up, five repetitions of `Session.select` produced these medians:
+
+| Collected tests | Selected / incompatible | Preflight median |
+|---|---|---|
+| 10 | 5 / 5 | 0.510 ms |
+| 100 | 50 / 50 | 2.314 ms |
+| 1000 | 500 / 500 | 18.931 ms |
+
+The shape check is reused for identical profiles; per-test decisions and grouping still scale with
+the collected suite. This separate measurement is not part of `plan_bench --check` thresholds.
+
 On an Intel i7-6600U (2016, 2 cores), Python 3.12, for ITF's own target files:
 
 | Measure | Value |

@@ -17,3 +17,8 @@ project_url = "https://github.com/eclipse-score/itf"
 extensions = [
     "score_sphinx_bundle",
 ]
+
+# The contract map of ITF's packs is generated from their code (bazel run //score/itf/cli:itf -- contracts map
+# --format html --output docs/_generated/catalog.html; //test/packs:catalog_test fails when it is stale) and
+# served from the site root.
+html_extra_path = ["_generated"]

@@ -108,4 +108,3 @@ each discovered dump to temporary storage on every call.
 
 **Prerequisites:** command and download access to the target's Linux/QNX core-file
 locations. No host core-dump tools are required.
-
