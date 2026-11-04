@@ -1,0 +1,22 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# A target with a simulated relay (the vendor's contract) and a status LED (the project's own contract).
+# Swapping the simulation for real hardware is changing one word: `acme.simulated_relay` becomes the label of
+# a factory that drives it. The test does not change.
+policies:
+  - examples/vendor_contract/targets/policy.py
+packs:
+  acme: acme.plugin             # the vendor's pack is not installed: say where it lives
+capabilities:
+  power: acme.simulated_relay
+  led: local.status_led

@@ -1,0 +1,24 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# A serial console on a shell over a pseudo-terminal: no container, no hardware.
+policies:
+  - examples/exec_everywhere/targets/policy.py
+packs:
+  serial: score.itf.packs.serial.plugin
+capabilities:
+  console: serial.pty_console
+  command: serial.exec
+goals:
+  # The project's policy also has an action making this true (for serial_device): name the pack's.
+  - state: console.open
+    by: serial.open

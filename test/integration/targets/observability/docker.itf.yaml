@@ -1,0 +1,39 @@
+policies:
+  - test/integration/targets/observability/policy.py
+packs:
+  docker: score.itf.packs.docker.plugin
+  pcap: score.itf.packs.pcap.plugin
+capabilities:
+  platform:
+    factory: docker.platform
+    with:
+      image: ubuntu:24.04
+      network: host
+      volumes: ${ITF_UDP_SENDER}:/itf/udp_sender:ro
+  command: docker.exec
+  process: docker.process
+  files: docker.files
+  capture:
+    factory: pcap.capture
+    with:
+      interface: any
+      filter: udp
+      binary_path: ${ITF_TCPDUMP:-tcpdump}
+  traffic:
+    factory: local.traffic
+    with:
+      host: 127.0.0.1
+      sender: /itf/udp_sender
+  packet_reader:
+    factory: local.packet_reader
+    with:
+      binary_path: ${ITF_TCPDUMP:-tcpdump}
+goals:
+  - state: platform.up
+    by: docker.start
+  - state: capture.running
+    by: pcap.start_on_host
+relations:
+  - state: platform.up
+    after:
+      - capture.running

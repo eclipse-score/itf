@@ -1,0 +1,6 @@
+include:
+  - ../qemu.itf.yaml
+policies:
+  - test/integration/targets/ubuntu/policy.py
+goals:
+  - console.shell

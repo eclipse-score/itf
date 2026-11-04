@@ -27,6 +27,15 @@ log = logging.getLogger("integration")
 EVIDENCE = Path(os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR", ".")) / "evidence"
 
 
+class RecordedConsole(Protocol):
+    __contract__ = "exec.console"
+
+    def lines(self, since: int = 0) -> list[str]: ...
+
+
+itf_expect = [RecordedConsole]
+
+
 @hookimpl
 def itf_verify(session):
     """Readiness, checked once after bring-up: a target that cannot answer fails here with a named check."""

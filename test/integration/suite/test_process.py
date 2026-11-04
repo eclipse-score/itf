@@ -13,12 +13,45 @@
 """Any target that starts processes asynchronously (`process`)."""
 
 import time
+from typing import Protocol
 
 import score.itf as itf
 from score.itf.core.process import WrappedProcess
 
 
-@itf.requires("process")
+class Spawn(Protocol):
+    __contract__ = "exec.process"
+
+    def spawn(self, binary_path: str, /) -> object: ...
+
+
+class SpawnInDirectory(Protocol):
+    __contract__ = "exec.process"
+
+    def spawn(self, binary_path: str, /, *, cwd: str) -> object: ...
+
+
+class SpawnWithArguments(Protocol):
+    __contract__ = "exec.process"
+
+    def spawn(self, binary_path: str, /, *, args: list[str]) -> object: ...
+
+
+class SpawnWithArgumentsInDirectory(Protocol):
+    __contract__ = "exec.process"
+
+    def spawn(self, binary_path: str, /, *, args: list[str], cwd: str) -> object: ...
+
+
+class Command(Protocol):
+    __contract__ = "exec.command"
+
+    def exec(self, command: str, /) -> tuple[int, bytes]: ...
+
+
+itf_requires = [itf.requires("process", shape=Spawn)]
+
+
 def test_a_process_reports_pid_running_and_exit_code(target):
     process = target.process.spawn("sleep 1; exit 42")
     assert process.pid() > 0 and process.is_running()
@@ -26,27 +59,25 @@ def test_a_process_reports_pid_running_and_exit_code(target):
     assert not process.is_running()
 
 
-@itf.requires("process")
 def test_stop_terminates_a_long_running_process(target):
     process = target.process.spawn("sleep 300")
     assert process.stop() in (143, 137)
     assert not process.is_running()
 
 
-@itf.requires("process")
 def test_output_is_captured(target):
     process = target.process.spawn("echo first; echo second")
     process.wait(timeout_s=30)
     assert process.get_output().split() == ["first", "second"]
 
 
-@itf.requires("process")
+@itf.requires("process", shape=SpawnInDirectory)
 def test_cwd_is_honoured(target):
     process = target.process.spawn("pwd", cwd="/tmp")
     assert process.wait(timeout_s=30) == 0 and "/tmp" in process.get_output()
 
 
-@itf.requires("process")
+@itf.requires("process", shape=SpawnWithArgumentsInDirectory)
 def test_wrapped_processes_coordinate(target):
     marker = "/tmp/itf_wrapped_ready"
     with WrappedProcess(target.process, f"rm -f {marker}", wait_on_exit=True):
@@ -58,8 +89,8 @@ def test_wrapped_processes_coordinate(target):
     assert first.ret_code == 0 and "done" in first.get_output()
 
 
-@itf.requires("process")
-@itf.requires("command")
+@itf.requires("process", shape=SpawnWithArgumentsInDirectory)
+@itf.requires("command", shape=Command)
 def test_arguments_reach_the_binary_one_by_one_spaces_included(target):
     target.command.exec("rm -f '/tmp/hello world' /tmp/hello /tmp/world")
     process = target.process.spawn("touch", args=["hello world"], cwd="/tmp")
@@ -68,8 +99,8 @@ def test_arguments_reach_the_binary_one_by_one_spaces_included(target):
     target.command.exec("rm -f '/tmp/hello world'")
 
 
-@itf.requires("process")
-@itf.requires("command")
+@itf.requires("process", shape=SpawnWithArguments)
+@itf.requires("command", shape=Command)
 def test_an_absolute_binary_path_is_used_as_given(target):
     code, output = target.command.exec("which echo")
     path = output.decode().strip()
@@ -78,14 +109,14 @@ def test_an_absolute_binary_path_is_used_as_given(target):
     assert process.wait(timeout_s=30) == 0 and "absolute_ok" in process.get_output()
 
 
-@itf.requires("process")
+@itf.requires("process", shape=SpawnWithArgumentsInDirectory)
 def test_a_wrapped_process_is_stopped_when_its_block_ends(target):
     with WrappedProcess(target.process, "sleep 300") as wrapped:
         assert wrapped.is_running()
     assert not wrapped.is_running()
 
 
-@itf.requires("process")
+@itf.requires("process", shape=SpawnWithArgumentsInDirectory)
 def test_a_wrapped_process_may_end_with_the_exit_code_it_expects(target):
     with WrappedProcess(
         target.process, "sh", args=["-c", "exit 42"], wait_on_exit=True, expected_exit_code=42

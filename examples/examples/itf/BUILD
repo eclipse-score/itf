@@ -10,79 +10,74 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score_itf//:defs.bzl", "py_itf_test")
+load("@score_itf//:defs.bzl", "itf_target", "py_itf_test")
 
-py_itf_test(
-    name = "test_docker",
-    srcs = [
-        "test_docker.py",
-    ],
-    args = [
-        "--docker-image-bootstrap=$(location //examples/docker:image_load)",
-        "--docker-image=score_itf_examples:latest",
-    ],
-    data = ["//examples/docker:image_load"],
-    plugins = [
-        "@score_itf//score/itf/plugins:docker_plugin",
+# `example_app` runs one test file on two machines (a select() on the platform); `dlt` receives a target's DLT
+# logs. Each target's directory (`targets/<name>/<name>.itf.yaml`) says what the target is made of; the packs its
+# factory labels name are the `itf_target`'s `packs`, and the shared targets/policy.py (`srcs`) keeps the code:
+# readiness checks, evidence, and the starting of dlt-daemon. Tests do not list the policy; they list conftest.py (pytest fixtures).
+# `bazel build //examples/itf:target_docker` compiles the docker target file and writes
+# `target_docker.plan.json`. Each itf_target supplies the `${NAME}` values its target file uses: `files`
+# names the built files (an image loader, a kernel), and its tests inherit them.
+
+DOCKER = "@score_itf//score/itf/packs/docker"
+
+DLT = "@score_itf//score/itf/packs/dlt"
+
+itf_target(
+    name = "target_docker",
+    src = "targets/docker/docker.itf.yaml",
+    srcs = ["targets/policy.py"],
+    files = {"ITF_IMAGE_LOAD": "//examples/docker:image_load"},
+    packs = [DOCKER],
+)
+
+itf_target(
+    name = "target_dlt",
+    src = "targets/dlt/dlt.itf.yaml",
+    srcs = ["targets/policy.py"],
+    files = {"ITF_IMAGE_LOAD": "//examples/docker:dlt_image_load"},
+    packs = [
+        DLT,
+        DOCKER,
     ],
 )
 
-# py_itf_test(
-#     name = "test_dlt",
-#     srcs = [
-#         "test_dlt.py",
-#     ],
-#     args = [
-#         "--docker-image-bootstrap=$(location @score_itf//test/resources:image_tarball)",
-#         "--docker-image=score_itf_examples:latest",
-#     ],
-#     data = ["@score_itf//test/resources:image_tarball"],
-#     plugins = [
-#         "@score_itf//score/itf/plugins:dlt_plugin",
-#         "@score_itf//score/itf/plugins:docker_plugin",
-#     ],
-# )
+itf_target(
+    name = "target_qemu",
+    src = "targets/qemu/qemu.itf.yaml",
+    srcs = ["targets/policy.py"],
+    files = {
+        "ITF_QEMU_CONFIG": "targets/qemu/qemu_bridge_config.json",
+        "ITF_QEMU_KERNEL": "//examples/itf/qnx:init",
+    },
+    packs = [
+        "@score_itf//score/itf/packs/ping",
+        "@score_itf//score/itf/packs/qemu",
+        "@score_itf//score/itf/packs/ssh",
+    ],
+    tags = ["manual"],
+)
 
+# One test file on two machines: the container, or the QEMU machine when building for QNX
+# (`--config=qemu-integration`). The target is the only thing that changes.
 py_itf_test(
-    name = "test_qemu_ssh_bridge_network",
+    name = "example_app",
     srcs = [
-        "test_qemu.py",
+        "conftest.py",
+        "test_example_app.py",
     ],
-    args = [
-        "--qemu-config=$(location @score_itf//test/resources:qemu_bridge_config)",
-        "--qemu-image=$(location //examples/itf/qnx:init)",
-    ],
-    data = [
-        "//examples/itf/qnx:init",
-        "@score_itf//test/resources:qemu_bridge_config",
-    ],
-    plugins = [
-        "@score_itf//score/itf/plugins:qemu_plugin",
-        "@score_itf//score/itf/plugins:dlt_plugin",
-    ],
-    tags = [
-        "manual",
-    ],
+    target = select({
+        "@platforms//os:qnx": ":target_qemu",
+        "//conditions:default": ":target_docker",
+    }),
 )
 
 py_itf_test(
-    name = "test_qemu_ssh_port_forwarding",
+    name = "dlt",
     srcs = [
-        "test_qemu.py",
+        "conftest.py",
+        "test_dlt_logs.py",
     ],
-    args = [
-        "--qemu-config=$(location @score_itf//test/resources:qemu_port_forwarding_config)",
-        "--qemu-image=$(location //examples/itf/qnx:init)",
-    ],
-    data = [
-        "//examples/itf/qnx:init",
-        "@score_itf//test/resources:qemu_port_forwarding_config",
-    ],
-    plugins = [
-        "@score_itf//score/itf/plugins:qemu_plugin",
-        "@score_itf//score/itf/plugins:dlt_plugin",
-    ],
-    tags = [
-        "manual",
-    ],
+    target = ":target_dlt",
 )

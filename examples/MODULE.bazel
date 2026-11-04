@@ -43,26 +43,25 @@ use_repo(python)
 
 ###############################################################################
 #
-# LLVM Toolchains
+# Hermetic C/C++ toolchain (as in score_itf): no host compiler or headers needed
 #
 ###############################################################################
-bazel_dep(name = "toolchains_llvm", version = "1.2.0")
+bazel_dep(name = "hermetic_cc_toolchain", version = "4.3.0")
 
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-llvm.toolchain(
-    cxx_standard = {"": "c++17"},
-    llvm_version = "19.1.0",
+zig_toolchains = use_extension("@hermetic_cc_toolchain//toolchain:ext.bzl", "toolchains")
+use_repo(zig_toolchains, "zig_sdk")
+
+register_toolchains(
+    "@zig_sdk//toolchain:linux_amd64_gnu.2.35",
+    "@zig_sdk//toolchain:linux_arm64_gnu.2.35",
 )
-use_repo(llvm, "llvm_toolchain")
-use_repo(llvm, "llvm_toolchain_llvm")
-
-register_toolchains("@llvm_toolchain//:all")
 
 ###############################################################################
 #
 # C++ rules
 #
 ###############################################################################
+bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 
 ###############################################################################
