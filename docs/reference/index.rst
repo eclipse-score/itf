@@ -22,5 +22,6 @@ API and Bazel macro reference for ITF.
 .. toctree::
    :maxdepth: 1
 
+   contracts
    bazel_macros
    plugins
