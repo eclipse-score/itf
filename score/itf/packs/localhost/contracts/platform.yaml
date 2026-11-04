@@ -1,0 +1,68 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# Platform contract: the thing everything else runs on (the host, a container, a virtual machine).
+contracts:
+  - contract: platform.instance
+    kind: capability
+    role: platform
+    version: 1
+    summary: The platform a target runs on, with a lifecycle the planner can bring up and observe.
+    description: >
+      Constructing the object creates nothing: the action delivering `platform.up` starts it
+      and the teardown stops it. Other nodes (command, process, files, console, endpoint) take a platform
+      as input and use what it exposes. `restart` simulates a reboot; after it, `target.reach()` brings
+      every goal back.
+    members:
+      - name: start
+        signature: "() -> None"
+        semantics: Brings the platform up; called by the action for platform.up, not by tests.
+      - name: running
+        signature: "() -> bool"
+        semantics: True while the platform is up; the probe of platform.up.
+      - name: restart
+        signature: "() -> None"
+        semantics: Restarts the platform. Anything connected to it (SSH sessions) is dropped.
+      - name: stop
+        signature: "() -> None"
+        semantics: Takes the platform down and releases what it created; idempotent.
+    guarantees:
+      - running() is true once the platform is up.
+      - After restart() the platform is running again within a bounded time.
+      - stop() can be called more than once.
+    see_also:
+      - platform.up
+
+  - contract: platform.up
+    kind: state
+    version: 1
+    summary: The platform exists and is running.
+    description: >
+      The root of most plans: command, process, file, console and shell actions require it. Delivered by
+      the start action of the platform's pack (host directory, container, virtual machine) or by waiting for a
+      machine that boots on its own (ICMP). Invalidated by restart.
+    probe: The platform reports running().
+    see_also:
+      - platform.instance
+      - shell.open
+
+  - contract: image.present
+    kind: state
+    version: 1
+    summary: The software image under test is installed on the platform.
+    description: >
+      A project-level state for setups that flash or load an image before the platform boots. The
+      pack set ships no action for it; a project delivers it and relates platform.up to it.
+    probe: Something the project defines, for example the image checksum on the device.
+    see_also:
+      - platform.up
+      - application.running

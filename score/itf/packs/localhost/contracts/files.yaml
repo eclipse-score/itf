@@ -1,0 +1,38 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# File transfer contract.
+contracts:
+  - contract: files.transfer
+    kind: capability
+    role: files
+    version: 1
+    summary: Copy files between the test host and the target.
+    description: >
+      Upload and download single files, creating missing directories on the destination. Factories add
+      management members (exists, remove, listdir, upload_dir, download_dir) where the transport supports
+      them; a test that needs them says so with `@itf.requires(role, shape=[...])`.
+    members:
+      - name: upload
+        signature: "(local_path: str, remote_path: str) -> None"
+        semantics: >
+          Copies a host file to the target, creating the destination directory. Raises FileNotFoundError
+          when the local file does not exist.
+      - name: download
+        signature: "(remote_path: str, local_path: str) -> None"
+        semantics: Copies a target file to the host, creating the destination directory.
+    guarantees:
+      - A file uploaded and downloaded again has the same content.
+      - Missing destination directories are created.
+      - The target sees the uploaded file at the remote path (a command can read it).
+    see_also:
+      - exec.command
