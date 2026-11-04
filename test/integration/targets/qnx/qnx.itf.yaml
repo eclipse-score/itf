@@ -1,0 +1,49 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# The QNX QEMU machine: qemu.itf.yaml plus a second login, which is a role of its own with its own credentials
+# (QNX's unprivileged user, no password). With two credentials, each shell says which one it uses; with two shells,
+# the roles built on a shell say they use the main one.
+include:
+  - ../qemu.itf.yaml
+packs:
+  net: score.itf.packs.net.plugin
+capabilities:
+  shell:
+    bind:
+      credentials: credentials
+  command:
+    bind:
+      shell: shell
+  process:
+    bind:
+      shell: shell
+  files:
+    bind:
+      shell: shell
+  qnx_user:
+    factory: net.password
+    with:
+      user: qnxuser
+      password: ""
+  qnx_shell:
+    factory: ssh.shell
+    bind:
+      credentials: qnx_user
+    with:
+      n_retries: 60
+      retry_interval: 2.0
+actions:
+  # Bring-up opens the main shell; the second login is opened by the tests that use it.
+  ssh.open:
+    bind:
+      shell: shell

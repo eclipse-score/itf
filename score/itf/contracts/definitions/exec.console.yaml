@@ -1,0 +1,55 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: exec.console
+    kind: capability
+    role: console
+    version: 1
+    summary: A console (UART, emulator serial port) whose output is recorded from the moment it opens.
+    description: >
+      Everything the console prints is kept in a bounded buffer from the moment it opens, including boot
+      messages, so a test can read what happened before it started. `mark` gives a cursor and `lines` /
+      `wait_for` look only at lines received after it. `run` types a command and returns its exit code
+      and output without the echo. The console is opened by the state `console.open`.
+    members:
+      - name: open
+        signature: "() -> None"
+        semantics: Opens the console and starts recording; normally done by the state, not by tests.
+      - name: is_open
+        signature: "() -> bool"
+        semantics: True while the console is open and its reader is healthy.
+      - name: close
+        signature: "() -> None"
+        semantics: Stops recording and releases the device; called at teardown.
+      - name: write
+        signature: "(text: str) -> None"
+        semantics: Sends one line of text (a newline is appended). Raises RuntimeError when not open.
+      - name: mark
+        signature: "() -> int"
+        semantics: A cursor for lines() and wait_for(); only lines received after this call count.
+      - name: lines
+        signature: "(since: int = 0) -> list[str]"
+        semantics: "The recorded lines, from the cursor `since` (default: everything still buffered)."
+      - name: wait_for
+        signature: "(pattern: str, timeout: float = 30.0, *, since: int | None = None, regex: bool = False) -> str | None"
+        semantics: The first line containing (or matching) the pattern after `since` (default now), or None on timeout.
+      - name: run
+        signature: "(command: str, timeout: float = 30.0) -> tuple[int, str]"
+        semantics: Runs a shell command on the console; returns exit code and output without echo or marker.
+    guarantees:
+      - Output printed since the console opened is recorded, not only output after the first read.
+      - lines(since=mark) returns only lines received after the mark was taken.
+      - run reports the exit code of the command.
+    see_also:
+      - exec.command
+      - console.open

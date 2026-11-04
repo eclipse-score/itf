@@ -24,7 +24,7 @@ from score.itf.core.engine.scopes import ROOT
 
 from .usage import ContractEntry
 
-RULES = ('namespaces', 'roles', 'forbid_stability')
+RULES = ('namespaces', 'roles', 'forbid_stability', 'require_major')
 
 
 def namespace_of(name: str) -> str:
@@ -68,6 +68,17 @@ def check(rules, contracts: dict[str, ContractEntry], target_files=()) -> list[V
         stability = getattr(entry.definition, "stability", None)
         if stability in (rules.get("forbid_stability") or ()):
             found.append(Violation("forbid_stability", f"{name} is {stability}, which the rules forbid"))
+        if namespace_of(name) in (rules.get("require_major") or ()):
+            unversioned = [label for label, _, major in entry.offerers if major is None]
+            unversioned += [label for label, _, _, major in entry.needers if major is None]
+            unversioned += [test_id or role for test_id, role, _, major in entry.tests if major is None]
+            if unversioned:
+                found.append(
+                    Violation(
+                        "require_major",
+                        f"{name} requires explicit @major declarations for: {', '.join(sorted(set(unversioned)))}",
+                    )
+                )
     for item in target_files:
         label, roles = item if isinstance(item, tuple) else ("target", roles_of_plan(item))
         for role, contract in sorted(roles.items()):

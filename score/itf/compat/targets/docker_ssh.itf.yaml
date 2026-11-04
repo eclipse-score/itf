@@ -1,0 +1,21 @@
+# Optional SSH/SFTP roles for the original docker_plugin, selected with --docker-ssh.
+include:
+  - docker.itf.yaml
+packs:
+  ssh: score.itf.packs.ssh.plugin
+capabilities:
+  endpoint:
+    factory: docker.endpoint
+    with:
+      port: 2222
+  credentials:
+    factory: net.password
+    with:
+      user: ${LEGACY_SSH_USER}
+      password: ${LEGACY_SSH_PASSWORD}
+  shell: ssh.shell
+  sftp: ssh.files
+relations:
+  - state: shell.open
+    after:
+      - platform.up

@@ -1,0 +1,38 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: exec.process
+    kind: capability
+    role: process
+    version: 1
+    summary: Start a program asynchronously and control it through a handle.
+    description: >
+      For anything that must keep running while the test does something else: servers, load generators,
+      long jobs. `spawn` returns at once with a process handle that reports its pid, whether it still
+      runs, waits for it, stops it and returns what it printed. The handle is also what
+      `score.itf.core.process.WrappedProcess` wraps, so processes from any factory coordinate the same way.
+    members:
+      - name: spawn
+        signature: "(binary_path: str, args: list[str] | None = None, cwd: str = '/') -> AsyncProcess"
+        semantics: >
+          Starts the program (a plain command line is accepted as the first argument) in `cwd` and returns
+          without waiting. The handle offers pid(), is_running(), wait(timeout_s), stop(),
+          get_exit_code() and get_output().
+    guarantees:
+      - spawn returns before the program ends.
+      - wait returns the program's exit code, and the handle then reports it is no longer running.
+      - stop ends a running program (exit code 143 or 137) and the handle then reports it is not running.
+      - get_output returns what the program wrote to stdout and stderr.
+      - The program starts in the requested working directory.
+    see_also:
+      - exec.command

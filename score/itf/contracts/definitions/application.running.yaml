@@ -1,0 +1,25 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: application.running
+    kind: state
+    version: 1
+    summary: The application under test is running on the target.
+    description: >
+      A project-level state: the pack set does not ship an action for it, a project or product pack
+      delivers it (start the application, wait until it answers). A target file lists it as a goal and
+      relates it to the platform and image states.
+    probe: Something the project defines, typically a health query on the application.
+    see_also:
+      - platform.up
+      - image.present

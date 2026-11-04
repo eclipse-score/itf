@@ -1,0 +1,31 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# The original docker_plugin as a target file: one container from --docker-image. The platform is not a
+# goal: the docker plugin's target_init starts it per test (or once, with --keep-target), after applying the
+# docker_configuration fixture, as the original plugin did. SSH roles are added by docker_ssh.itf.yaml only
+# when requested: an exposed port does not prove that the image actually runs an SSH server.
+packs:
+  docker: score.itf.packs.docker.plugin
+  net: score.itf.packs.net.plugin
+capabilities:
+  platform:
+    factory: docker.platform
+    with:
+      image: ${LEGACY_DOCKER_IMAGE}
+      bootstrap: ${LEGACY_DOCKER_BOOTSTRAP:-}
+      extract_coverage: ${LEGACY_EXTRACT_COVERAGE:-false}
+      coverage_dir: ${LEGACY_COVERAGE_DIR:-}
+      ports: 2222/tcp
+  command: docker.exec
+  process: docker.process
+  files: docker.files

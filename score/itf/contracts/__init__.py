@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"Contract definitions: an optional library. ITF knows no contracts; a contract is whatever name two\nparts agree on. A definition adds meaning, a version, members, guarantees, a suggested role, a stability and a\n\nDefinitions are YAML files (`contracts: - contract: exec.command, kind: capability, version: 1, summary, ...`).\nThey are found in three places, merged by `load_list()`:\n\n* the `contracts/` directory of every pack (the ITF team's supported definitions ship with the packs that use them),\n* the directories listed in `ITF_CONTRACTS_PATH`,\n* installed distributions with an entry point in the group `score_itf.contracts` (the value names a package,\n  or a callable returning directories, holding YAML files).\n\nFields: `contract` (the name), `kind` (capability | state), `version`, `summary`, `description`, `members`\n(`name`, `signature`, `semantics`), `guarantees`, `role` (the role name suggested in target files),\ncontract name), `see_also`, `probe`. Two definitions of one name are not an error here: `contract_map` reports\nthem. `definitions()` is the forgiving view a session wants: name -> the first definition."
+"Contract definitions: an optional library. ITF knows no contracts; a contract is whatever name two\nparts agree on. A definition adds meaning, a version, members, guarantees, a suggested role, a stability and a\n\nDefinitions are YAML files (`contracts: - contract: exec.command, kind: capability, version: 1, summary, ...`).\nBuilt-in packs list individual `$ref` files pointing to the shared `definitions/` directory, one specification\nper contract. References resolve from the declaring file; repeated references to one source are loaded once.\nThey are found in three places, merged by `load_list()`:\n\n* the `contracts/` directory of every pack (the ITF team's supported definitions ship with the packs that use them),\n* the directories listed in `ITF_CONTRACTS_PATH`,\n* installed distributions with an entry point in the group `score_itf.contracts` (the value names a package,\n  or a callable returning directories, holding YAML files).\n\nFields: `contract` (the name), `kind` (capability | state), `version`, `summary`, `description`, `members`\n(`name`, `signature`, `semantics`), `guarantees`, `role` (the role name suggested in target files),\ncontract name), `see_also`, `probe`. Two definitions of one name are not an error here: `contract_map` reports\nthem. `definitions()` is the forgiving view a session wants: name -> the first definition."
 
 from __future__ import annotations
 
@@ -88,21 +88,46 @@ def _definition(entry: dict, source: str) -> Definition:
         members.append(Member(member['name'], _text(member.get('signature')), _text(member.get('semantics')), bool(member.get('required', True))))
     if kind == 'state' and members:
         raise ContractError(f'{source}: {name}: a state has no members')
-    return Definition(contract=name, kind=kind, version=int(entry.get('version', 1)), summary=_text(entry.get('summary')), description=_text(entry.get('description')), members=tuple(members), guarantees=tuple((_text(g) for g in entry.get('guarantees') or ())), role=entry.get('role'), stability=stability, replaced_by=entry.get('replaced_by'), see_also=tuple(entry.get('see_also') or ()), probe=_text(entry['probe']) if entry.get('probe') else None, source=source)
+    version = entry.get('version', 1)
+    if type(version) is not int or version < 1:
+        raise ContractError(f'{source}: {name}: version must be a positive integer major, got {version!r}')
+    return Definition(contract=name, kind=kind, version=version, summary=_text(entry.get('summary')), description=_text(entry.get('description')), members=tuple(members), guarantees=tuple((_text(g) for g in entry.get('guarantees') or ())), role=entry.get('role'), stability=stability, replaced_by=entry.get('replaced_by'), see_also=tuple(entry.get('see_also') or ()), probe=_text(entry['probe']) if entry.get('probe') else None, source=source)
 
 
-def read_directory(directory: Path, label: str | None = None) -> list[Definition]:
-    found = []
-    for path in sorted(Path(directory).glob("*.yaml")):
-        where = f"{label or directory}: {path.name}"
-        try:
-            document = yaml_safe_load(path.read_text(encoding="utf-8")) or {}
-        except yaml.YAMLError as exc:
-            raise ContractError(f"{where}: invalid YAML: {exc}") from exc
-        if not isinstance(document, dict):
-            raise ContractError(f"{where}: expected a mapping")
-        found += [_definition(entry, where) for entry in document.get("contracts") or ()]
+def _read_file(path: Path, label, loaded: set[Path], visiting=()) -> list[Definition]:
+    key = path.resolve()
+    where = f"{label or path.parent}: {path.name}"
+    if key in visiting:
+        raise ContractError(f"{where}: contract reference cycle")
+    if key in loaded:
+        return []
+    try:
+        document = yaml_safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        raise ContractError(f"{where}: cannot read contract definition: {exc}") from exc
+    if not isinstance(document, dict):
+        raise ContractError(f"{where}: expected a mapping")
+    if "$ref" in document:
+        reference = document["$ref"]
+        if set(document) != {"$ref"} or not isinstance(reference, str) or not reference.strip():
+            raise ContractError(f"{where}: $ref must stand alone and name a contract YAML file")
+        found = _read_file(path.parent / reference, None, loaded, (*visiting, key))
+    else:
+        canonical = Path(__file__).parent / "definitions" / key.name
+        if canonical.is_file() and key == canonical.resolve():
+            where = f"score.itf.contracts.definitions: {key.name}"
+        found = [_definition(entry, where) for entry in document.get("contracts") or ()]
+    loaded.add(key)
     return found
+
+
+def read_directory(directory: Path, label: str | None = None, *, _loaded=None) -> list[Definition]:
+    loaded = set() if _loaded is None else _loaded
+    return [
+        definition
+        for path in sorted(Path(directory).glob("*.yaml"))
+        for definition in _read_file(path, label or str(directory), loaded)
+    ]
 
 
 def _pack_directories() -> list[Path]:
@@ -133,7 +158,7 @@ def _entry_point_directories() -> list[Path]:
 
 
 def load_list(extra=()) -> list[Definition]:
-    """Every definition from every source, duplicates included (`contract_map` reports them)."""
+    """Distinct definitions, duplicates included; repeated references to one source are loaded once."""
     directories = [*_pack_directories(), *_entry_point_directories()]
     for entry in filter(None, os.environ.get(PATH_VARIABLE, "").split(os.pathsep)):
         if not Path(entry).is_dir():
@@ -141,8 +166,9 @@ def load_list(extra=()) -> list[Definition]:
         directories.append(Path(entry))
     directories += [Path(d) for d in extra]
     found: list[Definition] = []
+    loaded: set[Path] = set()
     for directory in directories:
-        found += read_directory(directory)
+        found += read_directory(directory, _loaded=loaded)
     return found
 
 

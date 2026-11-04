@@ -1,0 +1,39 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: net.ping
+    kind: capability
+    role: ping
+    version: 1
+    summary: Ask whether a target answers ICMP echo, and wait for it to come up or go down.
+    description: >
+      The host pings an endpoint. Used as a boot detector (the target is up when it answers) and to wait
+      for a restart to take effect.
+    members:
+      - name: host
+        signature: ": str"
+        semantics: The address being pinged.
+      - name: ping
+        signature: "() -> bool"
+        semantics: One echo request; True when a reply arrives in time.
+      - name: wait_up
+        signature: "(timeout: float | None = None) -> bool"
+        semantics: Polls until the target answers; False on timeout.
+      - name: wait_down
+        signature: "(timeout: float | None = None) -> bool"
+        semantics: Polls until the target stops answering; False on timeout.
+    guarantees:
+      - ping returns a boolean and never raises for an unreachable target.
+    see_also:
+      - descriptor.endpoint
+      - network.reachable

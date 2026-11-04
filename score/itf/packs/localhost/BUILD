@@ -19,6 +19,7 @@ py_library(
     data = [
         "README.md",
         "pack.yaml",
+        "//score/itf/contracts:definitions",
     ] + glob(["contracts/*.yaml"]),
     visibility = ["//test/packs:__subpackages__"],
     deps = [

@@ -1,0 +1,17 @@
+capabilities:
+  platform:
+    factory: sim.platform
+    with:
+      name: bench
+  command: sim.exec
+goals:
+  - platform.up
+# A value only the test run has (a login, a lab address): the build compiles it with a placeholder.
+capabilities:
+  platform:
+    factory: sim.platform
+    with:
+      name: ${ITF_PLAN_TEST_NAME_SET_AT_TEST_TIME}
+  command: sim.exec
+goals:
+  - platform.up

@@ -1,0 +1,319 @@
+# *******************************************************************************
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+load("//:defs.bzl", "py_itf_test", "py_itf_unittest")
+
+# ITF's tests from main, unchanged, run against the compatibility layer: the original plugins' labels, options,
+# fixtures and imports are served by the new engine. unchanged_test keeps every test file byte-identical to main;
+# shims_test keeps every module of the original paths a re-export only. (main's test_attribute_plugin, which tags
+# itself with sample requirement ids, is replaced by //test/pytest_plugins:test_attribute_plugin.)
+
+py_itf_unittest(
+    name = "unchanged_test",
+    srcs = ["check_unchanged.py"],
+    data = glob(["test_*.py"]) + [
+        "conftest.py",
+        "main_tests.sha256",
+    ],
+)
+
+py_itf_unittest(
+    name = "layer_test",
+    srcs = glob(["layer/*.py"]),
+    deps = ["//score/itf/compat"],
+)
+
+py_itf_unittest(
+    name = "shims_test",
+    srcs = ["check_shims.py"],
+    data = [
+        "//score/itf/core/com",
+        "//score/itf/core/target",
+        "//score/itf/core/utils",
+        "//score/itf/plugins:core",
+        "//score/itf/plugins:core_dump",
+        "//score/itf/plugins:docker",
+        "//score/itf/plugins/dlt",
+        "//score/itf/plugins/qemu",
+    ],
+)
+
+py_itf_test(
+    name = "test_qemu_config_schema",
+    srcs = ["test_qemu_config_schema.py"],
+    data = [
+        "//test/resources:qemu_bridge_config",
+        "//test/resources:qemu_port_forwarding_config",
+    ],
+    deps = [
+        "//score/itf/plugins/qemu",
+        "@rules_python//python/runfiles",
+    ],
+)
+
+py_itf_test(
+    name = "test_rules_are_working_correctly",
+    srcs = [
+        "conftest.py",
+        "test_rules_are_working_correctly.py",
+    ],
+)
+
+py_itf_test(
+    name = "test_docker",
+    srcs = [
+        "test_async_exec.py",
+        "test_docker.py",
+        "test_exec_output_not_lost.py",
+    ],
+    args = [
+        "--docker-image=ubuntu:24.04",
+    ],
+    plugins = [
+        "//score/itf/plugins:docker_plugin",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+py_itf_test(
+    name = "test_dlt",
+    srcs = [
+        "test_dlt.py",
+    ],
+    args = [
+        "--docker-image-bootstrap=$(location //test/resources:image_load)",
+        "--docker-image=score_itf_examples:latest",
+    ],
+    data = ["//test/resources:image_load"],
+    plugins = [
+        "//score/itf/plugins:dlt_plugin",
+        "//score/itf/plugins:docker_plugin",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+py_itf_test(
+    name = "test_dlt_on_target",
+    srcs = [
+        "test_dlt_on_target.py",
+    ],
+    args = [
+        "--docker-image-bootstrap=$(location //test/resources:image_load)",
+        "--docker-image=score_itf_examples:latest",
+    ],
+    data = ["//test/resources:image_load"],
+    plugins = [
+        "//score/itf/plugins:dlt_plugin",
+        "//score/itf/plugins:docker_plugin",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+py_itf_test(
+    name = "test_ssh",
+    srcs = [
+        "test_ssh.py",
+    ],
+    args = [
+        "--docker-ssh",
+        "--docker-image=linuxserver/openssh-server:version-10.2_p1-r0",
+    ],
+    plugins = [
+        "//score/itf/plugins:docker_plugin",
+    ],
+    pytest_config = "//:pyproject.toml",  # Optional same content as default pytest.ini
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+py_itf_test(
+    name = "test_ssh_configurable",
+    srcs = [
+        "test_ssh.py",
+    ],
+    args = select(
+        {
+            "@platforms//os:qnx": [
+                "--qemu-config=$(location //test/resources:qemu_bridge_config)",
+                "--qemu-image=$(location //test/resources/qnx:init)",
+            ],
+            "//conditions:default": [
+                "--docker-ssh",
+                "--docker-image=linuxserver/openssh-server:version-10.2_p1-r0",
+            ],
+        },
+    ),
+    data = select(
+        {
+            "@platforms//os:qnx": [
+                "//test/resources:qemu_bridge_config",
+                "//test/resources/qnx:init",
+            ],
+            "//conditions:default": [],
+        },
+    ),
+    plugins = select(
+        {
+            "@platforms//os:qnx": [
+                "//score/itf/plugins:qemu_plugin",
+            ],
+            "//conditions:default": [
+                "//score/itf/plugins:docker_plugin",
+            ],
+        },
+    ),
+)
+
+py_itf_test(
+    name = "test_qemu_bridge_network",
+    srcs = [
+        "test_async_exec.py",
+        "test_qemu.py",
+    ],
+    args = [
+        "--qemu-config=$(location //test/resources:qemu_bridge_config)",
+        "--qemu-image=$(location //test/resources/qnx:init)",
+        "--dlt-config=$(location //test/resources:dlt_config)",
+    ],
+    data = [
+        "//test/resources:dlt_config",
+        "//test/resources:qemu_bridge_config",
+        "//test/resources/qnx:init",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+        "//score/itf/plugins:dlt_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+)
+
+py_itf_test(
+    name = "test_qemu_bridge_network_no_dlt",
+    srcs = [
+        "test_async_exec.py",
+        "test_qemu.py",
+    ],
+    args = [
+        "--qemu-config=$(location //test/resources:qemu_bridge_config)",
+        "--qemu-image=$(location //test/resources/qnx:init)",
+    ],
+    data = [
+        "//test/resources:qemu_bridge_config",
+        "//test/resources/qnx:init",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+)
+
+py_itf_test(
+    name = "test_qemu_port_forwarding",
+    srcs = [
+        "test_async_exec.py",
+        "test_qemu.py",
+    ],
+    args = [
+        "--qemu-config=$(location //test/resources:qemu_port_forwarding_config)",
+        "--qemu-image=$(location //test/resources/qnx:init)",
+    ],
+    data = [
+        "//test/resources:qemu_port_forwarding_config",
+        "//test/resources/qnx:init",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+        "//score/itf/plugins:dlt_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+)
+
+py_itf_test(
+    name = "test_ebclfsa",
+    srcs = [
+        "test_ping.py",
+        "test_qemu_disk.py",
+    ],
+    args = [
+        "--qemu-config=$(location @os_images//ebclfsa_aarch64:qemu_config)",
+        "--qemu-kernel=$(location @os_images//ebclfsa_aarch64:kernel)",
+        "--qemu-rootfs=$(location @os_images//ebclfsa_aarch64:image)",
+        "--qemu-disk=$(location //test/resources:qemu_disk_image)",
+    ],
+    data = [
+        "//test/resources:qemu_disk_image",
+        "@os_images//ebclfsa_aarch64:image",
+        "@os_images//ebclfsa_aarch64:kernel",
+        "@os_images//ebclfsa_aarch64:qemu_config",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+py_itf_test(
+    name = "test_ubuntu",
+    srcs = [
+        "test_ping.py",
+        "test_qemu_disk.py",
+    ],
+    args = [
+        "--qemu-config=$(location @os_images//ubuntu_x86_64:qemu_config)",
+        "--qemu-rootfs=$(location @os_images//ubuntu_x86_64:image)",
+        "--qemu-disk=$(location //test/resources:qemu_disk_image)",
+    ],
+    data = [
+        "//test/resources:qemu_disk_image",
+        "@os_images//ubuntu_x86_64:image",
+        "@os_images//ubuntu_x86_64:qemu_config",
+    ],
+    plugins = [
+        "//score/itf/plugins:qemu_plugin",
+    ],
+    tags = [
+        "manual",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+test_suite(
+    name = "linux_qemu_tests",
+    tags = [
+        "manual",
+    ],
+    tests = [
+        ":test_ebclfsa",
+        ":test_ubuntu",
+    ],
+)
+
+test_suite(
+    name = "qnx_qemu_tests",
+    tags = [
+        "manual",
+    ],
+    tests = [
+        ":test_qemu_bridge_network",
+        ":test_qemu_bridge_network_no_dlt",
+        ":test_qemu_port_forwarding",
+        ":test_ssh_configurable",
+    ],
+)

@@ -44,7 +44,10 @@ def _contract_text(contract: dict) -> list[str]:
         major = f" @{item['major']}" if item["major"] else ""
         lines.append(f"  needed by  {item['label']} ({item['slot']}){major}{expects}")
     for item in contract["tests"]:
-        lines.append(f"  test       {item['test'] or item['role']} (role {item['role']}): {_members(item['shape'])}")
+        major = f" @{item['major']}" if item.get("major") is not None else ""
+        lines.append(
+            f"  test       {item['test'] or item['role']} (role {item['role']}){major}: {_members(item['shape'])}"
+        )
     lines += [f"  DISAGREES  {item['kind']}: {item['message']}" for item in contract["disagreements"]]
     return lines + [""]
 
@@ -161,15 +164,20 @@ def _offered_html(c: dict) -> str:
 def _needed_html(c: dict) -> str:
     return "<p>Needed by</p>" + _list(
         f"<code>{_e(i['label'])}</code> slot <code>{_e(i['slot'])}</code> expects {_e(_members(i['expects']))}"
+        + (f"; requires {_e(_at(c['contract'], i['major']))}" if i["major"] is not None else "")
         for i in c["needed_by"]
     )
 
 
 def _tests_html(c: dict) -> str:
-    return "<p>Tests</p>" + _list(
-        f"{_e(i['test'] or i['role'])}: role <code>{_e(i['role'])}</code> {_e(_members(i['shape']))}"
-        for i in c["tests"]
-    )
+    items = []
+    for item in c["tests"]:
+        major = f"@{item['major']} " if item.get("major") is not None else ""
+        items.append(
+            f"{_e(item['test'] or item['role'])}: role <code>{_e(item['role'])}</code> "
+            f"{_e(major)}{_e(_members(item['shape']))}"
+        )
+    return "<p>Tests</p>" + _list(items)
 
 
 def _contract_card(c: dict) -> str:
@@ -202,7 +210,7 @@ def _factory_card(f: dict) -> str:
 
 
 def _action_card(a: dict) -> str:
-    uses = _list(f"slot <code>{_e(u['slot'])}</code>: {_e(u['contract'])}" for u in a["uses"])
+    uses = _list(f"slot <code>{_e(u['slot'])}</code>: {_e(_at(u['contract'], u.get('major')))}" for u in a["uses"])
     return (
         f'<div class="card" id="a-{_e(a["label"])}"><h3><code>{_e(a["label"])}</code> '
         f'<span class="muted">makes <span class="state">{_e(a["state"])}</span> true</span></h3>'

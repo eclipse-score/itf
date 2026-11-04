@@ -23,9 +23,11 @@ from __future__ import annotations
 import ast
 import dataclasses
 import importlib.util
+import logging
 from pathlib import Path
 
 
+from score.itf.core.engine.publish import split_major
 from score.itf.core.engine.yaml_text import safe_load as yaml_safe_load
 
 from . import Definition, load_list
@@ -40,6 +42,7 @@ class ObservedRequirement:
     contract: str | None = None
     shape: tuple[str, ...] = ()
     scope: str | None = None
+    major: int | None = None
 
 
 # ---- packs ----------------------------------------------------------------------------------------------------
@@ -124,15 +127,83 @@ def _argument(call: ast.Call, position: int, keyword: str):
     return next((k.value for k in call.keywords if k.arg == keyword), None)
 
 
-def _requirement(call: ast.Call) -> ObservedRequirement | None:
+_PROTOCOL_BASES = frozenset({"Protocol", "typing.Protocol", "typing_extensions.Protocol"})
+
+
+def _protocol_imports(tree: ast.Module) -> frozenset[str]:
+    bases = set(_PROTOCOL_BASES)
+    for node in tree.body:
+        if isinstance(node, ast.ImportFrom) and node.module in {"typing", "typing_extensions"}:
+            bases.update(alias.asname or alias.name for alias in node.names if alias.name == "Protocol")
+        elif isinstance(node, ast.Import):
+            bases.update(
+                f"{alias.asname or alias.name}.Protocol"
+                for alias in node.names
+                if alias.name in {"typing", "typing_extensions"}
+            )
+    return frozenset(bases)
+
+
+def _protocol(node, protocols, seen=(), *, bases=_PROTOCOL_BASES) -> tuple[str | None, tuple[str, ...]]:
+    name = node.id if isinstance(node, ast.Name) else ast.unparse(node)
+    if name not in protocols or name in seen:
+        raise ValueError(
+            f"cannot statically resolve Protocol shape {name}; use runtime preflight for imported or dynamic shapes"
+        )
+    declaration = protocols[name]
+    contract, members = None, set()
+    for base in declaration.bases:
+        if ast.unparse(base) in bases:
+            continue
+        inherited_contract, inherited_members = _protocol(base, protocols, (*seen, name), bases=bases)
+        contract = inherited_contract or contract
+        members.update(inherited_members)
+    for member in declaration.body:
+        if isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            members.add(member.name)
+        targets = (
+            member.targets
+            if isinstance(member, ast.Assign)
+            else ([member.target] if isinstance(member, ast.AnnAssign) else [])
+        )
+        for target in targets:
+            if isinstance(target, ast.Name):
+                if target.id == "__contract__":
+                    contract = _constant(member.value)
+                else:
+                    members.add(target.id)
+    return contract, tuple(sorted(member for member in members if not member.startswith("_")))
+
+
+def _requirement(call: ast.Call, protocols=None, errors=None, *, bases=_PROTOCOL_BASES) -> ObservedRequirement | None:
     func = call.func
     name = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", "")
     if name != "requires" or not call.args or _constant(call.args[0]) is None:
         return None
     contract = _constant(_argument(call, 1, "contract"))
+    shape_node = _argument(call, 2, "shape")
+    shape = _shape_of(shape_node)
+    if (
+        shape_node is not None
+        and not isinstance(shape_node, (ast.List, ast.Tuple))
+        and not (isinstance(shape_node, ast.Constant) and shape_node.value is None)
+    ):
+        try:
+            declared, shape = _protocol(shape_node, protocols or {}, bases=bases)
+            if declared and contract and split_major(declared) != split_major(contract):
+                raise ValueError(f"Protocol contract {declared!r} disagrees with {contract!r}")
+            contract = contract or declared
+            if not contract:
+                raise ValueError(f"Protocol shape {ast.unparse(shape_node)} has no statically resolved __contract__")
+        except ValueError as exc:
+            message = f"line {call.lineno}: {exc}"
+            if errors is not None:
+                errors.append(message)
+            else:
+                logging.getLogger(__name__).warning(message)
+    contract, major = split_major(contract) if contract else (None, None)
     scope = _constant(next((k.value for k in call.keywords if k.arg == "scope"), None))
-    shape = _shape_of(_argument(call, 2, "shape"))
-    return ObservedRequirement(_constant(call.args[0]), contract.split("@")[0] if contract else None, shape, scope)
+    return ObservedRequirement(_constant(call.args[0]), contract or None, shape, scope, major)
 
 
 def _shape_of(node) -> tuple[str, ...]:
@@ -148,20 +219,35 @@ def _python_files(paths) -> list[Path]:
     return files
 
 
-def _requirements_in(file: Path) -> list[tuple[str, ObservedRequirement]]:
+def _requirements_in(file: Path, errors=None) -> list[tuple[str, ObservedRequirement]]:
     try:
         tree = ast.parse(file.read_text(encoding="utf-8"))
     except (OSError, SyntaxError):
         return []
-    found = [(str(file), req) for req in _module_requirements(tree)]
+    protocols = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
+    bases = _protocol_imports(tree)
+    local_errors = []
+    found = [(str(file), req) for req in _module_requirements(tree, protocols, local_errors, bases=bases)]
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             calls = [d for d in node.decorator_list if isinstance(d, ast.Call)]
-            found += [(f"{file}::{node.name}", req) for req in map(_requirement, calls) if req is not None]
+            found += [
+                (f"{file}::{node.name}", req)
+                for req in (_requirement(call, protocols, local_errors, bases=bases) for call in calls)
+                if req is not None
+            ]
+    for error in local_errors:
+        message = f"{file}: {error}"
+        if errors is not None:
+            errors.append(message)
+        else:
+            logging.getLogger(__name__).warning(message)
     return found
 
 
-def _module_requirements(tree: ast.Module) -> list[ObservedRequirement]:
+def _module_requirements(
+    tree: ast.Module, protocols=None, errors=None, *, bases=_PROTOCOL_BASES
+) -> list[ObservedRequirement]:
     """The requirements of a module-level `itf_requires = itf.requires(...)` (or a list of them)."""
     found = []
     for node in tree.body:
@@ -170,13 +256,19 @@ def _module_requirements(tree: ast.Module) -> list[ObservedRequirement]:
         )
         if any(isinstance(t, ast.Name) and t.id == "itf_requires" for t in targets) and node.value is not None:
             calls = node.value.elts if isinstance(node.value, (ast.List, ast.Tuple)) else [node.value]
-            found += [req for req in (_requirement(c) for c in calls if isinstance(c, ast.Call)) if req is not None]
+            found += [
+                req
+                for req in (
+                    _requirement(call, protocols, errors, bases=bases) for call in calls if isinstance(call, ast.Call)
+                )
+                if req is not None
+            ]
     return found
 
 
-def collect_requirements(paths) -> list[tuple[str, ObservedRequirement]]:
+def collect_requirements(paths, *, errors=None) -> list[tuple[str, ObservedRequirement]]:
     """`(test id, requirement)` for every `@itf.requires(...)` in the Python files under `paths`."""
-    return [found for file in _python_files(paths) for found in _requirements_in(file)]
+    return [found for file in _python_files(paths) for found in _requirements_in(file, errors)]
 
 
 # ---- the inventory --------------------------------------------------------------------------------------------
@@ -228,7 +320,12 @@ def _action(a) -> dict:
         "breaks": list(a.breaks),
         "probe": bool(a.probe),
         "uses": [
-            {"slot": n.slot, "contract": n.contract, "expects": sorted(m.name for m in n.expected.members)}
+            {
+                "slot": n.slot,
+                "contract": n.contract,
+                "expects": sorted(m.name for m in n.expected.members),
+                "major": a.need_majors.get(n.slot),
+            }
             for n in a.uses
         ],
     }
