@@ -14,12 +14,19 @@ load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:py_itf_plugin.bzl", "py_itf_plugin")
 
+filegroup(
+    name = "definitions",
+    srcs = glob(["definitions/*.yaml"]),
+    visibility = ["//visibility:public"],
+)
+
 # Contract definitions (YAML) and the runner-agnostic checks that hold providers to them. A shared
 py_library(
     name = "contracts",
     srcs = glob(
         ["**/*.py"],
     ),
+    data = [":definitions"],
     visibility = ["//visibility:public"],
     deps = [
         "//score/itf/core",

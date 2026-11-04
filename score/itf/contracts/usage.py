@@ -28,6 +28,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from score.itf.core.engine.publish import split_major
+
 
 @dataclass(frozen=True)
 class Disagreement:
@@ -41,7 +43,7 @@ class ContractEntry:
     kind: str = "capability"
     offerers: list = field(default_factory=list)  # (label, members, major or None)
     needers: list = field(default_factory=list)  # (label, slot, expected members, major or None)
-    tests: list = field(default_factory=list)  # (test id, role, members)
+    tests: list = field(default_factory=list)  # (test id, role, members, major)
     definition: object = None
     definitions: list = field(default_factory=list)
     disagreements: list = field(default_factory=list)
@@ -52,7 +54,7 @@ class ContractEntry:
             "kind": self.kind,
             "offered_by": [{"label": l, "shape": list(m), "major": mj} for l, m, mj in self.offerers],
             "needed_by": [{"label": l, "slot": s, "expects": list(m), "major": mj} for l, s, m, mj in self.needers],
-            "tests": [{"test": t, "role": r, "shape": list(m)} for t, r, m in self.tests],
+            "tests": [{"test": t, "role": r, "shape": list(m), "major": major} for t, r, m, major in self.tests],
             "defined": self.definition is not None,
             "disagreements": [{"kind": d.kind, "message": d.message} for d in self.disagreements],
         }
@@ -87,11 +89,13 @@ def _add_factory(found: dict, part) -> None:
 
 
 def _add_action(found: dict, part) -> None:
-    _entry(found, part.state, "state").offerers.append((part.label, (), None))
-    for other in part.also:
-        _entry(found, other, "state").offerers.append((part.label, (), None))
-    for state in part.after:
-        _entry(found, state.rpartition(":")[2], "state").needers.append((part.label, "after", (), None))
+    for state in (part.state, *part.also):
+        name, major = split_major(state.rpartition(":")[2])
+        _entry(found, name, "state").offerers.append((part.label, (), major))
+    for relation in ("after", "breaks"):
+        for state in getattr(part, relation, ()):
+            name, major = split_major(state.rpartition(":")[2])
+            _entry(found, name, "state").needers.append((part.label, relation, (), major))
     for need in part.uses:
         _add_need(found, part.label, need, part.need_majors.get(need.slot))
 
@@ -101,8 +105,16 @@ def _add_tests(found: dict, tests) -> None:
         test_id, requirement = item if isinstance(item, tuple) else ("", item)
         if getattr(requirement, "contract", None):
             _entry(found, requirement.contract, "capability").tests.append(
-                (test_id, requirement.role, tuple(requirement.shape or ()))
+                (test_id, requirement.role, _members(requirement.shape), getattr(requirement, "major", None))
             )
+
+
+def _add_expectations(found: dict, parts) -> None:
+    for expectation in getattr(parts, "expectations", ()):
+        name, major = split_major(expectation.contract)
+        _entry(found, name, "capability").needers.append(
+            (expectation.origin, "itf_expect", _members(expectation.shape), major)
+        )
 
 
 def _add_definitions(found: dict, definitions) -> None:
@@ -116,6 +128,7 @@ def contract_map(parts, tests=None, definitions=None) -> dict[str, ContractEntry
     found: dict[str, ContractEntry] = {}
     for part in _descriptors(parts):
         (_add_factory if hasattr(part, "contract") else _add_action)(found, part)
+    _add_expectations(found, parts)
     _add_tests(found, tests)
     _add_definitions(found, definitions)
     for entry in found.values():
@@ -154,30 +167,35 @@ def _needers_missing(entry: ContractEntry, offered: set) -> list[Disagreement]:
 def _tests_missing(entry: ContractEntry, offered: set) -> list[Disagreement]:
     return [
         Disagreement("missing-member", f"test {test_id or role} requires {entry.name}.{member}, which no offerer has")
-        for test_id, role, shape in entry.tests
+        for test_id, role, shape, _ in entry.tests
         for member in shape
         if member not in offered
     ]
 
 
 def _unoffered_majors(entry: ContractEntry) -> list[Disagreement]:
-    majors_offered = {m for _, _, m in entry.offerers if m is not None}
-    if not majors_offered:
+    if not entry.offerers:
         return []
-    offered = ", ".join(f"@{m}" for m in sorted(majors_offered))
+    majors_offered = {m for _, _, m in entry.offerers if m is not None}
+    offered = ", ".join(f"@{m}" for m in sorted(majors_offered)) or "(no majors declared)"
     return [
         Disagreement("major-mismatch", f"{label} (slot {slot}) expects {entry.name}@{major}, offered: {offered}")
         for label, slot, _, major in entry.needers
+        if major is not None and major not in majors_offered
+    ] + [
+        Disagreement("major-mismatch", f"test {test_id or role} expects {entry.name}@{major}, offered: {offered}")
+        for test_id, role, _, major in entry.tests
         if major is not None and major not in majors_offered
     ]
 
 
 def _against_definition(entry: ContractEntry) -> list[Disagreement]:
-    """What a capability definition requires of its offerers: its required members and a version at least their major."""
+    """Definitions bound offered majors; capability definitions also require members."""
     definition = entry.definition
-    if definition is None or definition.kind != "capability":
+    if definition is None:
         return []
-    return _lacking_required(entry, definition) + _ahead_of_version(entry, definition)
+    members = _lacking_required(entry, definition) if definition.kind == "capability" else []
+    return members + _ahead_of_version(entry, definition)
 
 
 def _lacking_required(entry: ContractEntry, definition) -> list[Disagreement]:
@@ -218,7 +236,7 @@ def _skeleton_members(entry: ContractEntry) -> list[dict]:
 
 def _expected_members(entry: ContractEntry) -> set:
     return {m for _, _, members, _ in entry.needers for m in members} | {
-        m for _, _, members in entry.tests for m in members
+        m for _, _, members, _ in entry.tests for m in members
     }
 
 
@@ -228,7 +246,7 @@ def _skeleton_member(name: str, required: bool) -> dict:
 
 def _capability_part(entry: ContractEntry) -> dict:
     """The suggested role (the alphabetically first one tests use) and the members, when there are any."""
-    roles = sorted({r for _, r, _ in entry.tests})
+    roles = sorted({r for _, r, _, _ in entry.tests})
     members = _skeleton_members(entry)
     return ({"role": roles[0]} if roles else {}) | ({"members": members} if members else {})
 

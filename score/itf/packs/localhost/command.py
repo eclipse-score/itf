@@ -39,11 +39,13 @@ class LocalExec:
     def __init__(self, platform: Platform):
         self.platform = platform
 
-    def exec(self, command: str, timeout: float = 30.0) -> tuple[int, str]:
+    def exec(self, command: str, timeout: float = 30.0) -> tuple[int, bytes]:
         """(exit code, stdout followed by stderr); never raises on a nonzero exit."""
         logger.debug("local exec: sending %s", command)
-        code, stdout, stderr = ProcessWrapper.run("/bin/sh", ["-c", command], cwd=self.platform.root, timeout=timeout)
+        code, stdout, stderr = ProcessWrapper.run(
+            "/bin/sh", ["-c", command], cwd=self.platform.root, timeout=timeout, text=False
+        )
         output = stdout + stderr
-        logger.debug("local exec: output %s", _short(output))
+        logger.debug("local exec: output %s", _short(output.decode("utf-8", errors="replace")))
         logger.info("local exec: %s -> exit %s", command, code)
         return code, output
