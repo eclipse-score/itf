@@ -21,10 +21,14 @@ logger = logging.getLogger(__name__)
 
 
 class WrappedProcess:
-    """Unified process wrapper that works with any Target implementation.
+    """Context manager over one asynchronously executed binary.
 
-    Manages the lifecycle of a binary executed asynchronously through the
-    ``Target.execute_async()`` → ``AsyncProcess`` interface.
+    Works with anything offering ``spawn(binary_path, args=None, cwd="/", **kwargs) -> AsyncProcess``,
+    i.e. every provider of the ``itf.capabilities.exec.process`` contract: on exit it waits for or
+    stops the process and checks its exit code.
+
+        with WrappedProcess(target.process, "/usr/bin/app", args=["--verbose"]) as app:
+            assert app.is_running()
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -32,7 +36,7 @@ class WrappedProcess:
 
     def __init__(
         self,
-        target,
+        spawner,
         binary_path,
         args=None,
         cwd="/",
@@ -42,7 +46,7 @@ class WrappedProcess:
         expected_exit_code=0,
         **kwargs,
     ):
-        self.target = target
+        self.spawner = spawner
         self.binary_path = binary_path
         self.args = args if args is not None else []
         self.cwd = cwd
@@ -57,7 +61,7 @@ class WrappedProcess:
         self.kwargs = kwargs
 
     def __enter__(self):
-        self.process = self.target.execute_async(self.binary_path, args=self.args, cwd=self.cwd, **self.kwargs)
+        self.process = self.spawner.spawn(self.binary_path, args=self.args, cwd=self.cwd, **self.kwargs)
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
