@@ -15,28 +15,37 @@
 Score ITF
 =========
 
-Integration Test Framework for ECU testing in automotive domains.
+Integration Test Framework for ECU testing in automotive domains: a platform to compose test targets from
+self-describing parts. A target file says what a target is made of, OCTO plans it from the parts' own
+metadata (nothing is trusted on its name), and your tests ask for roles. Write a test once, run it on a
+container, a virtual machine or real hardware.
 
-.. grid:: 1 1 3 3
+.. grid:: 1 1 2 4
    :class-container: score-grid
 
    .. grid-item-card::
 
-      :ref:`How to <itf_how-to>`
+      :doc:`Start here <how-to/start_here>`
       ^^^
-      Learn how to install and use ITF.
+      Three questions that lead you to a starter and the commands to run.
+
+   .. grid-item-card::
+
+      `Contract map <catalog.html>`_
+      ^^^
+      Every pack, capability factory, action and contract ITF offers, searchable.
+
+   .. grid-item-card::
+
+      :doc:`Tutorial <how-to/tutorial>`
+      ^^^
+      Fifteen minutes: copy a starter, validate, graph, bring it up, test, swap a factory, override for one setup.
 
    .. grid-item-card::
 
       :ref:`Reference <itf_reference>`
       ^^^
-      API and Bazel macro reference.
-
-   .. grid-item-card::
-
-      :ref:`Concepts <itf_concepts>`
-      ^^^
-      Architecture, plugin system, and key design decisions.
+      Contracts, Bazel macros (``itf_target``, ``py_itf_test``) and packs.
 
 
 .. dropdown:: Sitemap
@@ -46,6 +55,8 @@ Integration Test Framework for ECU testing in automotive domains.
       :includehidden:
       :titlesonly:
 
+      how-to/start_here
+      how-to/tutorial
       how-to/index
       reference/index
       concepts/index

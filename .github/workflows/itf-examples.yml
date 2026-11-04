@@ -16,7 +16,21 @@ on:
   merge_group:
     types: [checks_requested]
 jobs:
-  itf-examples-build-all:
+  itf-examples-targets:
+    # Every example's target files compile on their own, without starting anything (see itf.yml).
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ./examples
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+      - name: Compile every target file
+        run: |
+          bazel build $(bazel query 'kind(_itf_target, //...) except attr(tags, manual, //...)')
+  itf-examples-test:
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -33,4 +47,4 @@ jobs:
           bazel build //...
       - name: Run test
         run: |
-          bazel test --test_output=all //...
+          bazel test --test_output=errors //...
