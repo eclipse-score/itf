@@ -1,6 +1,13 @@
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/
 common --registry=https://bcr.bazel.build
 
+common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+# Sandboxed zig compiles keep their compiled libc in /tmp/zig-cache. Bazel gives each sandbox a
+# private /tmp, which would make every compile (e.g. each autoconf check) rebuild libc; share it.
+common --enable_platform_specific_config
+build:linux --sandbox_add_mount_pair=/tmp
+
 test --test_output=errors
 
 coverage --combined_report=lcov

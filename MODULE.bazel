@@ -74,6 +74,24 @@ bazel_dep(name = "rules_cc", version = "0.2.17")
 
 ###############################################################################
 #
+# Hermetic C/C++ toolchain
+# Ships its own libc headers, so no host compiler or sysroot is needed. glibc 2.35 (Ubuntu
+# 22.04) is the oldest the built tools (bison for libpcap) accept.
+#
+###############################################################################
+bazel_dep(name = "hermetic_cc_toolchain", version = "4.3.0", dev_dependency = True)
+
+zig_toolchains = use_extension("@hermetic_cc_toolchain//toolchain:ext.bzl", "toolchains", dev_dependency = True)
+use_repo(zig_toolchains, "zig_sdk")
+
+register_toolchains(
+    "@zig_sdk//toolchain:linux_amd64_gnu.2.35",
+    "@zig_sdk//toolchain:linux_arm64_gnu.2.35",
+    dev_dependency = True,
+)
+
+###############################################################################
+#
 # Shell dependency
 #
 ###############################################################################
@@ -185,6 +203,13 @@ http_archive(
     strip_prefix = "dlt-daemon-%s" % DLT_DAEMON_CUSTOM_SHA,
     url = "https://github.com/draganbjedov/dlt-daemon/archive/%s.zip" % DLT_DAEMON_CUSTOM_SHA,
 )
+
+################################################################################
+#
+# Packet capture: tcpdump and libpcap built from source (Bazel Central Registry)
+#
+################################################################################
+bazel_dep(name = "tcpdump", version = "4.99.6.bcr.1")
 
 ################################################################################
 #
