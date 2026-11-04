@@ -10,6 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+policies:
+  - test/integration/targets/policy.py
 packs:
   ping: score.itf.packs.ping.plugin
   qemu: score.itf.packs.qemu.plugin
@@ -40,7 +42,7 @@ capabilities:
 goals:
   - console.open
   - state: platform.up
-    by: qemu.start  # ping.await_boot could make it true too
+    by: qemu.start  # ping.await_boot could make it true too, but we need qemu to actually start
   - network.reachable
   - shell.open
 relations:

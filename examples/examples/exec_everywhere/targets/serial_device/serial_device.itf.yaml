@@ -1,0 +1,43 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# A serial device in a container: fake_ecu.py answers on a TCP port inside a stock Python image, and the
+# real serial console reaches it with pyserial's socket:// URL.
+policies:
+  - examples/exec_everywhere/targets/policy.py
+packs:
+  docker: score.itf.packs.docker.plugin
+  serial: score.itf.packs.serial.plugin
+capabilities:
+  platform:
+    factory: docker.platform
+    with:
+      image: python:3.12-slim
+      command: python3 /ecu/fake_ecu.py
+      init: false
+      ports: 2323/tcp:23230
+      volumes: ${FAKE_ECU_SCRIPT}:/ecu/fake_ecu.py:ro
+  endpoint:
+    factory: docker.endpoint
+    with:
+      port: 2323
+  console:
+    factory: serial.console
+    with:
+      device: socket://127.0.0.1:23230
+  command: serial.exec
+goals:
+  - platform.up
+  # serial.open and the project's own action could both make this true. The project's waits until the device
+  # greets, so the console does not open before something listens.
+  - state: console.open
+    by: local.open_when_ecu_answers

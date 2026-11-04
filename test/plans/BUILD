@@ -84,4 +84,5 @@ py_itf_unittest(
         "//test/integration:target_files",
     ],
     env = {"PLANNER": "$(rootpath :planner)"},
+    deps = ["//score/itf/core"],
 )

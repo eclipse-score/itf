@@ -12,19 +12,36 @@
 # *******************************************************************************
 """Any target on a platform that can restart; state changes go through the planner."""
 
+from typing import Protocol
+
 import score.itf as itf
 
 
-@itf.requires("platform", shape=["restart"])
-@itf.requires("command")
+class Restart(Protocol):
+    __contract__ = "platform.instance"
+
+    def restart(self) -> None: ...
+
+
+class Command(Protocol):
+    __contract__ = "exec.command"
+
+    def exec(self, command: str, /) -> tuple[int, bytes]: ...
+
+
+itf_requires = [
+    itf.requires("platform", contract="platform.instance"),
+    itf.requires("command", shape=Command),
+]
+
+
+@itf.requires("platform", shape=Restart)
 def test_after_a_restart_reach_brings_every_goal_back(target):
     target.platform.restart()
     target.reach()  # re-plans every goal from what the probes now observe
     assert target.command.exec("echo -n back") == (0, b"back")
 
 
-@itf.requires("platform")
-@itf.requires("command")
 def test_renew_gives_a_new_platform_and_reaches_the_goals_again(target):
     old = target.platform
     target.renew("platform")

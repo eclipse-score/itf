@@ -26,6 +26,11 @@ A tcpdump capture of an interface.
 
 - CAP_NET_RAW (or root) and the interface on the host
 
+Under Bazel, host-capture tests must run locally rather than in `linux-sandbox`, which drops file
+capabilities from sandboxed executable copies. Grant `CAP_NET_RAW` to the actual exec-configuration
+tcpdump binary in the test's runfiles, not only to a fastbuild binary. The integration guide documents
+the `//test/integration:observability_pcap` target and its runfiles path.
+
 **Target file excerpt**
 
 ```yaml

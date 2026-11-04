@@ -1,0 +1,57 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# The same tests on a QEMU machine instead of a container: the platform is QEMU, commands and files go over
+# SSH. The tests do not change: they ask for the roles `command`, `files` and `console`. Manual: it needs
+# qemu-system-*, /dev/kvm and the QNX image (build with --config=x86_64-qnx).
+policies:
+  - examples/itf/targets/policy.py
+packs:
+  ping: score.itf.packs.ping.plugin
+  qemu: score.itf.packs.qemu.plugin
+  ssh: score.itf.packs.ssh.plugin
+capabilities:
+  platform:
+    factory: qemu.platform
+    with:
+      config_file: ${ITF_QEMU_CONFIG}
+      kernel: ${ITF_QEMU_KERNEL}
+  console: qemu.console
+  endpoint: qemu.endpoint
+  credentials: qemu.credentials
+  ping:
+    factory: ping.pinger
+    with:
+      boot_timeout: 120
+  shell:
+    factory: ssh.shell
+    with:
+      n_retries: 60
+      retry_interval: 2.0
+  command: ssh.exec
+  files: ssh.files
+goals:
+  - console.open
+  - state: platform.up
+    by: qemu.start  # ping.await_boot could make it true too
+  - network.reachable
+  - shell.open
+relations:
+  # The console records from before boot: open it first. The qemu pack does not know a console exists, so
+  # the order is the target file's to say.
+  - state: platform.up
+    after:
+      - console.open
+  # The session connects to the booted machine.
+  - state: shell.open
+    after:
+      - platform.up
