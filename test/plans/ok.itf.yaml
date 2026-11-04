@@ -1,3 +1,5 @@
+packs:
+  sim: score.itf.packs.sim.plugin
 capabilities:
   platform:
     factory: sim.platform
