@@ -1,146 +1,179 @@
-# Get Started
+<!--
+*******************************************************************************
+Copyright (c) 2026 Contributors to the Eclipse Foundation
 
-This guide walks you through setting up ITF in a new Bazel workspace from scratch.
+See the NOTICE file(s) distributed with this work for additional
+information regarding copyright ownership.
 
-## Prerequisites
+This program and the accompanying materials are made available under the
+terms of the Apache License Version 2.0 which is available at
+https://www.apache.org/licenses/LICENSE-2.0
 
-- [Bazel](https://bazel.build/install) 7.x or later
-- Docker (for Docker-based tests)
-- Python 3.10+
+SPDX-License-Identifier: Apache-2.0
+*******************************************************************************
+-->
 
-## 1. Add ITF to your workspace
+# Get started
 
-In your `MODULE.bazel`, declare the dependency using the latest published
-registry version:
+New to ITF? Read [Start here](start_here.md) and follow the [tutorial](tutorial.md) first. This page shows the
+smallest real test, file by file.
+
+## Add ITF
 
 ```starlark
-bazel_dep(name = "score_itf", version = "0.2.0")
+# MODULE.bazel
+bazel_dep(name = "score_itf", version = "...")
 ```
 
-To get unreleased fixes from the main branch, add a `git_override` directly
-after the `bazel_dep`:
-
-```starlark
-git_override(
-    module_name = "score_itf",
-    remote = "https://github.com/eclipse-score/itf.git",
-    commit = "<COMMIT_HASH>",
-)
 ```
-
-Replace `<COMMIT_HASH>` with the full SHA of the desired commit from the
-[score_itf repository](https://github.com/eclipse-score/itf).
-
-## 2. Configure `.bazelrc`
-
-Add the S-CORE Bazel registry so Bazel can resolve the `score_itf` module:
-
-```
+# .bazelrc
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/
 common --registry=https://bcr.bazel.build
 ```
 
-If you also want to build the ITF documentation locally (optional), add the
-Java configuration required by PlantUML:
+## A first test
 
+```yaml
+# target.itf.yaml: what the target is made of
+capabilities:
+  platform:
+    factory: docker.platform
+    with:
+      image: ubuntu:24.04
+  command: docker.exec
+goals:
+  - platform.up
 ```
-build --java_language_version=17
-build --java_runtime_version=remotejdk_17
-build --tool_java_language_version=17
-build --tool_java_runtime_version=remotejdk_17
-```
-
-## 3. Write your first test
-
-Create a test file `test_hello.py`:
 
 ```python
+# test_hello.py
+import score.itf as itf
+
+@itf.requires("command")
 def test_hello(target):
-    exit_code, output = target.execute("echo 'Hello from target!'")
-    assert exit_code == 0
-    assert b"Hello from target!" in output
+    assert target.command.exec("echo -n 'Hello from target!'") == (0, "Hello from target!")
 ```
 
-Create a `BUILD` file in the same directory:
-
 ```starlark
-load("@score_itf//:defs.bzl", "py_itf_test")
+# BUILD
+load("@score_itf//:defs.bzl", "itf_target", "py_itf_test")
+
+itf_target(
+    name = "target",
+    src = "target.itf.yaml",
+    packs = ["@score_itf//score/itf/packs/docker"],
+)
 
 py_itf_test(
     name = "test_hello",
     srcs = ["test_hello.py"],
-    args = ["--docker-image=ubuntu:24.04"],
-    plugins = ["@score_itf//score/itf/plugins:docker_plugin"],
+    target = ":target",
 )
 ```
 
-> **Note:** All `load()` calls and plugin labels must use the `@score_itf`
-> prefix. Using `//:defs.bzl` without the prefix would look for that file
-> in your own workspace and fail with `no such file`.
-
-## 4. Run the test
-
-```bash
-bazel test //path/to:test_hello
-```
-
-To see full test output:
+`platform` and `command` are roles. `docker.platform` and `docker.exec` are labels of capability factories:
+`<pack>.<name>`, and the pack is where they come from. `platform.up` is the goal: the state the target must
+reach. The test asks for a role, and gets `target.command`. The words are defined in the glossary of
+[the model](../concepts/model.md#the-vocabulary).
 
 ```bash
-bazel test //path/to:test_hello --test_output=all
+bazel build :target                  # compile the target file: target.plan.json; nothing runs
+bazel test :test_hello --test_arg=--itf-plan --test_output=all    # the plan and the gating
+bazel test :test_hello
 ```
 
-## 5. Link tests to requirements
+Without Bazel, name the target file in `pytest.ini` (`itf_target = target.itf.yaml`), in `pyproject.toml`
+(`[tool.itf]` with `target = "target.itf.yaml"`), with `ITF_TARGET`, or per run with
+`pytest --itf-target target.itf.yaml`. Python modules explicitly listed in the target file's `policies:` hold
+the project's ITF code (`itf_verify`, `itf_teardown`, the project's own parts); pytest fixtures stay in
+`conftest.py`. This test needs neither. Native ITF does not discover policies by searching directories.
 
-ITF integrates with the S-CORE docs-as-code traceability system. The
-`@add_test_properties` decorator writes requirement links and test
-classification metadata into the JUnit XML report, which Sphinx can then
-pick up to create bidirectional traceability between test results and
-requirements.
+## Add readiness and evidence: the policy
 
 ```python
-from attribute_plugin import add_test_properties
+# policy.py
+from score.itf.core import hookimpl
 
-@add_test_properties(
-    fully_verifies=["REQ-001", "REQ-002"],
-    test_type="requirements-based",
-    derivation_technique="requirements-analysis",
-)
-def test_hello(target):
-    exit_code, output = target.execute("echo 'Hello from target!'")
-    assert exit_code == 0
-    assert b"Hello from target!" in output
+@hookimpl
+def itf_verify(session):
+    """Checked once after bring-up: a target that cannot answer fails here, with a named check."""
+    code, output = session.target.command.exec("echo -n ready")
+    session.check("command.answers", code == 0 and output.strip() == "ready", detail=f"exit {code}")
+
+@hookimpl
+def itf_teardown(session):
+    """Collect evidence while the target still runs, before it is unwound."""
 ```
 
-Add `attribute_plugin` to the `plugins` list in your `BUILD` file:
+Select the module in YAML as well as bundling it in the `itf_target`'s `srcs`:
+
+```yaml
+# Add to target.itf.yaml
+policies:
+    - ./policy.py
+```
+
+`./policy.py` works when invoked from the directory containing that Python file. Policy paths are absolute
+or relative to the invocation working directory, not the YAML file's parent. For example,
+`policies: [/home/alice/bench/policy.py]` selects an absolute path. Under `bazel run`,
+`BUILD_WORKING_DIRECTORY` supplies the caller's working directory.
+
+For a shared baseline plus Ubuntu-specific contributions, invoke from the project root and declare both:
+
+```yaml
+# targets/ubuntu.itf.yaml
+policies:
+    - policies/common.py
+    - policies/ubuntu.py
+capabilities:
+    platform:
+        factory: docker.platform
+        with:
+            image: ubuntu:24.04
+    command: docker.exec
+goals:
+    - platform.up
+```
+
+```starlark
+# BUILD at the project root
+itf_target(
+        name = "ubuntu",
+        src = "targets/ubuntu.itf.yaml",
+        packs = ["@score_itf//score/itf/packs/docker"],
+        srcs = ["policies/common.py", "policies/ubuntu.py"],
+)
+```
+
+YAML is the source of truth; `srcs` bundles the selected Python files for planning and tests, it does not
+select policies. Any Python filename is valid; there is no `policy.py` basename, proximity, or single-file
+restriction, and no planner `--policy` selection. Direct `Session`, CLI and pytest load the same YAML
+selection, without an implicit `found.policy` contribution. Policy contributions alone do not trigger
+actions without goals requiring their states.
+
+Includes merge first, then the target file, then overrides in order. Nonempty `policies:` lists add paths
+deterministically and deduplicate them; omitting the key adds no own policies and retains included or
+inherited policies. Explicit `policies: []` clears the inherited list. Deduplicating a module does not permit
+duplicate part labels across distinct modules: those remain errors. Legacy discovery stays in compatibility
+handling, not the native target-file workflow.
+
+## Test properties in the JUnit report
+
+Add score_tooling's `attribute_plugin` to the `plugins` list and decorate tests with `@add_test_properties(...)`:
 
 ```starlark
 py_itf_test(
     name = "test_hello",
     srcs = ["test_hello.py"],
-    args = ["--docker-image=ubuntu:24.04"],
-    plugins = [
-        "@score_itf//score/itf/plugins:docker_plugin",
-        "@score_itf//score/itf/plugins:attribute_plugin",
-    ],
+    plugins = ["@score_itf//:attribute_plugin"],
+    target = ":target",
 )
 ```
 
-## Next steps
+## Next
 
-- **Write more tests**: See [Write Tests](write_tests.md) for Docker, QEMU,
-  and DLT examples.
-- **Use plugins**: See [Using Plugins](plugins.md) for configuring and
-  combining built-in plugins.
-- **Understand the design**: See the [Concepts](../concepts/index.rst)
-  section for the architecture and plugin system.
-
-## For ITF contributors
-
-Build this documentation site locally:
-
-```bash
-bazel run //:docs
-```
-
-Open `_build/index.html` in your browser.
+- **Choose a starter**: [Start here](start_here.md).
+- **Write tests**: [Write tests](write_tests.md): target files, overrides, scopes, gating, `reach`, `discard` and `renew`.
+- **Learn the words**: the glossary in [the model](../concepts/model.md).
+- **Find factories**: each pack's README has its label table; [the pack reference](../reference/plugins.rst).
+- **Write a pack**: [Write a pack](plugins.md).

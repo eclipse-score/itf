@@ -10,34 +10,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
-load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 
+# The original qemu plugin's labels; the modules re-export from score.itf.compat and the qemu pack.
 py_library(
     name = "config",
     srcs = ["config.py"],
-    imports = ["."],
     visibility = ["//visibility:public"],
-    deps = [requirement("pydantic")],
+    deps = ["//score/itf/compat"],
 )
 
 py_library(
     name = "qemu",
     srcs = [
         "__init__.py",
-        "boot.py",
-        "checks.py",
         "image_format.py",
         "qemu.py",
-        "qemu_process.py",
         "qemu_target.py",
     ],
-    imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
         ":config",
-        "//score/itf/core/process",
-        "//score/itf/core/utils",
+        "//score/itf/plugins:core",
     ],
 )

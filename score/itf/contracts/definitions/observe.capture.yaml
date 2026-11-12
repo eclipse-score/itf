@@ -1,0 +1,45 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: observe.capture
+    kind: capability
+    role: capture
+    version: 1
+    summary: A packet capture the test can start, stop and read.
+    description: >
+      A capture of network traffic written to a file. It is started by the state
+      `capture.running` (so it is on before the traffic of interest) and stopped at teardown.
+      Factories may add `path` (the capture file) and `window` (capture one block of a test into its own
+      file); neither is required: gate on them with `shape=`.
+    members:
+      - name: start
+        signature: "() -> None"
+        semantics: Starts capturing; normally done by the state, not by tests.
+      - name: stop
+        signature: "() -> None"
+        semantics: Stops capturing and finalises the file; idempotent.
+      - name: running
+        signature: "() -> bool"
+        semantics: True while the capture process is alive.
+      - name: path
+        required: false
+        signature: "Path (a property)"
+        semantics: The capture file.
+      - name: window
+        required: false
+        signature: "(name: str, ready_timeout: float = 5.0) -> ContextManager[Path]"
+        semantics: Captures one block of a test into its own file, named after `name`, and yields its path.
+    guarantees:
+      - running() is true while a capture is on.
+    see_also:
+      - capture.running

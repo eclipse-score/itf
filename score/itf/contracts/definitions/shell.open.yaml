@@ -1,0 +1,26 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: shell.open
+    kind: state
+    version: 1
+    summary: A shell session is connected and can run commands.
+    description: >
+      Delivered by the action that connects an exec.shell node (SSH). It requires the platform to be up
+      and is invalidated by anything that drops the connection, such as a restart. Reaching it again after
+      a restart reconnects.
+    probe: The session reports it is connected.
+    see_also:
+      - exec.shell
+      - platform.up
+      - network.reachable

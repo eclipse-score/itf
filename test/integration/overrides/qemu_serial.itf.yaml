@@ -1,0 +1,15 @@
+packs:
+  serial: score.itf.packs.serial.plugin
+capabilities:
+  platform:
+    with:
+      serial_backend: tcp:127.0.0.1:4444,server=on,wait=on
+  console:
+    factory: serial.console
+    with:
+      device: socket://127.0.0.1:4444
+  command:
+    factory: serial.exec
+goals:
+  - state: console.open
+    by: local.open_serial_console

@@ -165,6 +165,7 @@ toybox                                   # Minimal Unix utilities collection (re
 [type=link] waitfor=on                  # Create symbolic link: waitfor -> on (waits for resources to become available)
 [type=link] ability=on                  # Create symbolic link: ability -> on (manages process abilities/privileges)
 [type=link] /bin/sh=/proc/boot/ksh      # Create symbolic link: sh -> ksh (standard shell link)
+[type=link] sh=ksh
 [type=link] setconf=getconf             # Create symbolic link: setconf -> getconf (sets configuration parameters)
 
 awk                 # Text processing and pattern scanning

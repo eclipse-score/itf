@@ -10,3 +10,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+"""ITF: `import score.itf as itf` is the public API of `score.itf.core`: the same names, the same `Session`.
+
+A run that wants a plan to warn about deprecated contracts hands the session its definitions
+(`Session(..., definitions=score.itf.core.adapters.definitions.definitions())`); the pytest adapter and the
+command line do. A session needs none.
+"""
+
+from .core import *  # noqa: F401,F403
+from .core import __all__  # noqa: F401

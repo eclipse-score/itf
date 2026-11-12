@@ -1,1 +1,0 @@
-../../../test/integration/test_docker.py

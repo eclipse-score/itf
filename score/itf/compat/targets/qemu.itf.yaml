@@ -1,0 +1,43 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# The original qemu_plugin as a target file: the machine from --qemu-config/--qemu-kernel/--qemu-rootfs/
+# --qemu-disk, reached over SSH. Bring-up reaches what the old pre-test checks did: ping, SSH.
+packs:
+  ping: score.itf.packs.ping.plugin
+  qemu: score.itf.packs.qemu.plugin
+  ssh: score.itf.packs.ssh.plugin
+capabilities:
+  platform:
+    factory: qemu.platform
+    with:
+      config_file: ${LEGACY_QEMU_CONFIG}
+      kernel: ${LEGACY_QEMU_KERNEL:-}
+      rootfs: ${LEGACY_QEMU_ROOTFS:-}
+      disk: ${LEGACY_QEMU_DISK:-}
+  endpoint: qemu.endpoint
+  credentials: qemu.credentials
+  shell: ssh.shell
+  command: ssh.exec
+  process: ssh.process
+  files: ssh.files
+  ping: ping.pinger
+goals:
+  - state: platform.up
+    by: qemu.start  # ping.await_boot could make it true too
+  - network.reachable
+  - shell.open
+relations:
+  # The session connects to the booted machine.
+  - state: shell.open
+    after:
+      - platform.up

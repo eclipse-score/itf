@@ -10,17 +10,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+"""The original image format probe, now the qemu pack's."""
 
-import json
-import subprocess
-
-
-def get_image_format(path_to_image: str) -> str:
-    """Determine the disk image format by probing image metadata."""
-    result = subprocess.run(
-        ["qemu-img", "info", "--output=json", path_to_image],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return json.loads(result.stdout)["format"]
+from score.itf.packs.qemu.image_format import get_image_format  # noqa: F401

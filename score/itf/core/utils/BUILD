@@ -12,13 +12,10 @@
 # *******************************************************************************
 load("@rules_python//python:defs.bzl", "py_library")
 
+# The original label; the modules re-export from score.itf.compat.
 py_library(
     name = "utils",
-    srcs = [
-        "__init__.py",
-        "bazel.py",
-        "bunch.py",
-        "utils.py",
-    ],
+    srcs = glob(["*.py"]),
     visibility = ["//visibility:public"],
+    deps = ["//score/itf/compat"],
 )

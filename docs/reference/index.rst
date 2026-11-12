@@ -17,10 +17,12 @@
 Reference
 =========
 
-API and Bazel macro reference for ITF.
+The contract reference, the Bazel macros and the packs of ITF. The words are defined in the glossary of
+:doc:`../concepts/model`.
 
 .. toctree::
    :maxdepth: 1
 
+   contracts
    bazel_macros
    plugins

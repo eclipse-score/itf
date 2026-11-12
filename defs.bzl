@@ -12,8 +12,10 @@
 # *******************************************************************************
 """ITF public Bazel interface"""
 
+load("@score_itf//bazel:itf_target.bzl", local_itf_target = "itf_target")
 load("@score_itf//bazel:py_itf_test.bzl", local_py_itf_test = "py_itf_test")
 load("@score_itf//bazel:py_itf_unittest.bzl", local_py_itf_unittest = "py_itf_unittest")
 
 py_itf_test = local_py_itf_test
 py_itf_unittest = local_py_itf_unittest
+itf_target = local_itf_target

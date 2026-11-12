@@ -1,0 +1,40 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# qemu.itf.yaml with the original dlt_plugin: DLT received on the host (dlt.receive), from --dlt-config,
+# recording once the machine is up.
+include:
+  - qemu.itf.yaml
+packs:
+  dlt: score.itf.packs.dlt.plugin
+capabilities:
+  logs:
+    factory: dlt.receive
+    with:
+      host_ip: ${LEGACY_DLT_HOST_IP:-127.0.0.1}
+      multicast_ips: ${LEGACY_DLT_MULTICAST:-}
+  # the dlt_on_target fixture: dlt-receive run on the target (--dlt-receive-on-target-path, else the bundled one)
+  dlt_on_target:
+    factory: dlt.on_target
+    bind:
+      files: files
+      process: process
+    with:
+      binary_path: ${LEGACY_DLT_ON_TARGET:-}
+goals:
+  - state: logs.active
+    by: dlt.start_receive
+relations:
+  # Recording starts once the machine is up.
+  - state: logs.active
+    after:
+      - platform.up

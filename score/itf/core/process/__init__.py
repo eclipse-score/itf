@@ -10,3 +10,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+"""Process handling shared by the core and every pack: asynchronous handles on a target
+(:class:`AsyncProcess`, :class:`WrappedProcess`) and host-side subprocesses (:class:`ProcessWrapper`,
+:class:`PipeConsole`)."""
+
+from .async_process import AsyncProcess
+from .console import Console, PipeConsole
+from .process_wrapper import ProcessWrapper
+from .wrapped_process import WrappedProcess
+
+__all__ = ["AsyncProcess", "Console", "PipeConsole", "ProcessWrapper", "WrappedProcess"]

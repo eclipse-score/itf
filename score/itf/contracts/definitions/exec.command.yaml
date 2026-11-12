@@ -1,0 +1,36 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: exec.command
+    kind: capability
+    role: command
+    version: 1
+    summary: Run one shell command and get its exit code and output.
+    description: >
+      The simplest way to act on a target: hand over a command line, get back what happened. Where the
+      command runs depends on the factory (the host, a container, over SSH, on a serial console). Do not
+      rely on state persisting between calls: a factory may start a fresh shell each time, while a console
+      keeps one session. Prefer a child shell (`sh -c '...'`) when a command must not affect the session.
+    members:
+      - name: exec
+        signature: "(command: str, timeout: float = 30.0) -> tuple[int, bytes]"
+        semantics: >
+          Returns the exit code and the output as bytes, stdout followed by stderr. A nonzero exit is returned,
+          never raised. A command that does not finish within the timeout is an error of the factory.
+    guarantees:
+      - A nonzero exit code is returned, not raised.
+      - The output contains what the command wrote to stdout and to stderr.
+    see_also:
+      - exec.shell
+      - exec.process
+    conformance: score.itf.contracts.conformance.exec

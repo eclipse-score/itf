@@ -22,6 +22,11 @@ Practical guides for installing and using ITF.
 .. toctree::
    :maxdepth: 1
 
+   start_here
+   tutorial
    get_started
    write_tests
    plugins
+   migrate
+   contracts
+   versioning

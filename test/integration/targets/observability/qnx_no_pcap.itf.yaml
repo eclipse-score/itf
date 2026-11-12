@@ -1,0 +1,35 @@
+policies:
+  - test/integration/targets/observability/policy.py
+packs:
+  qemu: score.itf.packs.qemu.plugin
+  ssh: score.itf.packs.ssh.plugin
+capabilities:
+  platform:
+    factory: qemu.platform
+    with:
+      config_file: ${ITF_QEMU_CONFIG}
+      kernel: ${ITF_QEMU_KERNEL}
+  console: qemu.console
+  endpoint: qemu.endpoint
+  credentials: qemu.credentials
+  shell:
+    factory: ssh.shell
+    with:
+      n_retries: 60
+      retry_interval: 2.0
+  command: ssh.exec
+  process: ssh.process
+goals:
+  - state: platform.up
+    by: qemu.start
+  - state: console.open
+    by: qemu.open_console
+  - state: shell.open
+    by: ssh.open
+relations:
+  - state: console.open
+    after:
+      - platform.up
+  - state: shell.open
+    after:
+      - console.open
