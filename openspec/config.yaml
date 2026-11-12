@@ -1,0 +1,39 @@
+schema: spec-driven
+
+context: |
+  Preserve existing public plugins, options, fixtures, imports, and Bazel labels
+  unless a proposal explicitly changes them.
+  Treat reference implementations as evidence, not as a required integration plan.
+  Distinguish verified behavior from environment-dependent or unverified behavior.
+
+rules:
+  proposal:
+    - State the problem, intended outcome, scope, and non-goals near the beginning.
+    - Separate proposed behavior from details specific to a reference implementation.
+    - Summarize alternatives and unresolved decisions; link to design details instead of duplicating them.
+    - Tie verification claims to evidence, and identify known gaps explicitly.
+
+  design:
+    - Explain component boundaries, data flow, and when side effects can occur.
+    - Describe important failure paths and what must not happen on failure.
+    - Record decisions with alternatives and rationale; connect them to the relevant requirements.
+    - Keep requirement text in specs rather than restating it at length.
+
+  specs:
+    - Write atomic, observable requirements using SHALL or MUST.
+    - Use scenarios to show expected outcomes, including relevant rejection and boundary cases.
+    - Specify externally visible behavior; avoid prescribing internal implementation unless it is part of the contract.
+
+  tasks:
+    - Map tasks to the capability or requirement they verify.
+    - Record the exact test or command used as evidence.
+    - Keep blocked, unchecked, and environment-dependent verification distinct from passing results.
+
+operations:
+  apply:
+    guidance:
+      - Run a focused check for each changed behavior and report its result.
+      - Do not claim broader verification than the commands actually cover.
+  archive:
+    guidance:
+      - Preserve unresolved questions and verification gaps in the archived record.
