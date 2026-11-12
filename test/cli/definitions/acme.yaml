@@ -20,6 +20,7 @@ contracts:
       - name: is_on
         signature: "() -> bool"
         semantics: Whether the switch is on.
+    conformance: cli_conformance
   - contract: acme/dial
     kind: capability
     version: 1

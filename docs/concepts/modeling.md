@@ -70,3 +70,4 @@ that a pack's action also makes true, every target file that uses the state name
 1. Read its README: label table, prerequisites, target file excerpt.
 2. `itf validate` a target file with it; read the plan.
 3. Run `itf contracts map`: which names does it offer and expect, and do your tests agree?
+4. Run its conformance checks against your own fulfilling parts.

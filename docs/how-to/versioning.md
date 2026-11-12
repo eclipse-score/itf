@@ -73,6 +73,7 @@ itf versions check --tests test --require-major exec --require-major platform
 `--require-major` is a command-line override; the shared `require_major` policy lives in the rules file. Keep that
 list empty or add namespaces as contracts are migrated. Definition version is the
 latest major described, not a package version. `itf contracts check --rules ...` continues to enforce project rules
+such as required definitions, fixed roles and forbidden deprecated contracts; conformance checks validate behavior.
 In development mode, unavailable optional packs are reported as inventory warnings and the JSON check marks
 `complete: false`; declared-version consistency is distinct from inventory completeness. Release mode treats an
 incomplete inventory as a failure.

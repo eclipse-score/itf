@@ -44,3 +44,4 @@ contracts:
     guarantees:
       - A relay starts open (off).
       - After on() returns, is_on() is true; after off() returns, it is false.
+    conformance: acme.conformance

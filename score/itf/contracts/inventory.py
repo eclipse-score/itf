@@ -277,9 +277,34 @@ def collect_requirements(paths, *, errors=None) -> list[tuple[str, ObservedRequi
 def _definition(definition: Definition | None) -> dict | None:
     if definition is None:
         return None
-    return {'version': definition.version, 'kind': definition.kind, 'summary': definition.summary, 'description': definition.description, 'role': definition.role, 'stability': definition.stability, 'replaced_by': definition.replaced_by, 'see_also': list(definition.see_also), 'probe': definition.probe, 'guarantees': list(definition.guarantees), 'members': [{'name': m.name, 'signature': m.signature, 'semantics': m.semantics, 'required': m.required} for m in definition.members], 'source': definition.source}
+    return {
+        "version": definition.version,
+        "kind": definition.kind,
+        "summary": definition.summary,
+        "description": definition.description,
+        "role": definition.role,
+        "stability": definition.stability,
+        "replaced_by": definition.replaced_by,
+        "conformance": definition.conformance,
+        "see_also": list(definition.see_also),
+        "probe": definition.probe,
+        "guarantees": list(definition.guarantees),
+        "members": [
+            {"name": m.name, "signature": m.signature, "semantics": m.semantics, "required": m.required}
+            for m in definition.members
+        ],
+        "source": definition.source,
+    }
 
 
+def _checks(definitions: list[Definition]) -> dict[str, list[str]]:
+    from .conformance import all_checks
+
+    unique = {d.contract: d for d in definitions}
+    try:
+        return {name: [c.name for c in checks] for name, checks in all_checks(unique).items()}
+    except Exception:  # noqa: BLE001 - a conformance module that cannot import is not a reason to lose the map
+        return {}
 
 
 def _observes(factory) -> str:
@@ -331,9 +356,10 @@ def _action(a) -> dict:
     }
 
 
-def _contract_entry(name: str, entry) -> dict:
+def _contract_entry(name: str, entry, checks: dict) -> dict:
     data = entry.to_json()
-    data['definition'] = _definition(entry.definition)
+    data["definition"] = _definition(entry.definition)
+    data["checks"] = checks.get(name, [])
     return data
 
 
@@ -348,8 +374,15 @@ def _pack_entry(name: str, factories: list, actions: list) -> dict:
 def inventory(catalog, *, definitions=None, tests=(), errors=(), packs=None) -> dict:
     """Everything the map, the page and the reference show, as JSON-shaped data."""
     definitions = load_list() if definitions is None else list(definitions)
-    contracts = contract_map(catalog, tests=[(i, r) for (i, r) in tests], definitions=definitions)
+    contracts = contract_map(catalog, tests=[(i, r) for i, r in tests], definitions=definitions)
+    checks = _checks(definitions)
     names = list(packs) if packs is not None else list(catalog.packs())
     factories = [_factory(f) for f in sorted(catalog.factories.values(), key=lambda f: f.label)]
     actions = [_action(a) for a in sorted(catalog.action_descs.values(), key=lambda a: a.label)]
-    return {'packs': [_pack_entry(name, factories, actions) for name in names], 'contracts': [_contract_entry(name, entry) for (name, entry) in contracts.items()], 'factories': factories, 'actions': actions, 'errors': list(errors)}
+    return {
+        "packs": [_pack_entry(name, factories, actions) for name in names],
+        "contracts": [_contract_entry(name, entry, checks) for name, entry in contracts.items()],
+        "factories": factories,
+        "actions": actions,
+        "errors": list(errors),
+    }

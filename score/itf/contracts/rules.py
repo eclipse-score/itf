@@ -10,7 +10,25 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"A project's rules over contracts, checked in a pipeline: `check(rules, contract_map, target files)`.\n\nA contract rules file (YAML, or a mapping):\n\n    namespaces:           # contracts in these namespaces must have a definition (`acme` for acme/power.relay;\n                          # a name without `/` is its first segment: `exec` for exec.command)\n      - exec\n      - platform\n    roles:                # role -> the contract it must always be\n      command: exec.command\n      platform: platform.instance\n    forbid_stability:     # no target file may use a contract defined with these stabilities\n      - deprecated\n\n`target files` is an iterable of target plans, or of `(name, {role: contract})` pairs (`roles_of_plan` makes\nthose). `check` returns the violations; an empty list means the rules hold (the CLI exits 1 otherwise)."
+"""A project's rules over contracts, checked in a pipeline: `check(rules, contract_map, target files)`.
+
+A contract rules file (YAML, or a mapping):
+
+    namespaces:           # contracts in these namespaces must have a definition (`acme` for acme/power.relay;
+                          # a name without `/` is its first segment: `exec` for exec.command)
+      - exec
+      - platform
+    roles:                # role -> the contract it must always be
+      command: exec.command
+      platform: platform.instance
+    forbid_stability:     # no target file may use a contract defined with these stabilities
+      - deprecated
+    conformance: true     # every role of the given target files passes its contract's conformance checks
+                          # (`itf contracts check` runs them, as with --conformance)
+
+`target files` is an iterable of target plans, or of `(name, {role: contract})` pairs (`roles_of_plan` makes
+those). `check` returns the violations; an empty list means the rules hold (the CLI exits 1 otherwise).
+"""
 
 from __future__ import annotations
 
@@ -24,7 +42,7 @@ from score.itf.core.engine.scopes import ROOT
 
 from .usage import ContractEntry
 
-RULES = ('namespaces', 'roles', 'forbid_stability', 'require_major')
+RULES = ("namespaces", "roles", "forbid_stability", "require_major", "conformance")
 
 
 def namespace_of(name: str) -> str:

@@ -37,3 +37,4 @@ contracts:
     see_also:
       - exec.command
       - shell.open
+    conformance: score.itf.contracts.conformance.exec

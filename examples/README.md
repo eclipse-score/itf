@@ -38,6 +38,7 @@ the tests never use. Return annotations document the API; gating does not valida
 | `starter/` | three copy-and-edit starters (`container`, `ssh`, `serial`): a target file with `# CHANGE:` marks, an override file, a policy, one test; start here |
 | `exec_everywhere/` | one test file on four target files (`container`, `ssh`, `serial`, `serial_device`); the fake ECU's readiness is an action in the project's policy (`policy.py`) |
 | `itf/` | `example_app` and `dlt`: one test file on a container, or on a QEMU machine when building for QNX (a `select()` of the target); the project's policy (`policy.py`) starts the DLT daemon |
+| `vendor_contract/` | a vendor defines its own contract `acme/power.relay` (no registry), ships a definition and a conformance check in its pack; a factory fulfils it, a test requires the role; `itf contracts map` shows it |
 | `facade/` | **tutorial for projects adopting ITF**: a project's own target API (`target.run`, `push`, `pull`) kept as an `itf.Facade` in `conftest.py`; its tests run unchanged on the host and in a container, only the target files are new ([README](examples/facade/README.md)) |
 | `plain_python/` | compose and run a target from a script with `Session(target=...)`, without pytest |
 | `cpp/`, `docker/` | the example application and the images the examples run |

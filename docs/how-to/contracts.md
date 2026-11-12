@@ -19,6 +19,7 @@ Contracts are your project's own. A contract is **whatever name two parts agree 
 `exec.command`, a test or another part expects `exec.command`, and ITF checks that the shapes they publish and
 expect fit. ITF ships no vocabulary you must follow; it is the platform that lets a project **discover** its
 contracts (`itf contracts map`), **define** them (a definition file, optional) and **enforce** its rules
+(`itf contracts check --rules`). The ITF team maintains the contracts its own packs use, with conformance checks,
 as a supported set, not a standard. The reasoning is in
 [the decision record on target composition](../decisions/DR-002-arch-target-composition.md); the worked example is
 `examples/examples/vendor_contract`. The words are defined in the glossary of
@@ -89,6 +90,7 @@ Names with no definition are fine; they are simply listed as undefined.
 
 ## Define: a definition file
 
+A definition is optional. It adds meaning, members, a version, a stability, a suggested role and a conformance
 suite. Start from what is observed:
 
 ```
@@ -116,6 +118,7 @@ contracts:
         required: false
     guarantees:
       - A relay starts open (off).
+    conformance: acme.conformance
 ```
 
 Definitions are found in a pack's `contracts/` directory, in a project directory named by
@@ -123,6 +126,7 @@ Definitions are found in a pack's `contracts/` directory, in a project directory
 the group `score_itf.contracts`. For the supported ITF set, the layout below separates pack references
 from shared definitions. Fields: `contract`, `kind` (capability or state), `version`, `summary`,
 `description`, `members` (`name`, `signature`, `semantics`, `required`), `guarantees`, `role`, `stability`
+(`experimental`, `stable`, `deprecated`), `replaced_by`, `conformance`, `see_also`, `probe`. A deprecated
 contract makes a plan warn, naming `replaced_by`.
 
 Without a definition a target file still compiles: wiring and gating use names, and the no-trust checks use the
@@ -165,6 +169,29 @@ they reach. When packaging a wheel, include both trees and preserve their relati
 has no wheel configuration; this is packaging guidance, not a claim of built-wheel validation. See
 [Write a pack](plugins.md#build).
 
+## Conformance
+
+A `conformance:` module holds `CHECKS`, keyed by contract name; a check takes the offered object and raises
+through `expect`, so any runner can execute it:
+
+```python
+from score.itf.contracts.conformance import check, expect
+
+@check()
+def on_closes_the_relay_and_off_opens_it(node):
+    node.on()
+    expect(node.is_on() is True, "after on() returns, is_on() must be true")
+
+@check(shape=("toggle",))        # applies only to a node that offers the optional member
+def toggle_flips(node): ...
+
+CHECKS = {"acme/power.relay": [on_closes_the_relay_and_off_opens_it, toggle_flips]}
+```
+
+A test file with `from score.itf.contracts.pytest_conformance import test_conformance` and the plugin
+`//score/itf/contracts:conformance` runs every check against every part of the target that claims its contract.
+A fulfilling part for real hardware passes the same suite as the simulation.
+
 ## Enforce: `itf contracts check`
 
 ```yaml
@@ -180,6 +207,7 @@ forbid_stability:
 ```
 itf contracts check --rules rules.yaml target.itf.yaml      # exit 1 on violations, for pipelines
 itf contracts check --rules rules.yaml a.itf.yaml b.itf.yaml     # any number of target files
+itf contracts check --rules rules.yaml --conformance a.itf.yaml  # and run the conformance checks against them
 ```
 
 `itf contracts reference --output docs/reference/contracts.md` writes the Markdown reference of the defined contracts.
@@ -195,5 +223,7 @@ it say so with `shape`.
 
 Propose a single-entry definition in the shared library's
 `score/itf/contracts/definitions/<contract-id>.yaml` and a standalone reference in each relevant pack's
+`contracts/<contract-id>.yaml`. The definition names its conformance module; those checks apply across packs
 that fulfil the contract. Open a pull request with the definition, pack references and packaging data, the
+conformance checks, a factory that passes them and a target file in `test/integration/targets/` that exercises
 it (use the contract proposal template).

@@ -41,6 +41,7 @@ link here. A word that is not on the list is not ITF's.
 | **action** | a part that makes a state true, with a probe that checks it: `@state("platform.up", ...)` | `docker.start`, `ssh.open` |
 | **capability contract** | a contract fulfilled by a factory: something a test uses | `exec.command` |
 | **state contract** | a contract fulfilled by an action: a condition that can be made true and checked | `platform.up`, `shell.open` |
+| **contract** | any name that parts agree on, optionally with a version, a shape, a meaning and a conformance suite | `exec.command`, `acme/power.relay@1` |
 | **state** | the name of a condition. `@state` is only the decorator that declares an action | `platform.up` |
 | **goal** | a state listed under `goals:`: what must be true once the target is up. Goals are listed, never inferred | `platform.up` |
 | **slot** | a parameter of a part: what the part needs, written as the part's own Protocol with a `__contract__` | `platform: Platform` |
@@ -322,14 +323,18 @@ Per-test isolation is a fixture you own that calls `renew`: pytest's scopes deci
 A contract is whatever name two parts agree on, with whatever shape they publish and expect. ITF does not ship a
 vocabulary everyone must follow: it is the platform that lets a project discover, map, define and enforce its own.
 Plans are the compiler: they tell you, from metadata, whether a target file would work. The ITF team
+maintains the contracts its own packs use, with conformance checks, as a **supported set**, not a standard.
 
 | Tool | Does |
 |---|---|
 | `itf contracts map [target...]` | every contract name in use, from the loaded parts and tests: who offers it (with which shape), who needs it (expecting which members), which tests ask for it, whether a definition exists, and every disagreement; `--format text\|json\|mermaid\|html`, `--output FILE` |
 | `itf contracts new <name> --from-usage [target...]` | writes a definition skeleton, built from the shapes observed in the map, to `contracts/<name>.yaml` (or `--out FILE`); it never overwrites |
+| `itf contracts check --rules rules.yaml [target...]` | the project's rules: which namespaces need definitions, a role-to-contract convention, forbidden stabilities; `--conformance` also runs the conformance checks; exit 1 on violations, for pipelines |
 | `itf contracts reference --output FILE` | the Markdown reference of the defined contracts |
+| contract definitions | optional files, in a pack, a project, a distribution or `ITF_CONTRACTS_PATH`: meaning, members, version, stability, a suggested role, conformance |
 
 Without any definition a target file still compiles: wiring and gating use names, and the no-trust checks use the
+shapes the parts publish and expect. Definitions add meaning, versions and conformance where a project wants them.
 See [Use, define and enforce contracts](../how-to/contracts.md) and the `vendor_contract` example.
 
 ## No trust: every part brings its rules, and they check each other
@@ -346,6 +351,7 @@ Nothing is accepted because a name matches. Each rule comes from the party that 
 | "I need a `command`, version 1, with `exec`" | the test (`@itf.requires`) | the composed target | collection (gating) |
 | "I did make `shell.open` true" | the action | its own probe, run right after | bring-up |
 | "It is still true" | the probe | the target, again, before reuse and at teardown | every run |
+| "A fulfiller of `exec.command` behaves like this" | the contract's conformance checks | each part claiming it | CI, certification |
 
 The engine's only job is to hold every party to its own word and to the words of its neighbours.
 
@@ -364,6 +370,7 @@ The engine's only job is to hold every party to its own word and to the words of
 
 | Fact | Lives in | Only there |
 |---|---|---|
+| a contract's meaning, version, members, role, conformance | its definition, if the project wants one | yes |
 | a part's label, contract, slots, shape, settings, probes | the pack's code: decorators, slots, annotations, dataclasses | yes |
 | a pack's prerequisites and version | its `pack.yaml` | yes |
 | what a target is made of, its goals, its orderings | its target file | yes |

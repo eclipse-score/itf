@@ -9,7 +9,16 @@
 # https://www.apache.org/licenses/LICENSE-2.0
 #
 # SPDX-License-Identifier: Apache-2.0
-"`itf contracts map|new|check`: discover, define and enforce contracts with the optional contract library.\n\n    itf contracts map [--packs all|a,b] [--tests PATH...] [--format text|json|mermaid|html] [--output FILE]\n    itf contracts new NAME --from-usage [--out FILE]\n\nThe parts are those of the named packs (default: all) and of the project's own `policy.py`; the tests are read\nfrom `@itf.requires(...)` decorators without importing them; the definitions are those of the packs, of\n`ITF_CONTRACTS_PATH` and of `--definitions DIR`."
+"""`itf contracts map|new|check`: discover, define and enforce contracts with the optional contract library.
+
+    itf contracts map [--packs all|a,b] [--tests PATH...] [--format text|json|mermaid|html] [--output FILE]
+    itf contracts new NAME --from-usage [--out FILE]
+    itf contracts check --rules FILE [target...] [--conformance]
+
+The parts are those of the named packs (default: all) and of the project's own `policy.py`; the tests are read
+from `@itf.requires(...)` decorators without importing them; the definitions are those of the packs, of
+`ITF_CONTRACTS_PATH` and of `--definitions DIR`.
+"""
 
 from __future__ import annotations
 
@@ -21,7 +30,7 @@ import yaml
 from score.itf import contracts
 from score.itf.contracts import inventory as inv
 from score.itf.contracts import rules as contract_rules
-from score.itf.contracts import render
+from score.itf.contracts import render, run
 
 
 def _packs(value: str) -> list[str]:
@@ -152,67 +161,96 @@ def cmd_new(args) -> int:
 
 def cmd_check(args) -> int:
     from score.itf.cli import main as cli
+
     try:
         rules = contract_rules.load_rules(args.rules)
     except (OSError, ValueError, yaml.YAMLError) as exc:
-        print(f'itf: rules {args.rules}: {exc}', file=sys.stderr)
+        print(f"itf: rules {args.rules}: {exc}", file=sys.stderr)
         return 2
     try:
-        (packs, found, test_paths, modules) = _scope(args)
+        packs, found, test_paths, modules = _scope(args)
     except ValueError as exc:
-        print(f'itf: {exc}', file=sys.stderr)
+        print(f"itf: {exc}", file=sys.stderr)
         return 2
-    (catalog, errors, tests, definitions) = _observed(args, packs, found, test_paths, modules)
+    catalog, errors, tests, definitions = _observed(args, packs, found, test_paths, modules)
     mapped = contracts.contract_map(catalog, tests=tests, definitions=definitions)
     plans = []
-    violations = [contracts.Violation('load', e) for e in errors]
+    violations = [contracts.Violation("load", e) for e in errors]
     for one in found:
         session = cli.make_session(one, plan_only=True)
         failure = cli._resolve(session)
         label = one.target_file.describe()
         if failure:
-            violations.append(contracts.Violation('compile', f'{label} does not compile: {failure.strip()}'))
+            violations.append(contracts.Violation("compile", f"{label} does not compile: {failure.strip()}"))
         else:
             plans.append((label, contracts.roles_of_plan(session.target_plan)))
     violations += contracts.check(rules, mapped, plans)
+    if args.conformance or rules.get("conformance"):
+        violations += _conformance(found, catalog, definitions)
     for v in violations:
-        print(f'violation ({v.rule}): {v.message}', file=sys.stderr)
-    print(f'{len(violations)} violation(s)')
+        print(f"violation ({v.rule}): {v.message}", file=sys.stderr)
+    print(f"{len(violations)} violation(s)")
     return 1 if violations else 0
 
 
+def _conformance(found, catalog, definitions) -> list:
+    """Run the conformance checks against the roles of each target file; print every result."""
+    by_contract = {d.contract: d for d in definitions}
+    results = run.run_conformance(
+        [f.target_file for f in found], by_contract, _policies(found), found[0].overrides if found else ()
+    )
+    violations = []
+    for r in results:
+        print(
+            f"[{r.status:^4}] {r.target_file}: {r.role} ({r.factory}) {r.contract}: {r.check}"
+            + (f"  {r.detail}" if r.detail else "")
+        )
+        if r.status == "fail":
+            violations.append(contracts.Violation("conformance", f"{r.role} ({r.factory}) fails {r.check}: {r.detail}"))
+    for line in run.not_run(catalog, by_contract, results):
+        print(f"[ not run ] {line}")
+    return violations
 
 
 def add_contracts(sub) -> None:
-    parser = sub.add_parser('contracts', help='map, define and check the contracts in use')
-    commands = parser.add_subparsers(dest='contracts_command', required=True)
+    parser = sub.add_parser("contracts", help="map, define and check the contracts in use")
+    commands = parser.add_subparsers(dest="contracts_command", required=True)
 
     def common(p, tests=True):
-        p.add_argument('--packs', default='all', help='`all` (default) or a comma separated list of pack names')
-        p.add_argument('--definitions', action='append', default=[], help='a directory of definitions (repeatable)')
+        p.add_argument("--packs", default="all", help="`all` (default) or a comma separated list of pack names")
+        p.add_argument("--definitions", action="append", default=[], help="a directory of definitions (repeatable)")
         if tests:
-            p.add_argument('--tests', nargs='+', default=[], metavar='PATH', help='test files or directories to read')
-    p = commands.add_parser('map', help='every contract in use: offerers, needers, tests, definition, disagreements')
-    p.add_argument('target', nargs='*', help='target files to map (default: every pack, or --packs)')
-    p.add_argument('--override', action='append', default=[], help='an override file for every target file')
+            p.add_argument("--tests", nargs="+", default=[], metavar="PATH", help="test files or directories to read")
+
+    p = commands.add_parser("map", help="every contract in use: offerers, needers, tests, definition, disagreements")
+    p.add_argument("target", nargs="*", help="target files to map (default: every pack, or --packs)")
+    p.add_argument("--override", action="append", default=[], help="an override file for every target file")
     common(p)
-    p.add_argument('--format', choices=render.FORMATS, default='text')
-    p.add_argument('--output', help='write here instead of standard output')
+    p.add_argument("--format", choices=render.FORMATS, default="text")
+    p.add_argument("--output", help="write here instead of standard output")
     p.set_defaults(func=cmd_map)
-    p = commands.add_parser('reference', help='write the Markdown reference of the defined contracts')
+
+    p = commands.add_parser("reference", help="write the Markdown reference of the defined contracts")
     common(p, tests=False)
-    p.add_argument('--output', required=True)
+    p.add_argument("--output", required=True)
     p.set_defaults(func=cmd_reference)
-    p = commands.add_parser('new', help='a definition skeleton for NAME, built from the shapes in use')
-    p.add_argument('name')
-    p.add_argument('target', nargs='*', help='target files whose usage to read (default: every pack, or --packs)')
-    p.add_argument('--from-usage', action='store_true', help='build it from the observed shapes (required)')
-    p.add_argument('--out', help='the file to write (default: contracts/NAME.yaml); never overwritten')
+
+    p = commands.add_parser("new", help="a definition skeleton for NAME, built from the shapes in use")
+    p.add_argument("name")
+    p.add_argument("target", nargs="*", help="target files whose usage to read (default: every pack, or --packs)")
+    p.add_argument("--from-usage", action="store_true", help="build it from the observed shapes (required)")
+    p.add_argument("--out", help="the file to write (default: contracts/NAME.yaml); never overwritten")
     common(p)
     p.set_defaults(func=cmd_new)
-    p = commands.add_parser('check', help='enforce a contract rules file; exit 1 on violations')
-    p.add_argument('--rules', required=True, help='the contract rules: namespaces, roles, forbid_stability, conformance')
-    p.add_argument('target', nargs='*', help='target files whose roles the rules cover')
-    p.add_argument('--override', action='append', default=[], help='an override file for every target file')
+
+    p = commands.add_parser("check", help="enforce a contract rules file; exit 1 on violations")
+    p.add_argument(
+        "--rules", required=True, help="the contract rules: namespaces, roles, forbid_stability, conformance"
+    )
+    p.add_argument("target", nargs="*", help="target files whose roles the rules cover")
+    p.add_argument("--override", action="append", default=[], help="an override file for every target file")
+    p.add_argument(
+        "--conformance", action="store_true", help="run the conformance checks against the given target files"
+    )
     common(p)
     p.set_defaults(func=cmd_check)
