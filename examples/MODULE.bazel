@@ -24,7 +24,6 @@ module(
 bazel_dep(name = "rules_python", version = "1.0.0")
 
 PYTHON_VERSIONS = [
-    "3.10",
     "3.12",
 ]
 
