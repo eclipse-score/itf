@@ -125,6 +125,7 @@ Design a factory so it fits any target, not only the one in front of you:
   An order that comes from how two packs are combined is the target file's `relations:`.
 
 A contract may carry a major version (`exec.command@1`), a definition with members and guarantees, and
+conformance checks that every factory offering it must pass. Adding members within a major never breaks a
 consumer, because consumers list the members they use. A new major is a new contract for consumers that say so.
 
 ## Gating
@@ -164,6 +165,7 @@ IP address, a pack that knows another pack, a runner flag that changes bring-up.
 |---|---|---|
 | **Runner** (pytest, Bazel, the `itf` command line, CI) | collecting and selecting tests by name or marker, running them, parallelism, reports, retries of whole tests, where outputs go | how a target is built, the order of bring-up, which machine a test uses |
 | **ITF core** | the plan (both gates), bring-up and teardown in order, probes and reuse, gating, `reach`/`discard`/`renew`, evidence, masking secrets, the target file format | any technology (no docker, ssh, dlt in the core), any project's values |
+| **Packs** | parts for one technology: factories, actions with probes, their settings, the contracts they offer with definitions and conformance checks | other packs' code, orderings between packs, project values, test logic |
 | **Project** (the integrators) | target files and override files per machine, the policy (`policy.py`: readiness checks in `itf_verify`, evidence in `itf_teardown`, project-specific parts `local.<name>`), facades over its own target API, contract rules | product assertions, technology code that should be a pack |
 | **Testers** | tests: the roles they need (`@itf.requires`), what they do with them, what the product must do; pytest fixtures for test data in `conftest.py` | bring-up, addresses, credentials, waiting for boot, cleanup of the machine, choosing a target |
 | **Infrastructure** (labs, CI, IT) | machines, images, networks, benches, credentials and their storage, the environment variables and `.env` files a target file reads | anything inside the test or the target file's structure |
@@ -214,9 +216,11 @@ same checks in the build.
 
 1. Write the parts: factories, actions with probes, settings dataclasses; slots with your own Protocols.
 2. Define the contracts others will offer or need: `itf contracts new <name> --from-usage` writes a definition
+   skeleton from the shapes in use; add guarantees and conformance checks.
 3. See where you stand: `itf contracts map` lists every contract in use, who offers it, who needs it, which tests
    ask for it, and every disagreement.
 4. Add a target file for the pack under `test/integration/targets/`, so the generic suite runs on it, and a
+   conformance run.
 
 ### Reviewing and CI
 

@@ -45,6 +45,7 @@ and how parts declare themselves. The words are defined in the glossary of [the 
    and expect. ITF lets projects discover (`itf contracts map`), define (optional definition files,
    `itf contracts new --from-usage`) and enforce (`itf contracts check --rules`) their contracts. It does not
    ship a vocabulary everyone must follow. The ITF team maintains the contracts its own packs use, with
+   conformance checks, as a supported set, not a standard.
 2. **A target file is keyed by role.** `capabilities:` maps a role to a factory label (`command: docker.exec`) or
    to a mapping with `factory`, `with`, `bind` or `remove: true`. A role is the stable key for duplicates (two
    consoles on one board), overrides, includes, scopes and tests (`target.debug`). Docker Compose does the same.
@@ -115,6 +116,7 @@ Nothing is accepted because a name matches. Each rule comes from the party that 
 | a pack's host prerequisites | the host (`itf doctor`) | before bring-up |
 | a test's requirement | the composed target | collection |
 | an action's claim to have made a state true | its own probe | after it runs, before reuse, at teardown |
+| a contract's conformance checks | each part claiming the contract | CI |
 
 ## Alternatives
 
@@ -132,6 +134,7 @@ Nothing is accepted because a name matches. Each rule comes from the party that 
 ## Consequences
 
 - A project that wants its own contracts needs no registration or release. It names them, maps them, and adds
+  definitions when it wants meaning, versions or conformance.
 - Every target file states the orderings between the packs it combines. The starters show the common ones.
 - Two actions that could make one state true, or a slot with two candidates, are errors at target file time.
   The error names both and the line to write.

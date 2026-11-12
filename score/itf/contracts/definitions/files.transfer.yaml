@@ -35,3 +35,4 @@ contracts:
       - The target sees the uploaded file at the remote path (a command can read it).
     see_also:
       - exec.command
+    conformance: score.itf.contracts.conformance.files

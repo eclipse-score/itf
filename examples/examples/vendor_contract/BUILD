@@ -17,6 +17,7 @@ load("@score_itf//bazel:py_itf_plugin.bzl", "py_itf_plugin")
 # A vendor's contract, end to end (see README.md). acme_pack/ is what Acme's distribution contains once
 # installed (a site-packages directory):
 #   acme/            the pack: a factory fulfilling `acme/power.relay`, the definition (contracts/power.yaml)
+#                    and the conformance checks (conformance.py)
 # Nothing registers the contract anywhere: its name is the vendor's own.
 
 py_library(
@@ -47,3 +48,11 @@ py_itf_test(
     target = ":target",
 )
 
+# The vendor's conformance checks, run against the part that claims the contract.
+py_itf_test(
+    name = "conformance",
+    srcs = ["test_conformance.py"],
+    contracts = glob(["acme_pack/acme/contracts/*.yaml"]),
+    plugins = ["@score_itf//score/itf/contracts:conformance"],
+    target = ":target",
+)

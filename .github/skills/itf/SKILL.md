@@ -64,6 +64,7 @@ Which command answers which question, and the rules for using them: `references/
 | `itf diff old.json new.json` / `itf evidence <run-dir>` | compare plans / the summary page of a run | no |
 | `itf contracts map [target...] [--format text\|json\|mermaid\|html] [--output f]` | discover | no |
 | `itf contracts new <name> --from-usage [target...]` | writes `contracts/<name>.yaml` itself (no redirect) | no |
+| `itf contracts check --rules rules.yaml [target...] [--conformance]` | enforce | no |
 | `itf contracts reference --output f` | the Markdown reference of the defined contracts | no |
 
 Under Bazel `itf` is `bazel run @score_itf//score/itf/cli:itf --`; policy paths resolve from caller working
@@ -153,6 +154,7 @@ itf.requires(...)`, or a list, at module level or in `__init__.py`); a test need
 - A part written in the policy is `local.<function>`. A project action is considered whenever its slots
   can be filled: if it makes a state true that a pack's action also makes true, target files need `by:`.
 - Define a contract only when it adds something: `itf contracts new <name> --from-usage`, then fill the
+  `TODO`s; add `conformance:` for a checks module. Enforce conventions with `itf contracts check --rules`
   (rules: `namespaces`, `roles`, `forbid_stability`). Example: `examples/examples/vendor_contract`.
 - A pack is a directory with `pack.yaml` (`name`, `version`, `prerequisites`), `providers.py` (the
   `@capability` factories), `steps.py` (the `@state` actions), `plugin.py`; loaded from labels

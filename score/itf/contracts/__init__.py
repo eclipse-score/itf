@@ -10,7 +10,26 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"Contract definitions: an optional library. ITF knows no contracts; a contract is whatever name two\nparts agree on. A definition adds meaning, a version, members, guarantees, a suggested role, a stability and a\n\nDefinitions are YAML files (`contracts: - contract: exec.command, kind: capability, version: 1, summary, ...`).\nBuilt-in packs list individual `$ref` files pointing to the shared `definitions/` directory, one specification\nper contract. References resolve from the declaring file; repeated references to one source are loaded once.\nThey are found in three places, merged by `load_list()`:\n\n* the `contracts/` directory of every pack (the ITF team's supported definitions ship with the packs that use them),\n* the directories listed in `ITF_CONTRACTS_PATH`,\n* installed distributions with an entry point in the group `score_itf.contracts` (the value names a package,\n  or a callable returning directories, holding YAML files).\n\nFields: `contract` (the name), `kind` (capability | state), `version`, `summary`, `description`, `members`\n(`name`, `signature`, `semantics`), `guarantees`, `role` (the role name suggested in target files),\ncontract name), `see_also`, `probe`. Two definitions of one name are not an error here: `contract_map` reports\nthem. `definitions()` is the forgiving view a session wants: name -> the first definition."
+"""Contract definitions: an optional library. ITF knows no contracts; a contract is whatever name two
+parts agree on. A definition adds meaning, a version, members, guarantees, a suggested role, a stability and a
+conformance suite where a project wants them; nothing needs one.
+
+Definitions are YAML files (`contracts: - contract: exec.command, kind: capability, version: 1, summary, ...`).
+Built-in packs list individual `$ref` files pointing to the shared `definitions/` directory, one specification
+per contract. References resolve from the declaring file; repeated references to one source are loaded once.
+They are found in three places, merged by `load_list()`:
+
+* the `contracts/` directory of every pack (the ITF team's supported definitions ship with the packs that use them),
+* the directories listed in `ITF_CONTRACTS_PATH`,
+* installed distributions with an entry point in the group `score_itf.contracts` (the value names a package,
+  or a callable returning directories, holding YAML files).
+
+Fields: `contract` (the name), `kind` (capability | state), `version`, `summary`, `description`, `members`
+(`name`, `signature`, `semantics`), `guarantees`, `role` (the role name suggested in target files),
+`stability` (experimental | stable | deprecated), `replaced_by`, `conformance` (a module whose `CHECKS` is keyed by
+contract name), `see_also`, `probe`. Two definitions of one name are not an error here: `contract_map` reports
+them. `definitions()` is the forgiving view a session wants: name -> the first definition.
+"""
 
 from __future__ import annotations
 
@@ -51,20 +70,21 @@ class Definition:
     contract: str
     kind: str
     version: int = 1
-    summary: str = ''
-    description: str = ''
+    summary: str = ""
+    description: str = ""
     members: tuple[Member, ...] = ()
     guarantees: tuple[str, ...] = ()
     role: str | None = None
-    stability: str = 'stable'
+    stability: str = "stable"
     replaced_by: str | None = None
+    conformance: str | None = None
     see_also: tuple[str, ...] = ()
     probe: str | None = None
-    source: str = ''
+    source: str = ""
 
     @property
     def member_names(self) -> tuple[str, ...]:
-        return tuple((m.name for m in self.members))
+        return tuple(m.name for m in self.members)
 
 
 def _text(value) -> str:
@@ -72,26 +92,48 @@ def _text(value) -> str:
 
 
 def _definition(entry: dict, source: str) -> Definition:
-    name = entry.get('contract')
+    name = entry.get("contract")
     if not isinstance(name, str) or not name:
-        raise ContractError(f'{source}: an entry needs `contract:` (its name)')
-    kind = entry.get('kind')
+        raise ContractError(f"{source}: an entry needs `contract:` (its name)")
+    kind = entry.get("kind")
     if kind not in KINDS:
-        raise ContractError(f'{source}: {name}: kind must be one of {KINDS}, got {kind!r}')
-    stability = entry.get('stability', 'stable')
+        raise ContractError(f"{source}: {name}: kind must be one of {KINDS}, got {kind!r}")
+    stability = entry.get("stability", "stable")
     if stability not in STABILITIES:
-        raise ContractError(f'{source}: {name}: stability must be one of {STABILITIES}, got {stability!r}')
+        raise ContractError(f"{source}: {name}: stability must be one of {STABILITIES}, got {stability!r}")
     members = []
-    for member in entry.get('members') or ():
-        if not isinstance(member, dict) or not member.get('name'):
-            raise ContractError(f'{source}: {name}: a member is a mapping with a name')
-        members.append(Member(member['name'], _text(member.get('signature')), _text(member.get('semantics')), bool(member.get('required', True))))
-    if kind == 'state' and members:
-        raise ContractError(f'{source}: {name}: a state has no members')
-    version = entry.get('version', 1)
+    for member in entry.get("members") or ():
+        if not isinstance(member, dict) or not member.get("name"):
+            raise ContractError(f"{source}: {name}: a member is a mapping with a name")
+        members.append(
+            Member(
+                member["name"],
+                _text(member.get("signature")),
+                _text(member.get("semantics")),
+                bool(member.get("required", True)),
+            )
+        )
+    if kind == "state" and members:
+        raise ContractError(f"{source}: {name}: a state has no members")
+    version = entry.get("version", 1)
     if type(version) is not int or version < 1:
-        raise ContractError(f'{source}: {name}: version must be a positive integer major, got {version!r}')
-    return Definition(contract=name, kind=kind, version=version, summary=_text(entry.get('summary')), description=_text(entry.get('description')), members=tuple(members), guarantees=tuple((_text(g) for g in entry.get('guarantees') or ())), role=entry.get('role'), stability=stability, replaced_by=entry.get('replaced_by'), see_also=tuple(entry.get('see_also') or ()), probe=_text(entry['probe']) if entry.get('probe') else None, source=source)
+        raise ContractError(f"{source}: {name}: version must be a positive integer major, got {version!r}")
+    return Definition(
+        contract=name,
+        kind=kind,
+        version=version,
+        summary=_text(entry.get("summary")),
+        description=_text(entry.get("description")),
+        members=tuple(members),
+        guarantees=tuple(_text(g) for g in entry.get("guarantees") or ()),
+        role=entry.get("role"),
+        stability=stability,
+        replaced_by=entry.get("replaced_by"),
+        conformance=entry.get("conformance"),
+        see_also=tuple(entry.get("see_also") or ()),
+        probe=_text(entry["probe"]) if entry.get("probe") else None,
+        source=source,
+    )
 
 
 def _read_file(path: Path, label, loaded: set[Path], visiting=()) -> list[Definition]:

@@ -36,3 +36,4 @@ contracts:
       - The program starts in the requested working directory.
     see_also:
       - exec.command
+    conformance: score.itf.contracts.conformance.exec

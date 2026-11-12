@@ -181,13 +181,15 @@ def _tests_html(c: dict) -> str:
 
 
 def _contract_card(c: dict) -> str:
-    d = c['definition']
+    d = c["definition"]
     parts = [_card_head(c)] + (_definition_html(d) if d else []) + [_offered_html(c), _needed_html(c)]
-    if c['tests']:
+    if c["tests"]:
         parts.append(_tests_html(c))
-    if c['disagreements']:
-        parts.append('<p class="bad">Disagreements</p>' + _list((_e(i['message']) for i in c['disagreements'])))
-    return ''.join(parts) + '</div>'
+    if c["checks"]:
+        parts.append("<p>Conformance checks</p>" + _list(f"<code>{_e(n)}</code>" for n in c["checks"]))
+    if c["disagreements"]:
+        parts.append('<p class="bad">Disagreements</p>' + _list(_e(i["message"]) for i in c["disagreements"]))
+    return "".join(parts) + "</div>"
 
 
 def _factory_card(f: dict) -> str:
@@ -281,7 +283,18 @@ SPDX-License-Identifier: Apache-2.0
 -->
 """
 
-REFERENCE_INTRO = "# Contracts\n\nThis page is generated from the supported contract definitions (`score/itf/packs/*/contracts/*.yaml`) and the\npacks' code. Do not edit it by hand: run\n`bazel run //score/itf/cli:itf -- contracts reference --output docs/reference/contracts.md`.\n\nITF knows no contracts: a contract is a name two parts agree on. These are the ones the ITF team maintains for\nits own packs, as a supported set and not as a standard. A **capability contract** is fulfilled by a capability\nfactory (`@capability`) and used in a test through a role; a **state contract** is made true by an action\n(`@state`) and listed under `goals:`. A definition adds meaning, a version, members, a suggested role, a\nstability. `itf contracts map` shows every contract in use, with its disagreements.\n"
+REFERENCE_INTRO = """# Contracts
+
+This page is generated from the supported contract definitions (`score/itf/packs/*/contracts/*.yaml`) and the
+packs' code. Do not edit it by hand: run
+`bazel run //score/itf/cli:itf -- contracts reference --output docs/reference/contracts.md`.
+
+ITF knows no contracts: a contract is a name two parts agree on. These are the ones the ITF team maintains for
+its own packs, as a supported set and not as a standard. A **capability contract** is fulfilled by a capability
+factory (`@capability`) and used in a test through a role; a **state contract** is made true by an action
+(`@state`) and listed under `goals:`. A definition adds meaning, a version, members, a suggested role, a
+stability and a conformance suite. `itf contracts map` shows every contract in use, with its disagreements.
+"""
 
 
 def _definition_lines(d: dict) -> list[str]:
@@ -314,13 +327,19 @@ def _makers(c: dict, inv: dict) -> list[str]:
 
 
 def _section(c: dict, inv: dict) -> list[str]:
-    d = c['definition']
-    lines = [f"## `{c['contract']}`", '', f"{c['kind'].capitalize()} contract, version {d['version']}, {d['stability']}. {d['summary']}", '']
-    lines += [f"- Suggested role: `{d['role']}`"] if d['role'] else []
-    lines += [f"- Replaced by: `{d['replaced_by']}`"] if d['replaced_by'] else []
-    lines += [f"- Defined in: `{_relative(d['source'])}`", '', d['description'], '']
-    lines += _definition_lines(d) + _makers(c, inv)
-    return lines + ['']
+    d = c["definition"]
+    lines = [
+        f"## `{c['contract']}`",
+        "",
+        f"{c['kind'].capitalize()} contract, version {d['version']}, {d['stability']}. {d['summary']}",
+        "",
+    ]
+    lines += [f"- Suggested role: `{d['role']}`"] if d["role"] else []
+    lines += [f"- Replaced by: `{d['replaced_by']}`"] if d["replaced_by"] else []
+    lines += [f"- Defined in: `{_relative(d['source'])}`", "", d["description"], ""]
+    lines += _definition_lines(d) + _makers(c, inv) + ["", "### Conformance checks", ""]
+    lines += [f"- `{n}`" for n in c["checks"]] if c["checks"] else ["No checks defined."]
+    return lines + [""]
 
 
 def _relative(source: str) -> str:

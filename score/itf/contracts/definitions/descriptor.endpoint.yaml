@@ -32,3 +32,4 @@ contracts:
     see_also:
       - descriptor.credentials
       - net.ping
+    conformance: score.itf.packs.net.conformance_descriptor

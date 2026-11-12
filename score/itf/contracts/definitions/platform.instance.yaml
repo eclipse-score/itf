@@ -40,3 +40,4 @@ contracts:
       - stop() can be called more than once.
     see_also:
       - platform.up
+    conformance: score.itf.contracts.conformance.platform

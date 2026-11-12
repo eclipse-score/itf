@@ -105,6 +105,7 @@ The full glossary is in [the model](docs/concepts/model.md); these are the words
 | Thing | Defined in |
 |---|---|
 | a part's label, contract, slots, shape, settings, probes | the pack's code: decorators, slots, annotations, dataclasses |
+| a contract's meaning, version, members, conformance | an optional definition file, the project's own |
 | what a target is made of, its goals, its orderings and its policies | its target file |
 | project-owned parts, readiness checks and evidence | Python files explicitly listed in `policies:` |
 | what differs in one setup | its override file |
@@ -121,13 +122,16 @@ The full glossary is in [the model](docs/concepts/model.md); these are the words
 | "I need tcpdump on PATH" | the pack | the host (`itf doctor`) | before bring-up |
 | "I need a `command` with `exec`" | the test | the composed target | collection (gating) |
 | "I did make `shell.open` true" | the action | its own probe | bring-up, every run |
+| "A fulfiller of `exec.command` behaves like this" | the contract's conformance checks | each part claiming it | CI |
 
 ## Contracts are your project's own
 
 ITF knows no contracts: a contract is whatever name two parts agree on. ITF lets a project **discover** them
 (`itf contracts map`: who offers and who needs each name, with which shape, and every disagreement), **define**
+them (an optional definition: meaning, members, version, stability, conformance; `itf contracts new <name>
 --from-usage` writes a skeleton file) and **enforce** its rules (`itf contracts check --rules rules.yaml
 [target...]`, exit 1 on violations). The ITF team maintains the contracts its own packs use, with
+conformance checks, as a supported set, not a standard. See
 [Use, define and enforce contracts](docs/how-to/contracts.md) and
 [`examples/examples/vendor_contract`](examples/examples/vendor_contract).
 
@@ -211,6 +215,7 @@ pack's README has its label table, host prerequisites and a target file excerpt.
 - [Start here](docs/how-to/start_here.md), [tutorial](docs/how-to/tutorial.md) and
   [get started](docs/how-to/get_started.md).
 - [Write tests](docs/how-to/write_tests.md): target files, overrides, scopes, gating, `reach`, `discard` and `renew`.
+- [Write a pack](docs/how-to/plugins.md): factories, actions, `pack.yaml`, conformance.
 - [The manifesto](docs/concepts/manifesto.md): the principles, capabilities and states, probes, gating, and who
   owns what. Read it before writing a pack, a target file or a test.
 - [The model](docs/concepts/model.md) and [the platform](docs/concepts/platform.md).
