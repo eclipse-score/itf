@@ -97,8 +97,9 @@ core, so it stays when the layer is removed.
 
 ## Possible integration strategy
 
-This proposal adds only this Markdown document: no implementation or RST navigation changes. Maintainers
-choose whether to adopt the design, how to divide the implementation for review, and its landing order.
+This proposal adds this Markdown document and an OpenSpec change (`openspec/changes/compose-itf-targets`):
+no implementation or RST navigation changes. Maintainers choose whether to adopt the design, how to divide the
+implementation for review, and its landing order.
 The reference implementation is evidence for that discussion, not a prescribed set of pull requests.
 
 One possible approach is to review related concerns in manageable groups:
