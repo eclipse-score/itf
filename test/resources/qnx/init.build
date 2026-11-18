@@ -15,7 +15,7 @@
 
 [image=0x3600000]                                   # Set image size to 56MB (0x3600000 bytes)
 [virtual=x86_64,multiboot] boot = {                 # Configure for x86_64 architecture with multiboot support
-    startup-x86 -v -D8250..115200 -zz               # Start x86 kernel with verbose output, serial console at 115200 baud
+    startup-x86 -v -D8250..115200 -f,,1000M          # QEMU's virtual LAPIC timer runs at 1 GHz.
     PATH=/proc/boot                                 # Set executable search path to boot directory
     LD_LIBRARY_PATH=/proc/boot                      # Set library search path to boot directory
     [+keeplinked] procnto-smp-instr                 # Keep process manager linked and instrumented for SMP
@@ -29,6 +29,7 @@
     # These env variables get inherited by all programs which follow
     SYSNAME=nto                          # Set system name to "nto" (Neutrino)
     TERM=qansi                           # Set terminal type to QNX ANSI
+    PCI_CAP_MODULE_DIR=/proc/boot
 
     devc-ser8250 &                       # Start serial driver in background
     waitfor /dev/ser1                    # Wait for serial device to be available

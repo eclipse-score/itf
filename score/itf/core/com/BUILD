@@ -10,10 +10,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
-load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 
+# The original labels; the modules re-export from the ssh and ping packs.
 py_library(
     name = "ssh",
     srcs = [
@@ -23,9 +22,7 @@ py_library(
         "ssh_command.py",
     ],
     visibility = ["//visibility:public"],
-    deps = [
-        requirement("paramiko"),
-    ],
+    deps = ["//score/itf/compat"],
 )
 
 py_library(
@@ -35,6 +32,7 @@ py_library(
         "ping.py",
     ],
     visibility = ["//visibility:public"],
+    deps = ["//score/itf/compat"],
 )
 
 py_library(

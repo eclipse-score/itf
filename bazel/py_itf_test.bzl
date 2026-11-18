@@ -11,17 +11,48 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Bazel symbolic macro for running pytest via ITF."""
+"""Bazel symbolic macro for running pytest via ITF.
+
+A test with a `target file` (an `itf_target`) runs against that target file: its pack dependencies come
+from the target file's `packs`, the target file and its override files arrive through `ITF_TARGET` and
+`ITF_OVERRIDE`, its policy is loaded without being listed in `srcs`, and building the test builds the
+target file, whose plan fails the build when it does not compile.
+`plugins` are for additional pytest plugins. Pack dependencies belong to the target;
+project-owned fixtures, including on-target DLT setup, belong in conftest.py.
+"""
 
 load("@rules_python//python:defs.bzl", "PyInfo", "py_test")
 load("@score_itf//bazel:py_itf_plugin.bzl", "PyItfPluginInfo")
+load("@score_itf//bazel:target_info.bzl", "ItfTargetInfo", "contract_directories", "itf_path_list")
 
 # =============================================================================
 # Wrapper test rule: resolves plugin providers at analysis time and creates
 # a launcher script that invokes the py_test binary with the full arg list.
 # =============================================================================
 
+def _host_platform_impl(settings, attr):
+    return {"//command_line_option:platforms": str(settings["//command_line_option:host_platform"])}
+
+# pytest runs on the host, also when the target is built for another platform (--config=qemu-integration), so the
+# wrapped py_test is built for the host platform (--host_platform), the platform cfg = "exec" resolved to before:
+# a project's select() on the test's deps or plugins sees the same constraints it did. Unlike cfg = "exec", this
+# keeps the target configuration's coverage settings, so `bazel coverage` instruments the test and the code it runs.
+_host_platform = transition(
+    implementation = _host_platform_impl,
+    inputs = ["//command_line_option:host_platform"],
+    outputs = ["//command_line_option:platforms"],
+)
+
 def _itf_test_impl(ctx):
+    target = ctx.attr.target[ItfTargetInfo] if ctx.attr.target else None
+    plugins = list(ctx.attr.plugins)
+
+    # A test without an itf_target uses the original API: the compatibility core plugin comes first (the original
+    # `target` fixture chain), as the original rule loaded score.itf.plugins.core before the plugins given, so
+    # their `target_init` overrides it. Decided here, not in the macro, so `target` may be a select().
+    if not target:
+        plugins = [ctx.attr._compat_core_plugin] + plugins
+    target_packs = list(target.packs) if target else []
     executable = ctx.executable.test_binary
     pytest_config = ctx.file.pytest_config
 
@@ -44,15 +75,17 @@ def _itf_test_impl(ctx):
     # 3. JUnit XML output (Bazel sets XML_OUTPUT_FILE environment variable)
     args.append("--junit-xml=$XML_OUTPUT_FILE")
 
-    # 4. Plugin enable flags and plugin-specific args (resolved at analysis time)
-    args.append("-p score.itf.plugins.core")
-    for plugin_target in ctx.attr.plugins:
+    # 4. The ITF adapter (a pip install would register it as a pytest11 entry point), then
+    #    every plugin's enable flags and args. Packs are plugins like any other.
+    args.append("-p score.itf.core.adapters.pytest.plugin")
+    for plugin_target in plugins:
         info = plugin_target[PyItfPluginInfo]
         for ep in info.enabled_plugins:
             args.append("-p %s" % ep)
         args.extend(info.resolved_args)
 
-    # 5. Source file paths (positional args for pytest)
+    # 5. The source file paths (positional args for pytest). The target file's policy is not one of them: the
+    #    adapter loads the policy beside the target file itself, wherever the tests are.
     for src in ctx.files.srcs:
         args.append(src.short_path)
 
@@ -72,7 +105,7 @@ def _itf_test_impl(ctx):
     # for _itf_test (target config) vs py_test (exec config via cfg transition).
     # Augmenting PYTHONPATH ensures the correct plugin packages are importable.
     plugin_imports = []
-    for plugin_target in ctx.attr.plugins:
+    for plugin_target in plugins + target_packs:
         if PyInfo in plugin_target:
             plugin_imports.extend(plugin_target[PyInfo].imports.to_list())
     seen = {}
@@ -124,7 +157,7 @@ def _itf_test_impl(ctx):
     )
     runfiles = ctx.runfiles(
         files = direct_files,
-        transitive_files = ctx.attr.test_binary[DefaultInfo].default_runfiles.files,
+        transitive_files = ctx.attr.test_binary[0][DefaultInfo].default_runfiles.files,  # a list: the attribute has a transition,
     )
 
     # Use runfiles.merge() for data deps so that repo-name root symlinks
@@ -139,14 +172,34 @@ def _itf_test_impl(ctx):
 
     # Merge plugin runfiles (carries plugin data files + py_library runfiles) and envs
     env = {}
-    for plugin_target in ctx.attr.plugins:
+    for plugin_target in plugins:
         info = plugin_target[PyItfPluginInfo]
         runfiles = runfiles.merge(info.plugin_runfiles)
 
         # Also merge the DefaultInfo runfiles forwarded from py_library
         runfiles = runfiles.merge(plugin_target[DefaultInfo].default_runfiles)
         env.update(info.env)
-    env.update(ctx.attr.env)
+    for pack in target_packs:
+        # Packs load from the target file's labels; their data and environment still travel with the test.
+        info = pack[PyItfPluginInfo]
+        runfiles = runfiles.merge(info.plugin_runfiles).merge(pack[DefaultInfo].default_runfiles)
+        env.update(info.env)
+    contracts = list(ctx.files.contracts)
+    if target:
+        runfiles = runfiles.merge(target.runfiles)
+        env.update(target.env)  # the target file's ${NAME} values: plain values and the paths of its files
+        env["ITF_TARGET"] = target.document.short_path
+        if target.overrides:
+            env["ITF_OVERRIDE"] = itf_path_list([f.short_path for f in target.overrides])
+        contracts = list(target.contracts) + contracts
+    if contracts:
+        # Contract definitions of the project (or a vendor): the directories ITF_CONTRACTS_PATH names.
+        runfiles = runfiles.merge(ctx.runfiles(files = contracts))
+        env["ITF_CONTRACTS_PATH"] = itf_path_list(contract_directories(contracts, short = True))
+    env.update({
+        k: ctx.expand_location(v.replace("$(location ", "$(rootpath "), targets = expand_targets)
+        for k, v in ctx.attr.env.items()
+    })
 
     return [
         DefaultInfo(
@@ -156,6 +209,12 @@ def _itf_test_impl(ctx):
         RunEnvironmentInfo(
             environment = env,
         ),
+        # What `bazel coverage` measures: the test sources and everything the wrapped py_test runs.
+        coverage_common.instrumented_files_info(
+            ctx,
+            source_attributes = ["srcs"],
+            dependency_attributes = ["test_binary"],
+        ),
     ]
 
 _itf_test = rule(
@@ -163,17 +222,41 @@ _itf_test = rule(
     implementation = _itf_test_impl,
     attrs = {
         "test_binary": attr.label(
-            doc = "The py_test target to wrap.",
-            cfg = "exec",
+            doc = "The py_test target to wrap, built for the host (see _host_platform).",
+            cfg = _host_platform,
             executable = True,
             mandatory = True,
             providers = [PyInfo],
         ),
+        "target": attr.label(
+            # The test's own configuration: the files a target file names (images, kernels) are target artifacts, and
+            # built once, in the configuration the test's own data uses. The itf_target takes its packs, sources and
+            # planner in the exec configuration itself.
+            doc = "An itf_target: the target file this test runs against, with the packs it names and its policy.",
+            providers = [ItfTargetInfo],
+        ),
+        "contracts": attr.label_list(
+            doc = "Contract definitions (YAML files, or a directory of them) the test loads besides ITF's own and the target file's: their directories go to ITF_CONTRACTS_PATH.",
+            allow_files = True,
+            cfg = "exec",
+            default = [],
+        ),
         "plugins": attr.label_list(
-            doc = "List of py_itf_plugin targets.",
+            doc = "List of py_itf_plugin targets: ITF packs and plain pytest plugins.",
             providers = [PyItfPluginInfo],
             cfg = "exec",
             default = [],
+        ),
+        "_lcov_merger": attr.label(
+            doc = "Merges the coverage the wrapped py_test writes into coverage.dat (`bazel coverage`).",
+            default = configuration_field(fragment = "coverage", name = "output_generator"),
+            cfg = "exec",
+        ),
+        "_compat_core_plugin": attr.label(
+            doc = "The original core plugin, loaded first for a test without an itf_target.",
+            default = Label("//score/itf/plugins:core_plugin"),
+            providers = [PyItfPluginInfo],
+            cfg = "exec",
         ),
         "srcs": attr.label_list(
             doc = "Test source files (passed as positional args to pytest).",
@@ -214,7 +297,7 @@ _itf_test = rule(
 # Symbolic macro: the public API, creates the py_test + _itf_test pair.
 # =============================================================================
 
-def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins, deps, tags, pytest_config, env, **kwargs):
+def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins, target, contracts, deps, tags, pytest_config, env, **kwargs):
     """Symbolic macro implementation for ITF tests."""
     pytest_bootstrap = Label("@score_itf//:main.py")
 
@@ -230,7 +313,7 @@ def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins,
         main = pytest_bootstrap,
         deps = [
             "@score_itf//:itf",
-        ] + deps + plugins,
+        ] + deps + plugins + [Label("@score_itf//score/itf/plugins:core")],  # the wrapper adds the target's packs
         tags = ["manual"],
         visibility = ["//visibility:private"],
     )
@@ -242,6 +325,8 @@ def _py_itf_test_impl(name, visibility, srcs, args, data, data_as_exec, plugins,
         name = name,
         test_binary = name + ".test_binary",
         plugins = plugins,
+        target = target,
+        contracts = contracts,
         srcs = srcs,
         pytest_config = pytest_config,
         data = data,
@@ -265,6 +350,7 @@ py_itf_test = macro(
         "data": attr.label_list(default = [], allow_files = True),
         "data_as_exec": attr.label_list(default = [], allow_files = True),
         "plugins": attr.label_list(default = [], providers = [PyItfPluginInfo]),
+        "target": attr.label(default = None, providers = [ItfTargetInfo], doc = "An itf_target (or a select() of them): the target file this test runs against. Its policy (itf_verify, itf_teardown, fixtures, the project's own capabilities and actions) is loaded without being listed in srcs."),
         "deps": attr.label_list(default = [], providers = [PyInfo]),
         "pytest_config": attr.label(default = None, allow_single_file = True, doc = "Custom pytest configuration file. If not specified, uses the default from @score_itf//:pytest.ini."),
         "env": attr.string_dict(default = {}, doc = "Environment variables for the test."),

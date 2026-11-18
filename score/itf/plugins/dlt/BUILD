@@ -10,17 +10,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
-load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_python//python:defs.bzl", "py_library")
 
-copy_file(
-    name = "libdlt",
-    src = "//third_party/dlt:libdlt.so",
-    out = "libdlt.so.2",
-    allow_symlink = True,
-)
-
+# The original dlt plugin's label; the modules re-export from score.itf.compat and the dlt pack.
 py_library(
     name = "dlt",
     srcs = [
@@ -28,13 +20,6 @@ py_library(
         "dlt_receive.py",
         "dlt_window.py",
     ],
-    data = [
-        ":libdlt",
-    ],
     visibility = ["//visibility:public"],
-    deps = [
-        "//score/itf/core/process",
-        "//score/itf/core/utils",
-        "//third_party/python_dlt",
-    ],
+    deps = ["//score/itf/plugins:core"],
 )

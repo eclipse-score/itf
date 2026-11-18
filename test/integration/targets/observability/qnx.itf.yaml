@@ -1,0 +1,58 @@
+policies:
+  - test/integration/targets/observability/policy.py
+packs:
+  qemu: score.itf.packs.qemu.plugin
+  ssh: score.itf.packs.ssh.plugin
+  pcap: score.itf.packs.pcap.plugin
+capabilities:
+  platform:
+    factory: qemu.platform
+    with:
+      config_file: ${ITF_QEMU_CONFIG}
+      kernel: ${ITF_QEMU_KERNEL}
+  console: qemu.console
+  endpoint: qemu.endpoint
+  credentials: qemu.credentials
+  shell:
+    factory: ssh.shell
+    with:
+      n_retries: 60
+      retry_interval: 2.0
+  command: ssh.exec
+  process: ssh.process
+  capture:
+    factory: pcap.capture
+    with:
+      interface: tap0
+      filter: udp
+      binary_path: ${ITF_TCPDUMP:-tcpdump}
+  traffic:
+    factory: local.traffic
+    bind:
+      command: command
+    with:
+      host: 169.254.21.88
+      port: 3491
+  packet_reader:
+    factory: local.packet_reader
+    with:
+      binary_path: ${ITF_TCPDUMP:-tcpdump}
+goals:
+  - state: platform.up
+    by: qemu.start
+  - state: console.open
+    by: qemu.open_console
+  - state: shell.open
+    by: ssh.open
+  - state: capture.running
+    by: pcap.start_on_host
+relations:
+  - state: platform.up
+    after:
+      - capture.running
+  - state: console.open
+    after:
+      - platform.up
+  - state: shell.open
+    after:
+      - console.open

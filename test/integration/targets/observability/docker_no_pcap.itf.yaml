@@ -1,0 +1,15 @@
+policies:
+  - test/integration/targets/observability/policy.py
+packs:
+  docker: score.itf.packs.docker.plugin
+  dlt: score.itf.packs.dlt.plugin
+capabilities:
+  platform:
+    factory: docker.platform
+    with:
+      image: ubuntu:24.04
+      network: host
+  command: docker.exec
+goals:
+  - state: platform.up
+    by: docker.start

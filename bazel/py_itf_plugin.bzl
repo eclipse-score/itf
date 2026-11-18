@@ -18,6 +18,7 @@ load("@rules_python//python:defs.bzl", "PyInfo")
 PyItfPluginInfo = provider(
     doc = "Information about an ITF test plugin.",
     fields = {
+        "pack": "String: the ITF pack's name (the first part of its factory labels), or empty for a plain pytest plugin.",
         "enabled_plugins": "List of pytest plugin module paths to enable.",
         "resolved_args": "List of CLI args with $(location ...) pre-resolved.",
         "plugin_runfiles": "Merged runfiles from all plugin data dependencies.",
@@ -60,6 +61,7 @@ def _py_itf_plugin_impl(ctx):
     # Build providers list - always include PyItfPluginInfo
     providers = [
         PyItfPluginInfo(
+            pack = ctx.attr.pack,
             enabled_plugins = ctx.attr.enabled_plugins,
             resolved_args = resolved_args,
             plugin_runfiles = plugin_runfiles,
@@ -81,12 +83,17 @@ py_itf_plugin = rule(
     doc = "Defines an ITF test plugin with its dependencies and configuration.",
     implementation = _py_itf_plugin_impl,
     attrs = {
+        "pack": attr.string(
+            doc = "The ITF pack this plugin loads, as named in factory labels (`docker` for `docker.platform`). " +
+                  "An itf_target reads the pack names of its `packs` here. Leave empty for a plain pytest plugin.",
+            default = "",
+        ),
         "py_library": attr.label(
             doc = "The py_library target providing the plugin's Python code.",
             mandatory = True,
         ),
         "enabled_plugins": attr.string_list(
-            doc = "List of pytest plugin module paths to enable (e.g. 'score.itf.plugins.docker').",
+            doc = "List of pytest plugin module paths to enable (e.g. 'score.itf.packs.docker.plugin').",
             default = [],
         ),
         "plugin_args": attr.string_list(

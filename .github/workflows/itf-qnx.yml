@@ -26,6 +26,9 @@ jobs:
     needs: workflow-approval
     # yamlfmt inserts spurious blank lines in >- blocks, so keep this on one line
     if: ${{ !cancelled() && (needs.workflow-approval.result == 'success' || needs.workflow-approval.result == 'skipped') && (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    # Pinned like every job, and this one must stay so: the os_images genrules deploy into the image over ssh inside
+    # Bazel's sandbox, and on ubuntu-26.04 OpenSSH refuses to start there (systemd's ssh_config.d file shows a
+    # foreign owner in the sandbox).
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -65,4 +68,5 @@ jobs:
         run: |
           bazel test --config=qemu-integration \
            --credential_helper=*.qnx.com="${QNX_CREDENTIAL_HELPER}" -- \
-           //test/integration:qnx_qemu_tests
+           //test/integration:qnx_qemu_tests \
+           //test/integration/legacy:qnx_qemu_tests

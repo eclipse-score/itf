@@ -1,0 +1,58 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# A machine reached over SSH. For the local demo it is a container running sshd; for a real machine delete
+# `platform`, replace `endpoint` with a `net.endpoint` (with `host` and `port`), and set the login.
+# Copy this folder and change what is marked `# CHANGE:`.
+policies:
+  - examples/starter/ssh/targets/policy.py
+packs:
+  docker: score.itf.packs.docker.plugin
+  net: score.itf.packs.net.plugin
+  ssh: score.itf.packs.ssh.plugin
+capabilities:
+  # CHANGE: delete this role for a real machine (and the docker pack in BUILD), with the platform.up goal
+  # and the relation at the end: nothing starts a platform there.
+  platform:
+    factory: docker.platform
+    with:
+      image: linuxserver/openssh-server:version-10.2_p1-r0
+      command: null
+      init: false
+      environment: PASSWORD_ACCESS=true,USER_NAME=${SSH_USER},USER_PASSWORD=${SSH_PASSWORD}
+      ports: 2222/tcp  # the port sshd listens on, published by the container
+  endpoint:
+    # CHANGE: net.endpoint for a real machine, with `host` and `port` under `with`.
+    factory: docker.endpoint
+    with:
+      port: 2222
+  credentials:
+    # CHANGE: net.key for key authentication (`key_path` replaces `password`).
+    factory: net.password
+    with:
+      # The login comes from the environment or targets/.env (see .env.example), never from this file.
+      user: ${SSH_USER}
+      password: ${SSH_PASSWORD}
+  shell:
+    factory: ssh.shell
+    with:
+      n_retries: 20  # how many times to retry the connection while the machine boots
+  command: ssh.exec
+goals:
+  - platform.up
+  - shell.open
+relations:
+  # The session connects to a service of the container: the container runs first.
+  # CHANGE: delete this relation for a real machine (see the platform role above).
+  - state: shell.open
+    after:
+      - platform.up

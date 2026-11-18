@@ -21,10 +21,10 @@ cc_binary(
 cc_test(
     name = "example-test",
     srcs = ["test.cpp"],
-    deps = [
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
+    # Statically: with the hermetic toolchain's static libc++, a dynamically linked gtest would hold
+    # its own copy of the C++ runtime globals and free them twice at exit.
+    linkstatic = True,
+    deps = ["@googletest//:gtest_main"],
 )
 
 pkg_tar(

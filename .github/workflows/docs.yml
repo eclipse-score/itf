@@ -16,6 +16,7 @@ permissions:
   contents: read
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [opened, reopened, synchronize]
   push:
@@ -27,7 +28,28 @@ on:
     types: [created]
 
 jobs:
+  # The documentation site serves the pack marketplace (docs/_generated/catalog.html), which is the contract
+  # map over all ITF packs (`itf contracts map --format html`), generated from the packs' code and definitions.
+  # The Sphinx build only sees source files, so it is regenerated here on every docs run and the run fails
+  # when the checked-in copy differs: the published marketplace is never stale. The same holds for the
+  # contracts reference (docs/reference/contracts.md), generated from the supported definitions.
+  marketplace:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+      - name: Regenerate the pack marketplace
+        run: bazel run //score/itf/cli:itf -- contracts map --format html --output docs/_generated/catalog.html
+      - name: Regenerate the contracts reference
+        run: bazel run //score/itf/cli:itf -- contracts reference --output docs/reference/contracts.md
+      - name: Fail when a checked-in generated page is stale
+        run: git diff --exit-code docs/_generated/catalog.html docs/reference/contracts.md
+
   docs-verify:
+    needs: [marketplace]
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     uses: eclipse-score/cicd-workflows/.github/workflows/docs-verify.yml@8d80e8df150cae21d53cbc8031d0f970648f7a67 # v0.0.3
     permissions:
@@ -37,14 +59,49 @@ jobs:
       bazel-docs-verify-target: "//:docs"
 
   docs-build:
-    needs: [docs-verify]
+    needs: [marketplace, docs-verify]
     if: github.event_name != 'pull_request'
     uses: eclipse-score/cicd-workflows/.github/workflows/docs.yml@8d80e8df150cae21d53cbc8031d0f970648f7a67 # v0.0.3
     permissions:
-      contents: write
-      pages: write
-      pull-requests: write
-      id-token: write
+      contents: read
     with:
-      bazel-target: "//:docs -- --github_user=${{ github.repository_owner }} --github_repo=${{ github.event.repository.name }}"
+      bazel-target: "//:docs"
       retention-days: 3
+
+  docs-deploy:
+    needs: [docs-build]
+    if: >-
+      (github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) ||
+      github.event_name == 'release'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download built documentation
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages
+          path: _site
+      - name: Verify the site entry point
+        run: test -s _site/index.html
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Package the Pages site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: itf-pages-site
+          path: _site
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: itf-pages-site
