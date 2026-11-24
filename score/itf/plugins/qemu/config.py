@@ -31,6 +31,8 @@ Optional top-level keys:
     - `port_forwarding` (array of objects with `host_port` and `guest_port`)
     - `ssh_auth` (object selecting the SSH authentication method; see `SshAuth`.
       If omitted, login defaults to user `root` with an empty password.)
+    - `uefi` (object with `code` and `vars` firmware paths; boots the guest through UEFI.
+      `vars` is copied to a temporary file so the original is not modified.)
 
 Each entry in `networks` must contain:
     - `name` (string)
@@ -90,6 +92,14 @@ Example: Custom SSH Authentication (username + SSH private key)
             "pkey_path": "/path/to/some/key"
         }
     }
+
+Example: UEFI boot
+    {
+        "uefi": {
+            "code": "/usr/share/edk2/ovmf/OVMF_CODE.fd",
+            "vars": "/path/to/OVMF_VARS.fd"
+        }
+    }
 """
 
 import json
@@ -142,6 +152,15 @@ class PortForwarding(BaseModel):
     guest_port: int = Field(ge=1, le=65535)
 
 
+class Uefi(BaseModel):
+    """UEFI firmware configuration"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(min_length=1)
+    vars: str = Field(min_length=1)
+
+
 class QemuConfigModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -153,6 +172,7 @@ class QemuConfigModel(BaseModel):
     qemu_kernel_cmdline: str | None = None
     port_forwarding: list[PortForwarding] = Field(default_factory=list)
     ssh_auth: SshAuth = Field(default_factory=SshAuth)
+    uefi: Uefi | None = None
 
 
 def load_configuration(config_file: str) -> QemuConfigModel:

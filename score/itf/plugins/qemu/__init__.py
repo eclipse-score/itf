@@ -12,6 +12,7 @@
 # *******************************************************************************
 import logging
 import os
+import shutil
 import subprocess
 import socket
 import tempfile
@@ -53,6 +54,24 @@ def _create_overlay(base_image: str) -> str:
     )
     logger.info(f"Created qcow2 overlay: {overlay_path} (backing: {base_image})")
     return overlay_path
+
+
+def _copy_uefi_vars(uefi_vars: str) -> str:
+    """Copy the UEFI variable store *uefi_vars* to a temporary file.
+
+    The firmware writes to the variable store, so the guest works on the copy and
+    the original file is never modified.  The caller is responsible for cleaning
+    up the returned path.
+    """
+    vars_fd, vars_path = tempfile.mkstemp(suffix=os.path.splitext(uefi_vars)[1], prefix="qemu_uefi_vars_")
+    os.close(vars_fd)
+    try:
+        shutil.copyfile(uefi_vars, vars_path)
+    except Exception:
+        os.unlink(vars_path)
+        raise
+    logger.info(f"Copied UEFI variable store: {vars_path} (source: {uefi_vars})")
+    return vars_path
 
 
 def pytest_addoption(parser):
@@ -133,17 +152,21 @@ def target_init(config, request, dlt):
     logger.info(f"Starting tests on host: {socket.gethostname()}")
     overlay_path = None
     disk_overlay_path = None
+    uefi_vars_path = None
     try:
         if config.qemu_rootfs:
             overlay_path = _create_overlay(os.path.abspath(config.qemu_rootfs))
         if config.qemu_disk:
             disk_overlay_path = _create_overlay(os.path.abspath(config.qemu_disk))
+        if config.qemu_config.uefi:
+            uefi_vars_path = _copy_uefi_vars(os.path.abspath(config.qemu_config.uefi.vars))
         with qemu_target(
             Bunch(
                 qemu_config=config.qemu_config,
                 qemu_kernel=config.qemu_kernel,
                 qemu_rootfs=overlay_path,
                 qemu_disk=disk_overlay_path,
+                qemu_uefi_vars=uefi_vars_path,
             )
         ) as qemu:
             boot_until_ready(qemu, request.config.getoption("qemu_boot_attempts"), pre_tests_phase)
@@ -153,3 +176,5 @@ def target_init(config, request, dlt):
             os.unlink(overlay_path)
         if disk_overlay_path and os.path.exists(disk_overlay_path):
             os.unlink(disk_overlay_path)
+        if uefi_vars_path and os.path.exists(uefi_vars_path):
+            os.unlink(uefi_vars_path)

@@ -15,6 +15,8 @@ import os
 import subprocess
 import sys
 
+from score.itf.plugins.qemu.image_format import get_image_format
+
 logger = logging.getLogger(__name__)
 
 
@@ -62,6 +64,8 @@ class Qemu:
         rootfs,
         kernel_cmdline,
         disk,
+        uefi_vars=None,
+        uefi_code=None,
     ):
         """Create a QEMU instance with the specified parameters.
 
@@ -75,6 +79,9 @@ class Qemu:
         :param str rootfs: Optional path to a qcow2 disk image.
         :param str kernel_cmdline: Optional kernel command line string.
         :param str disk: Optional path to an additional qcow2 disk image.
+        :param str uefi_vars: Optional path to a writable UEFI variable store (e.g. OVMF_VARS.fd).
+        :param str uefi_code: Optional path to the UEFI firmware code (e.g. OVMF_CODE.fd). Together
+            with ``uefi_vars`` it boots the guest through UEFI firmware.
         """
         if machine not in _SUPPORTED_MACHINES:
             raise ValueError("machine must be one of: " + ", ".join(sorted(_SUPPORTED_MACHINES)))
@@ -87,6 +94,10 @@ class Qemu:
         self.__rootfs = rootfs
         self.__kernel_cmdline = kernel_cmdline
         self.__disk = disk
+        if bool(uefi_code) != bool(uefi_vars):
+            raise ValueError("uefi_code and uefi_vars must be set together")
+        self.__uefi_code = uefi_code
+        self.__uefi_vars = uefi_vars
 
         self.__check_qemu_is_installed()
 
@@ -152,12 +163,23 @@ class Qemu:
                 "-device",
                 "virtio-rng-pci,rng=rng0",  # Provide hardware random number generation
             ]
+            + self.__uefi_args()
             + self._extra_qemu_args()
             + self.__network_devices_args()
             + self.__port_forwarding_args()
             + self.__kernel_args()
             + self.__disks_args()
         )
+
+    def __uefi_args(self) -> list[str]:
+        if not self.__uefi_vars:
+            return []
+        return [
+            "-drive",
+            f"if=pflash,unit=0,readonly=on,format={get_image_format(self.__uefi_code)},file={self.__uefi_code}",
+            "-drive",
+            f"if=pflash,unit=1,format={get_image_format(self.__uefi_vars)},file={self.__uefi_vars}",
+        ]
 
     def __kernel_args(self) -> list[str]:
         if not self.__path_to_kernel_image:

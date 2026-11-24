@@ -36,6 +36,8 @@ class QemuProcess:
         rootfs,
         kernel_cmdline,
         disk,
+        uefi_vars=None,
+        uefi_code=None,
     ):
         self._path_to_qemu_kernel_image = path_to_qemu_kernel_image
         self._available_ram = available_ram
@@ -46,6 +48,8 @@ class QemuProcess:
         self._rootfs = rootfs
         self._kernel_cmdline = kernel_cmdline
         self._disk = disk
+        self._uefi_vars = uefi_vars
+        self._uefi_code = uefi_code
         self._qemu = Qemu(
             self._path_to_qemu_kernel_image,
             self._available_ram,
@@ -56,6 +60,8 @@ class QemuProcess:
             rootfs=self._rootfs,
             kernel_cmdline=self._kernel_cmdline,
             disk=self._disk,
+            uefi_vars=self._uefi_vars,
+            uefi_code=self._uefi_code,
         )
         self._console = None
         self._guest_panicked = threading.Event()
@@ -76,6 +82,8 @@ class QemuProcess:
             logger.info(f"Using QEMU root filesystem image: {self._rootfs}")
         if self._disk is not None:
             logger.info(f"Using QEMU additional disk image: {self._disk}")
+        if self._uefi_vars is not None:
+            logger.info(f"Using UEFI firmware: {self._uefi_code} (variable store: {self._uefi_vars})")
         subprocess_params = {
             "stdin": subprocess.PIPE,
             "stdout": subprocess.PIPE,
