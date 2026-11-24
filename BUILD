@@ -21,12 +21,6 @@ compile_pip_requirements(
     requirements_txt = "requirements_lock_3_12.txt",
 )
 
-compile_pip_requirements(
-    name = "requirements_3_10",
-    src = "requirements.in",
-    requirements_txt = "requirements_lock_3_10.txt",
-)
-
 exports_files([
     "main.py",
     "pytest.ini",

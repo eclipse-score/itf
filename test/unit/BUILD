@@ -53,10 +53,26 @@ py_itf_unittest(
     deps = ["//score/itf/plugins/qemu"],
 )
 
+py_itf_unittest(
+    name = "test_python_312",
+    srcs = ["test_python_312.py"],
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//score/itf/core/com",
+        "//score/itf/core/process",
+        "//score/itf/core/utils",
+        "//score/itf/plugins:core",
+        "//score/itf/plugins:docker",
+        "//score/itf/plugins/dlt",
+        "//score/itf/plugins/qemu",
+    ],
+)
+
 test_suite(
     name = "unit",
     tests = [
         ":test_ping",
+        ":test_python_312",
         ":test_qemu",
         ":test_qemu_auth",
         ":test_qemu_boot_retry",
