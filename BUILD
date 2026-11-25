@@ -18,6 +18,7 @@ load("@score_tooling//:defs.bzl", "copyright_checker")
 compile_pip_requirements(
     name = "requirements_3_12",
     src = "requirements.in",
+    extra_args = ["--no-annotate"],
     requirements_txt = "requirements_lock_3_12.txt",
 )
 
