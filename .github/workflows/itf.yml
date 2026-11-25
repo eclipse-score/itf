@@ -51,4 +51,6 @@ jobs:
           sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
       - name: Run Linux QEMU integration tests
         run: |
-          bazel test --config=qemu-integration-linux -- //test/integration/legacy:linux_qemu_tests
+          bazel test --config=qemu-integration-linux --keep_going -- \
+            //test/integration:linux_qemu_tests \
+            //test/integration/legacy:linux_qemu_tests

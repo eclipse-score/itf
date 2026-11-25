@@ -4,21 +4,24 @@ Date: Mon, 9 Feb 2026 11:01:49 +0100
 Subject: [PATCH] Use runfiles to find libdlt.so.2
 
 ---
- dlt/core/core_base.py | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ dlt/core/core_base.py | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/dlt/core/core_base.py b/dlt/core/core_base.py
 index e0c3daf..d2d32e1 100644
 --- a/dlt/core/core_base.py
 +++ b/dlt/core/core_base.py
-@@ -7,7 +7,10 @@ import sys
+@@ -7,7 +7,13 @@ import sys
  if sys.platform.startswith("darwin"):
      dltlib = ctypes.cdll.LoadLibrary("libdlt.dylib")
  elif sys.platform.startswith("linux"):
 -    dltlib = ctypes.cdll.LoadLibrary("libdlt.so.2")
++    import os
 +    from python.runfiles import Runfiles
 +    r = Runfiles.Create()
 +    so_path = r.Rlocation("score_itf/score/itf/plugins/dlt/libdlt.so.2")
++    if not so_path or not os.path.exists(so_path):
++        so_path = r.Rlocation("score_itf/score/itf/packs/dlt/libdlt.so.2")
 +    dltlib = ctypes.cdll.LoadLibrary(so_path)
  else:
      raise RuntimeError("Platform %s not supported" % sys.platform)

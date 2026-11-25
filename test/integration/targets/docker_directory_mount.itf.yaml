@@ -1,0 +1,13 @@
+policies:
+  - policy.py
+packs:
+  docker: score.itf.packs.docker.plugin
+capabilities:
+  platform:
+    factory: docker.platform
+    with:
+      image: ubuntu:24.04
+      volumes: /usr/share/zoneinfo:/extra/mount:ro
+  command: docker.exec
+goals:
+  - platform.up

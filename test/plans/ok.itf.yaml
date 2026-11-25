@@ -1,0 +1,10 @@
+packs:
+  sim: score.itf.packs.sim.plugin
+capabilities:
+  platform:
+    factory: sim.platform
+    with:
+      name: bench
+  command: sim.exec
+goals:
+  - platform.up

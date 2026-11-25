@@ -14,7 +14,17 @@ load("@itf_pip//:requirements.bzl", "requirement")
 load("//:defs.bzl", "py_itf_unittest")
 
 PACKS = [
+    "core_dump",
+    "dlt",
+    "docker",
     "localhost",
+    "net",
+    "pcap",
+    "ping",
+    "qemu",
+    "serial",
+    "sim",
+    "ssh",
 ]
 
 exports_files(["pytest.ini"])
