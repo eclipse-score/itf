@@ -171,7 +171,7 @@ def test_port_forwarding_args_are_built_from_forwarding_entries(mocker):
 
     assert qemu._Qemu__port_forwarding_args() == [
         "-netdev",
-        "user,id=net1,hostfwd=tcp::2222-:22",
+        "user,id=net1,hostfwd=tcp:127.0.0.1:2222-:22",
         "-device",
         "virtio-net-pci,netdev=net1",
     ]

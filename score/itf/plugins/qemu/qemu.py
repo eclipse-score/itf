@@ -209,7 +209,7 @@ class Qemu:
             result.extend(
                 [
                     "-netdev",
-                    f"user,id=net{id},hostfwd=tcp::{forwarding.host_port}-:{forwarding.guest_port}",
+                    f"user,id=net{id},hostfwd=tcp:127.0.0.1:{forwarding.host_port}-:{forwarding.guest_port}",
                     "-device",
                     f"{self.__arch_config['network_device']},netdev=net{id}",
                 ]
