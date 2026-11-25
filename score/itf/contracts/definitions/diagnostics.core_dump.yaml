@@ -1,0 +1,31 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: diagnostics.core_dump
+    kind: capability
+    role: core_dumps
+    version: 1
+    summary: Copy the target's core files to the host, when the test or a policy decides to.
+    description: >
+      Looks in the usual core file places of Linux and QNX targets with a command and copies each file found
+      through file transfer, mirroring its target path. Collecting is explicit: the consumer chooses when.
+    members:
+      - name: collect
+        signature: "(output_dir: str) -> list[str]"
+        semantics: Copies the core files that are new or changed since the last collect into output_dir and returns their local paths; remote files are kept.
+    guarantees:
+      - A file is never written outside output_dir.
+      - A core file that has not changed is not copied twice.
+    see_also:
+      - exec.command
+      - files.transfer

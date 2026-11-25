@@ -1,1 +1,1 @@
-../../../test/integration/test_dlt.py
+../../../test/integration/legacy/test_dlt.py

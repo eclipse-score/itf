@@ -1,0 +1,39 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: exec.shell
+    kind: capability
+    role: shell
+    version: 1
+    summary: An open shell session with ITF's original `Ssh` command API.
+    description: >
+      A connected session (for example SSH) offering the original `Ssh` methods: output split into lines,
+      stdout and stderr kept apart or merged, a bound on how long a command may run (exit code -1 when
+      the command exceeds max_exec_time). Other capabilities (command, process, files) are built on top
+      of one shell. The session is opened by the state `shell.open`.
+    members:
+      - name: execute_command_output
+        signature: "(cmd: str, timeout: float = 30, max_exec_time: float = 180, logger_in=None, verbose: bool = True, separate_stderr: bool = True) -> tuple[int, list[str], list[str]]"
+        semantics: >
+          Returns the exit code, the stdout lines and the stderr lines, each line keeping its newline;
+          stderr is merged into stdout unless separate_stderr. The exit code is -1 when the command
+          exceeds max_exec_time.
+      - name: execute_command
+        signature: "(cmd: str, timeout: float = 30, max_exec_time: float = 180, logger_in=None, verbose: bool = True) -> int"
+        semantics: Returns the exit code; never raises on a nonzero exit.
+    guarantees:
+      - Line splitting preserves each newline.
+      - A command exceeding max_exec_time reports exit code -1.
+    see_also:
+      - exec.command
+      - shell.open

@@ -1,1 +1,1 @@
-../../../test/integration/test_qemu.py
+../../../test/integration/legacy/test_qemu.py
