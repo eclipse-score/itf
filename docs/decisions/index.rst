@@ -28,6 +28,13 @@ Infrastructure
 
 .. toctree::
    :maxdepth: 1
-   :glob:
 
-   DR-*-infra*
+   DR-001-infra
+
+Architecture
+------------
+
+.. toctree::
+   :maxdepth: 1
+
+   DR-002-arch-target-composition
