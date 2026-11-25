@@ -82,6 +82,30 @@ py_itf_unittest(
 )
 
 py_itf_unittest(
+    name = "catalog_test",
+    srcs = glob(["catalog/*.py"]),
+    data = [
+        "//:docs/_generated/catalog.html",
+        "//:docs/reference/contracts.md",
+    ],
+    deps = [
+        "//score/itf/contracts",
+        "//score/itf/core",
+        "//score/itf/packs/core_dump",
+        "//score/itf/packs/dlt",
+        "//score/itf/packs/docker",
+        "//score/itf/packs/localhost",
+        "//score/itf/packs/net",
+        "//score/itf/packs/pcap",
+        "//score/itf/packs/ping",
+        "//score/itf/packs/qemu",
+        "//score/itf/packs/serial",
+        "//score/itf/packs/sim",
+        "//score/itf/packs/ssh",
+    ],
+)
+
+py_itf_unittest(
     name = "import_light_test",
     srcs = ["test_import_light.py"],
     deps = [

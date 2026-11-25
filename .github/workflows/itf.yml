@@ -16,13 +16,26 @@ on:
   merge_group:
     types: [checks_requested]
 jobs:
-  itf-build-all:
+  # Every job runs on a pinned image: ubuntu-latest moves to a new release under a running pull request.
+  itf-targets:
+    # Every target file compiles on its own, before and without any test: an itf_target runs both gates, the
+    # strict shapes and the contract definitions in a build action and constructs nothing, so a wrong target
+    # file fails here without a container or a machine. `itf validate` is the same check from the command line.
+    # The QEMU targets are manual: their kernels and images need the QNX SDP or downloaded OS images.
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.4.1
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+      - name: Compile every target file
+        run: |
+          bazel build $(bazel query 'kind(_itf_target, //...) except attr(tags, manual, //...)')
+  itf-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
       - name: Run build
@@ -31,11 +44,77 @@ jobs:
       - name: Check that the legacy suite is main's, byte for byte
         run: |
           python3 tools/legacy_unchanged.py
-      - name: Run test
+      - name: Check the contract rules
         run: |
-          bazel test //...
-
+          bazel run //score/itf/cli:itf -- contracts check --rules tools/contract_rules.yaml
+      - name: Check version declarations
+        run: |
+          bazel run //score/itf/cli:itf -- versions check --rules tools/contract_rules.yaml --tests test
+  itf-test:
+    # Every test that needs no QEMU machine, with coverage: the unit tests, the new-style integration suite
+    # (test/integration) on every target file, its conformance runs, and the original API integration tests on the
+    # compatibility layer (test/integration/legacy, test/integration/compat). `bazel coverage` runs the tests and
+    # measures score/itf in the same pass (.bazelrc: --instrumentation_filter, --combined_report=lcov).
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.4.1
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+      - name: Check target pack coverage
+        run: |
+          bazel coverage --test_output=errors --test_arg=-k --test_arg=wrapped_processes_coordinate //test/integration:localhost
+          python3 -c 'from pathlib import Path; from tools.coverage_summary import read; assert read(Path("bazel-out/_coverage/_coverage_report.dat"))["score/itf/packs/localhost"][0] > 0, "target pack has no coverage"'
+      - name: Check representative target test selection
+        run: |
+          bazel test --test_output=errors --test_arg=-k --test_arg='test_output_and_exit_code_are_returned or test_a_process_reports_pid_running_and_exit_code or test_upload_rejects_a_missing_local_file or test_execute_command_returns_the_exit_code or test_console_commands_produce_fresh_output' //test/integration:localhost //test/integration:docker //test/integration:ssh //test/integration:serial
+          python3 -c '
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          common = {"test_output_and_exit_code_are_returned", "test_a_process_reports_pid_running_and_exit_code", "test_upload_rejects_a_missing_local_file"}
+          targets = {"localhost": common, "docker": common, "ssh": common | {"test_execute_command_returns_the_exit_code"}, "serial": {"test_output_and_exit_code_are_returned", "test_console_commands_produce_fresh_output"}}
+          for target, expected in targets.items():
+              path = Path("bazel-testlogs/test/integration") / target / "test.xml"
+              cases = {case.get("name"): case for case in ET.parse(path).iter("testcase")}
+              missing = expected - cases.keys()
+              skipped = {name for name in expected & cases.keys() if cases[name].find("skipped") is not None}
+              assert not missing and not skipped, f"{target}: missing {missing}, skipped {skipped}"
+          '
+      - name: Run the tests, with coverage
+        run: |
+          bazel coverage --test_output=errors //...
+      - name: Run Docker observability tests
+        run: |
+          bazel test --test_output=errors //test/integration:observability
+      - name: Summarize coverage
+        if: ${{ !cancelled() }}
+        run: |
+          python3 tools/coverage_summary.py bazel-out/_coverage/_coverage_report.dat >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: bazel-out/_coverage/_coverage_report.dat
+  itf-build-all:
+    name: itf-build-all
+    if: always()
+    needs: [itf-targets, itf-build, itf-test]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require all ITF checks
+        env:
+          TARGETS_RESULT: ${{ needs.itf-targets.result }}
+          BUILD_RESULT: ${{ needs.itf-build.result }}
+          TEST_RESULT: ${{ needs.itf-test.result }}
+        run: |
+          [[ "$TARGETS_RESULT" == success && "$BUILD_RESULT" == success && "$TEST_RESULT" == success ]]
   itf-qemu-linux:
+    # Pinned like every job, and this one must stay so: the os_images genrules deploy into the image over ssh inside
+    # Bazel's sandbox, and on ubuntu-26.04 OpenSSH refuses to start there (systemd's ssh_config.d file shows a
+    # foreign owner in the sandbox).
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -56,4 +135,5 @@ jobs:
         run: |
           bazel test --config=qemu-integration-linux --keep_going -- \
             //test/integration:linux_qemu_tests \
-            //test/integration/legacy:linux_qemu_tests
+            //test/integration/legacy:linux_qemu_tests \
+            //test/integration:ubuntu

@@ -29,7 +29,7 @@ time.
 
 The design rests on four principles: a planner (OCTO) that plans from declarations only, parts that meet only
 through names, probes as evidence, and teardown from observed state. This record decides how a target is described
-and how parts declare themselves. The words are defined in the glossary of the model (`docs/concepts/model.md`, added with the documentation).
+and how parts declare themselves. The words are defined in the glossary of [the model](../concepts/model.md#the-vocabulary).
 
 ## Decisions
 
@@ -95,7 +95,7 @@ and how parts declare themselves. The words are defined in the glossary of the m
    factories and actions) is its **policy**: Python modules explicitly listed in YAML `policies:`, not
    discovered from directories. Relative paths are YAML-relative; absolute paths remain absolute, and inline YAML
    uses invocation CWD. Direct Session, CLI and pytest share this selection; see the
-   authoring guide (`docs/how-to/write_tests.md`, added with the documentation). Conftests stay pytest's, for fixtures.
+   [authoring guide](../how-to/write_tests.md#code-the-policy). Conftests stay pytest's, for fixtures.
    The policy's parts are labelled `local.<name>`, and `local`
     is reserved: no pack may be named `local`, so `local.x` always means this project's policy. The policy
     outranks the target file, which outranks the packs. The pack for the test host is `localhost`. A project's

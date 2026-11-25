@@ -1,0 +1,47 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# A vendor's contract: what a switched power relay promises. No registry: the name `acme/power.relay` is
+# whatever Acme's parts and its customers' tests agree on. Block style only.
+contracts:
+  - contract: acme/power.relay
+    kind: capability
+    role: power
+    version: 1
+    stability: experimental
+    summary: Switch a power relay on and off and read its state.
+    description: >
+      A relay that powers a device under test. A test switches it and reads back what it did; how the relay
+      is driven (a USB board, a network switch, a simulation) is the factory's business. The contract says
+      nothing about what is attached to the relay.
+    members:
+      - name: "on"
+        signature: "() -> None"
+        semantics: >
+          Closes the relay. Switching a relay that is already on does nothing.
+      - name: "off"
+        signature: "() -> None"
+        semantics: >
+          Opens the relay. Switching a relay that is already off does nothing.
+      - name: is_on
+        signature: "() -> bool"
+        semantics: >
+          Reports the state the relay is in now, read back from the relay and not remembered by the factory.
+      - name: toggle
+        signature: "() -> bool"
+        semantics: >
+          Flips the relay and returns the new state. Optional: tests that use it gate on it with shape.
+        required: false
+    guarantees:
+      - A relay starts open (off).
+      - After on() returns, is_on() is true; after off() returns, it is false.
+    conformance: acme.conformance
