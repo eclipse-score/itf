@@ -206,6 +206,18 @@ py_itf_test(
     target_compatible_with = ["@platforms//os:linux"],
 )
 
+py_itf_test(
+    name = "conformance_localhost",
+    timeout = "long",
+    srcs = [
+        "conformance/test_conformance.py",
+        "conftest.py",
+    ],
+    plugins = ["//score/itf/contracts:conformance"],
+    target = ":target_localhost",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
 # The same host with an override file: the facts of one setup (the platform's working directory).
 itf_target(
     name = "target_localhost_override",
@@ -264,6 +276,18 @@ py_itf_test(
     target_compatible_with = ["@platforms//os:linux"],
 )
 
+py_itf_test(
+    name = "conformance_serial",
+    timeout = "long",
+    srcs = [
+        "conformance/test_conformance.py",
+        "conftest.py",
+    ],
+    plugins = ["//score/itf/contracts:conformance"],
+    target = ":target_serial",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
 # ---- containers (Docker or rootless Podman)
 
 # A container through the Docker API only.
@@ -317,6 +341,19 @@ py_itf_test(
     target_compatible_with = ["@platforms//os:linux"],
 )
 
+py_itf_test(
+    name = "conformance_docker",
+    timeout = "long",
+    srcs = [
+        "conformance/test_conformance.py",
+        "conftest.py",
+    ],
+    plugins = ["//score/itf/contracts:conformance"],
+    tags = ["requires-docker"],
+    target = ":target_docker",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
 # A container running sshd: SSH, SFTP and a shell session.
 itf_target(
     name = "target_docker_ssh",
@@ -354,6 +391,19 @@ py_itf_test(
         "@platforms//os:qnx": ":target_qnx_bridge",
         "//conditions:default": ":target_docker_ssh",
     }),
+)
+
+py_itf_test(
+    name = "conformance_docker_ssh",
+    timeout = "long",
+    srcs = [
+        "conformance/test_conformance.py",
+        "conftest.py",
+    ],
+    plugins = ["//score/itf/contracts:conformance"],
+    tags = ["requires-docker"],
+    target = ":target_docker_ssh",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 # A dlt-daemon container: DLT received on the host over TCP, and dlt-receive run on the container.
