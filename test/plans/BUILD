@@ -80,6 +80,7 @@ py_itf_unittest(
     srcs = ["test_shipped_targets.py"],
     data = [
         ":planner",
+        "//score/itf/compat:target_files",
         "//test/integration:target_files",
     ],
     env = {"PLANNER": "$(rootpath :planner)"},

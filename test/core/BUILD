@@ -45,6 +45,19 @@ py_itf_unittest(
 )
 
 py_itf_unittest(
+    name = "python_312_test",
+    srcs = ["test_python_312.py"],
+    deps = [
+        "//score/itf/core",
+        "//score/itf/core/process",
+        "//score/itf/packs/dlt",
+        "//score/itf/packs/docker",
+        "//score/itf/packs/localhost",
+        "//score/itf/packs/qemu",
+    ],
+)
+
+py_itf_unittest(
     name = "itf_test",
     srcs = ["conftest.py"] + glob([
         "itf/*.py",
@@ -83,5 +96,6 @@ test_suite(
         ":itf_test",
         ":kinds_test",
         ":octo_test",
+        ":python_312_test",
     ],
 )

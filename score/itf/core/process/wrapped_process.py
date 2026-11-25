@@ -61,10 +61,7 @@ class WrappedProcess:
         self.kwargs = kwargs
 
     def __enter__(self):
-        # Until the original Target classes run on the compatibility layer, Target.wrap_exec passes the target
-        # itself, which starts processes with execute_async.
-        spawn = self.spawner.spawn if hasattr(self.spawner, "spawn") else self.spawner.execute_async
-        self.process = spawn(self.binary_path, args=self.args, cwd=self.cwd, **self.kwargs)
+        self.process = self.spawner.spawn(self.binary_path, args=self.args, cwd=self.cwd, **self.kwargs)
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
