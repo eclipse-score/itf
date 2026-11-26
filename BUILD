@@ -38,11 +38,7 @@ py_library(
         "//score/itf/core",
         "//score/itf/core/adapters:definitions",
         "//score/itf/core/adapters:pytest",
-        "//score/itf/core/com",
         "//score/itf/core/process",
-        "//score/itf/core/target",
-        "//score/itf/core/utils",
-        "//score/itf/plugins:core",
     ],
 )
 

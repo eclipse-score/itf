@@ -28,6 +28,9 @@ jobs:
       - name: Run build
         run: |
           bazel build //...
+      - name: Check that the legacy suite is main's, byte for byte
+        run: |
+          python3 tools/legacy_unchanged.py
       - name: Run test
         run: |
           bazel test //...

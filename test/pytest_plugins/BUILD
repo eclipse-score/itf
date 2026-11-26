@@ -12,6 +12,20 @@
 # *******************************************************************************
 load("//:defs.bzl", "itf_target", "py_itf_test")
 
+# Plain pytest plugins work with py_itf_test as before: no target file, no ITF target.
+py_itf_test(
+    name = "test_attribute_plugin",
+    srcs = ["test_attribute_plugin.py"],
+    args = [
+        "-p",
+        "pytester",
+    ],
+    plugins = [
+        "//:attribute_plugin",
+        "//score/itf/plugins:core_plugin",
+    ],
+)
+
 itf_target(
     name = "target_pack_imports",
     src = "target_pack_imports.itf.yaml",

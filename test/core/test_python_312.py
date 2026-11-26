@@ -10,9 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
-# Verifies that the ITF unit tests run on the Python 3.12 toolchain and that the
-# score.itf modules import and behave correctly under it.
+"""Verify ITF modules and syntax using the supported Python 3.12 toolchain."""
 
 import importlib
 import sys
@@ -21,13 +19,12 @@ import pytest
 
 ITF_MODULES = [
     "score.itf",
-    "score.itf.core.com.ping",
     "score.itf.core.process.console",
-    "score.itf.core.utils.bazel",
-    "score.itf.plugins.core",
-    "score.itf.plugins.dlt",
-    "score.itf.plugins.docker",
-    "score.itf.plugins.qemu",
+    "score.itf.core.frontends.target_file",
+    "score.itf.packs.dlt.plugin",
+    "score.itf.packs.docker.plugin",
+    "score.itf.packs.localhost.plugin",
+    "score.itf.packs.qemu.plugin",
 ]
 
 
@@ -41,8 +38,6 @@ def test_itf_module_imports(module_name):
 
 
 def test_type_statement_is_supported():
-    # PEP 695 `type` aliases are 3.12+ syntax. Compiling them proves the
-    # toolchain really is 3.12, not just a version string.
     namespace = {}
     exec("type IntList = list[int]", namespace)
     assert namespace["IntList"].__value__ == list[int]
