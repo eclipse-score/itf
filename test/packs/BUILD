@@ -15,6 +15,12 @@ load("//:defs.bzl", "py_itf_unittest")
 # Pack unit tests: each may import its own pack's internals; packs never import each other.
 
 py_itf_unittest(
+    name = "pcap_test",
+    srcs = ["test_pcap.py"],
+    deps = ["//score/itf/packs/pcap:lib"],
+)
+
+py_itf_unittest(
     name = "ssh_legacy_api_test",
     srcs = ["test_ssh_legacy_api.py"],
     deps = ["//score/itf/packs/ssh:lib"],
@@ -45,6 +51,12 @@ py_itf_unittest(
     name = "docker_test",
     srcs = glob(["docker/*.py"]),
     deps = ["//score/itf/packs/docker:lib"],
+)
+
+py_itf_unittest(
+    name = "serial_test",
+    srcs = glob(["serial/*.py"]),
+    deps = ["//score/itf/packs/serial:lib"],
 )
 
 py_itf_unittest(
@@ -79,8 +91,10 @@ py_itf_unittest(
         "//score/itf/packs/docker",
         "//score/itf/packs/localhost",
         "//score/itf/packs/net",
+        "//score/itf/packs/pcap",
         "//score/itf/packs/ping",
         "//score/itf/packs/qemu",
+        "//score/itf/packs/serial",
         "//score/itf/packs/ssh",
     ],
 )

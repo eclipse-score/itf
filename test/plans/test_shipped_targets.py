@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-PACKS = ("core_dump", "dlt", "docker", "localhost", "net", "ping", "qemu", "sim", "ssh")
+PACKS = ("core_dump", "dlt", "docker", "localhost", "net", "pcap", "ping", "qemu", "serial", "sim", "ssh")
 ROOTS = (Path("test/integration/targets"), Path("score/itf/compat/targets"))
 
 

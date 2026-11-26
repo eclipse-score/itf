@@ -19,8 +19,10 @@ PACKS = [
     "docker",
     "localhost",
     "net",
+    "pcap",
     "ping",
     "qemu",
+    "serial",
     "sim",
     "ssh",
 ]

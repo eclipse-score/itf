@@ -22,7 +22,7 @@ import pytest
 
 # What a plan never calls: the Docker SDK (and requests under it), paramiko, pyserial.
 HEAVY = ("docker", "paramiko", "requests", "urllib3", "serial")
-PACKS = ("core_dump", "dlt", "docker", "localhost", "net", "ping", "qemu", "ssh")
+PACKS = ("core_dump", "dlt", "docker", "localhost", "net", "pcap", "ping", "qemu", "serial", "ssh")
 
 
 @pytest.mark.parametrize("pack", PACKS)

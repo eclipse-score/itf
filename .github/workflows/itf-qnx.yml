@@ -70,4 +70,5 @@ jobs:
            --credential_helper=*.qnx.com="${QNX_CREDENTIAL_HELPER}" -- \
            //test/integration:qnx_qemu_tests \
            //test/integration/legacy:qnx_qemu_tests \
-           //test/integration:observability
+           //test/integration:observability \
+           //test/integration:observability_serial

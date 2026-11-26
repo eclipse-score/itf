@@ -60,8 +60,10 @@ ALL_PACKS = ["//score/itf/packs/" + pack for pack in [
     "docker",
     "localhost",
     "net",
+    "pcap",
     "ping",
     "qemu",
+    "serial",
     "sim",
     "ssh",
 ]]
