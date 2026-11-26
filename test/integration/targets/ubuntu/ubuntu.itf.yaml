@@ -1,0 +1,6 @@
+include:
+  - ../qemu.itf.yaml
+policies:
+  - policy.py
+goals:
+  - console.shell

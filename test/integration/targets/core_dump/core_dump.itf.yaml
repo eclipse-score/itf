@@ -1,0 +1,10 @@
+include:
+  - ../localhost.itf.yaml
+packs:
+  core_dump: score.itf.packs.core_dump.plugin
+capabilities:
+  core_dumps:
+    factory: core_dump.collector
+    bind:
+      command: command
+      files: files

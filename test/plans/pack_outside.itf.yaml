@@ -1,0 +1,3 @@
+capabilities:
+  platform:
+    factory: localhost.platform
