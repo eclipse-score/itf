@@ -37,3 +37,4 @@ contracts:
     see_also:
       - descriptor.endpoint
       - network.reachable
+    conformance: score.itf.packs.ping.conformance_net

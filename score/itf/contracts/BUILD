@@ -12,6 +12,7 @@
 # *******************************************************************************
 load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
+load("//bazel:py_itf_plugin.bzl", "py_itf_plugin")
 
 filegroup(
     name = "definitions",
@@ -34,4 +35,22 @@ py_library(
         "//score/itf/core",
         requirement("pyyaml"),
     ],
+)
+
+py_library(
+    name = "pytest_conformance_lib",
+    srcs = ["pytest_conformance.py"],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":contracts",
+        "//score/itf/core",
+        requirement("pytest"),
+    ],
+)
+
+py_itf_plugin(
+    name = "conformance",
+    enabled_plugins = ["score.itf.contracts.pytest_conformance"],
+    py_library = ":pytest_conformance_lib",
+    visibility = ["//visibility:public"],
 )
