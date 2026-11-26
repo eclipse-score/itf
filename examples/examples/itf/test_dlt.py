@@ -1,1 +1,0 @@
-../../../test/integration/legacy/test_dlt.py

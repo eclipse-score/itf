@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
 oci_image(
     name = "image",
@@ -24,5 +25,38 @@ oci_load(
     name = "image_load",
     image = ":image",
     repo_tags = ["score_itf_examples:latest"],
+    visibility = ["//examples/itf:__pkg__"],
+)
+
+# A DLT target (the itf examples): dlt-daemon, dlt-receive and dlt-adaptor-stdin from score_itf.
+pkg_tar(
+    name = "dlt-bins",
+    srcs = [
+        "@score_itf//third_party/dlt:dlt-adaptor-stdin",
+        "@score_itf//third_party/dlt:dlt-daemon",
+        "@score_itf//third_party/dlt:dlt-receive",
+    ],
+    package_dir = "usr/bin",
+)
+
+pkg_tar(
+    name = "dlt-conf",
+    srcs = ["@score_itf//third_party/dlt:dlt-daemon-conf"],
+    package_dir = "etc",
+)
+
+oci_image(
+    name = "dlt_image",
+    base = "@ubuntu_24_04_examples",
+    tars = [
+        ":dlt-bins",
+        ":dlt-conf",
+    ],
+)
+
+oci_load(
+    name = "dlt_image_load",
+    image = ":dlt_image",
+    repo_tags = ["score_itf_dlt:latest"],
     visibility = ["//examples/itf:__pkg__"],
 )

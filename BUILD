@@ -24,6 +24,8 @@ compile_pip_requirements(
 )
 
 exports_files([
+    "docs/_generated/catalog.html",
+    "docs/reference/contracts.md",
     "main.py",
     "pytest.ini",
 ])
