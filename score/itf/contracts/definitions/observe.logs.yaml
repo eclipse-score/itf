@@ -1,0 +1,40 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: observe.logs
+    kind: capability
+    role: logs
+    version: 1
+    summary: Log messages the session receives from the target (DLT), searchable by the test.
+    description: >
+      The session subscribes to the target's log stream and keeps a bounded buffer of decoded messages.
+      Tests read them after the target did something. Factories may add `filter` (by application and context
+      id), which is not required: gate on it with `shape=`. The subscription is made by the state
+      `logs.active`.
+    members:
+      - name: is_active
+        signature: "() -> bool"
+        semantics: True while the stream delivers messages; the probe of the state `logs.active`.
+      - name: lines
+        signature: "() -> list[DltMessage]"
+        semantics: Every buffered message in arrival order; raises RuntimeError when the stream is dead.
+      - name: filter
+        required: false
+        signature: "(apid: str | None = None, ctid: str | None = None) -> list[DltMessage]"
+        semantics: The buffered messages of one application id and context id, in arrival order.
+    guarantees:
+      - A message sent on the target arrives in lines() within seconds.
+      - Where filter is offered, ids that no message has give an empty list.
+    see_also:
+      - logs.active
+      - descriptor.endpoint

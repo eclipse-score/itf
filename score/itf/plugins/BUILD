@@ -49,6 +49,14 @@ py_library(
 
 # ---- ITF plugin targets (used by py_itf_test symbolic macro) ----
 
+# Loaded first by every py_itf_test that names no itf_target, as the original rule loaded it.
+py_itf_plugin(
+    name = "core_plugin",
+    enabled_plugins = ["score.itf.plugins.core"],
+    py_library = ":core",
+    visibility = ["//visibility:public"],
+)
+
 py_itf_plugin(
     name = "docker_plugin",
     enabled_plugins = [
