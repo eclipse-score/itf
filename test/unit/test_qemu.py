@@ -30,6 +30,8 @@ def _build_qemu(
     disk=None,
     network_adapters=None,
     port_forwarding=None,
+    uefi_code=None,
+    uefi_vars=None,
 ):
     if network_adapters is None:
         network_adapters = []
@@ -48,6 +50,8 @@ def _build_qemu(
         rootfs=rootfs,
         kernel_cmdline=kernel_cmdline,
         disk=disk,
+        uefi_code=uefi_code,
+        uefi_vars=uefi_vars,
     )
 
 
@@ -175,3 +179,30 @@ def test_port_forwarding_args_are_built_from_forwarding_entries(mocker):
         "-device",
         "virtio-net-pci,netdev=net1",
     ]
+
+
+def test_uefi_args_are_empty_without_firmware(mocker):
+    qemu = _build_qemu(mocker)
+
+    assert qemu._Qemu__uefi_args() == []
+
+
+def test_uefi_args_add_readonly_code_and_writable_vars_pflash(mocker):
+    mocker.patch("score.itf.plugins.qemu.qemu.get_image_format", side_effect=["raw", "qcow2"])
+    qemu = _build_qemu(mocker, uefi_code="/fw/OVMF_CODE.fd", uefi_vars="/tmp/OVMF_VARS.qcow2")
+
+    assert qemu._Qemu__uefi_args() == [
+        "-drive",
+        "if=pflash,unit=0,readonly=on,format=raw,file=/fw/OVMF_CODE.fd",
+        "-drive",
+        "if=pflash,unit=1,format=qcow2,file=/tmp/OVMF_VARS.qcow2",
+    ]
+
+
+@pytest.mark.parametrize(
+    "uefi_code,uefi_vars",
+    [("/fw/OVMF_CODE.fd", None), (None, "/tmp/OVMF_VARS.fd")],
+)
+def test_uefi_code_and_vars_must_be_set_together(mocker, uefi_code, uefi_vars):
+    with pytest.raises(ValueError):
+        _build_qemu(mocker, uefi_code=uefi_code, uefi_vars=uefi_vars)

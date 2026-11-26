@@ -132,3 +132,22 @@ def test_ssh_auth_unknown_keys_are_rejected():
     config = {**_VALID_BRIDGE_CONFIG, "ssh_auth": {"ldap": "ldap://localhost"}}
     with pytest.raises(ValueError):
         QemuConfigModel.model_validate(config)
+
+
+def test_uefi_is_disabled_by_default():
+    model = QemuConfigModel.model_validate(_VALID_BRIDGE_CONFIG)
+    assert model.uefi is None
+
+
+def test_uefi_code_and_vars_are_accepted():
+    config = {**_VALID_BRIDGE_CONFIG, "uefi": {"code": "/fw/OVMF_CODE.fd", "vars": "/fw/OVMF_VARS.fd"}}
+    model = QemuConfigModel.model_validate(config)
+    assert model.uefi.code == "/fw/OVMF_CODE.fd"
+    assert model.uefi.vars == "/fw/OVMF_VARS.fd"
+
+
+@pytest.mark.parametrize("uefi", [{"code": "/fw/OVMF_CODE.fd"}, {"vars": "/fw/OVMF_VARS.fd"}])
+def test_uefi_requires_code_and_vars(uefi):
+    config = {**_VALID_BRIDGE_CONFIG, "uefi": uefi}
+    with pytest.raises(Exception):
+        QemuConfigModel.model_validate(config)

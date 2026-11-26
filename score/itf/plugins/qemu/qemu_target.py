@@ -346,6 +346,8 @@ def qemu_target(test_config):
             rootfs=test_config.qemu_rootfs,
             kernel_cmdline=test_config.qemu_config.qemu_kernel_cmdline,
             disk=test_config.qemu_disk,
+            uefi_vars=test_config.qemu_uefi_vars,
+            uefi_code=test_config.qemu_config.uefi.code if test_config.qemu_config.uefi else None,
         )
     else:
         process_ctx = nullcontext()
