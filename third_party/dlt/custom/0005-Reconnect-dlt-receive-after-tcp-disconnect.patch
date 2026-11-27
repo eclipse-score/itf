@@ -1,0 +1,71 @@
+From 6cb7969d77553212e67c8f89dfe08293c0a55c4e Mon Sep 17 00:00:00 2001
+Subject: [PATCH] Reconnect dlt-receive after TCP disconnect
+
+Treat TCP EOF and errors as a dropped daemon connection, then reconnect with
+bounded attempts and backoff. Preserve UDP semantics: ignore empty datagrams
+and do not restart the multicast socket.
+---
+ src/lib/dlt_client.c | 46 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+
+diff --git a/src/lib/dlt_client.c b/src/lib/dlt_client.c
+--- a/src/lib/dlt_client.c
++++ b/src/lib/dlt_client.c
+@@ -203,2 +203,3 @@ DltReturnValue dlt_client_connect(DltClient* client, int verbose)
+                     close(client->sock);
++                    client->sock = -1;
+                     dlt_log(LOG_WARNING, str);
+@@ -387,2 +388,3 @@ DltReturnValue dlt_client_cleanup(DltClient* client, int verbose)
+         close(client->sock);
++        client->sock = -1;
+     }
+@@ -401,1 +403,3 @@ DltReturnValue dlt_client_main_loop(DltClient* client, void* data, int verbose)
+     int ret;
++    unsigned int reconnect_delay_seconds = 1;
++    unsigned int reconnect_attempts = 0;
+@@ -426,1 +430,39 @@ DltReturnValue dlt_client_main_loop(DltClient* client, void* data, int verbose)
++        if (ret < 0 && errno == EINTR)
++        {
++            continue;
++        }
++
++        if (client->mode == DLT_CLIENT_MODE_TCP && ret <= 0)
++        {
++            if (dlt_message_free(&msg, verbose) == DLT_RETURN_ERROR ||
++                dlt_client_cleanup(client, verbose) == DLT_RETURN_ERROR)
++            {
++                return DLT_RETURN_ERROR;
++            }
++
++            fprintf(stderr, "DLT daemon connection closed; reconnecting\n");
++            while (dlt_client_connect(client, verbose) != DLT_RETURN_OK)
++            {
++                dlt_client_cleanup(client, verbose);
++                if (++reconnect_attempts >= 8)
++                {
++                    fprintf(stderr, "DLT daemon reconnect limit reached\n");
++                    return DLT_RETURN_ERROR;
++                }
++                sleep(reconnect_delay_seconds);
++                if (reconnect_delay_seconds < 8)
++                {
++                    reconnect_delay_seconds *= 2;
++                }
++            }
++            reconnect_delay_seconds = 1;
++            reconnect_attempts = 0;
++            if (dlt_message_init(&msg, verbose) == DLT_RETURN_ERROR)
++            {
++                dlt_client_cleanup(client, verbose);
++                return DLT_RETURN_ERROR;
++            }
++            continue;
++        }
++
+         if (ret < 0)
+@@ -436,1 +478,5 @@ DltReturnValue dlt_client_main_loop(DltClient* client, void* data, int verbose)
+         } else if (ret == 0) {
++            if (client->mode == DLT_CLIENT_MODE_UDP)
++            {
++                continue;
++            }

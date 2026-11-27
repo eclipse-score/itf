@@ -10,5 +10,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+"""The original target base classes, served by the compatibility layer."""
 
-from .target import Target, UnsupportedTarget
+from score.itf.compat.target import Target, UnsupportedTarget  # noqa: F401

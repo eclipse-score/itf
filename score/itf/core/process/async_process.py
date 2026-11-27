@@ -16,8 +16,8 @@ from abc import ABC, abstractmethod
 class AsyncProcess(ABC):
     """Common interface for a non-blocking process execution handle.
 
-    Target implementation must conform to this contract so that :class:`WrappedProcess` can
-    manage process lifecycles regardless of the underlying execution backend.
+    Every ``itf.capabilities.exec.process`` provider returns one from ``spawn``, so that
+    :class:`WrappedProcess` manages process lifecycles regardless of the execution backend.
     """
 
     @abstractmethod

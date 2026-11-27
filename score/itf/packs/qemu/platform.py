@@ -1,0 +1,191 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+"""The QEMU process behind `qemu.instance`, booting copy-on-write overlays of its images."""
+
+from __future__ import annotations
+
+import logging
+import os
+import shutil
+import tempfile
+import threading
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from score.itf.core.process import ProcessWrapper
+
+from .config import QemuConfigModel, load_configuration
+from .image_format import get_image_format
+from .qemu import Qemu
+
+if TYPE_CHECKING:
+    from score.itf.core.process.console import PipeConsole
+
+logger = logging.getLogger(__name__)
+
+
+# Printed by the QNX kernel on a fatal kernel error, e.g. "Shutdown[1] S/C/F=5/4/3 ...". The guest does not recover.
+GUEST_PANIC_MARKER = "Shutdown["
+
+
+@dataclass(frozen=True)
+class PlatformConfig:
+    config_file: str
+    kernel: str | None = None
+    rootfs: str | None = None
+    disk: str | None = None
+    binary_dir: str = "/usr/bin"
+    serial_backend: str = "mon:stdio"
+    panic_marker: str = GUEST_PANIC_MARKER  # a console line meaning the guest kernel panicked; "" watches for none
+
+
+def create_overlay(base_image: str) -> str:
+    """A temporary qcow2 overlay backed by `base_image`, so the image itself is never modified."""
+    fd, overlay = tempfile.mkstemp(suffix=".qcow2", prefix="qemu_overlay_")
+    os.close(fd)
+    try:
+        code, _, stderr = ProcessWrapper.run(
+            "qemu-img", ["create", "-f", "qcow2", "-b", base_image, "-F", get_image_format(base_image), overlay]
+        )
+        if code != 0:
+            raise RuntimeError(f"qemu-img create failed ({code}): {stderr}")
+    except BaseException:
+        os.unlink(overlay)
+        raise
+    logger.info("Created qcow2 overlay %s (backing %s)", overlay, base_image)
+    return overlay
+
+
+def copy_uefi_vars(uefi_vars: str) -> str:
+    """A temporary copy of the UEFI variable store: the firmware writes to it, so the original is never modified."""
+    fd, copy = tempfile.mkstemp(suffix=os.path.splitext(uefi_vars)[1], prefix="qemu_uefi_vars_")
+    os.close(fd)
+    try:
+        shutil.copyfile(uefi_vars, copy)
+    except BaseException:
+        os.unlink(copy)
+        raise
+    logger.info("Copied UEFI variable store %s (source %s)", copy, uefi_vars)
+    return copy
+
+
+def _absolute(path: str | None) -> str | None:
+    return os.path.abspath(path) if path else None
+
+
+class QemuPlatform:
+    """`platform`: one QEMU process, its console on stdio, booting overlays that last as long as the platform."""
+
+    qemu_config: QemuConfigModel
+    console: PipeConsole | None
+    kernel: str | None
+    rootfs: str | None
+    disk: str | None
+
+    def __init__(self, config: dict):
+        self.qemu_config = load_configuration(config["config_file"])
+        self.kernel = _absolute(config.get("kernel"))
+        self.rootfs = _absolute(config.get("rootfs"))
+        self.disk = _absolute(config.get("disk"))
+        self.binary_dir = config.get("binary_dir", "/usr/bin")
+        self.serial_backend = config.get("serial_backend", "mon:stdio")
+        if not (self.kernel or self.rootfs):
+            raise ValueError("a QEMU platform needs a kernel, a rootfs, or both")
+        self.console = None
+        self.panic_marker = config.get("panic_marker", GUEST_PANIC_MARKER)
+        self._qemu: Qemu | None = None
+        self._overlays: list[str] = []
+        self._uefi_vars: str | None = None  # the copy of the UEFI variable store this machine writes to
+        self._guest_panicked = threading.Event()
+        self._compat_console_callbacks = []
+
+    def start(self) -> None:
+        if self._qemu is not None:
+            # Started again after its QEMU died (a guest panic stops it): clear the old process first.
+            try:
+                self.stop()
+            except Exception:  # noqa: BLE001  a dead QEMU reports a nonzero exit; the new start is what matters
+                logger.info("previous QEMU had ended", exc_info=True)
+        while len(self._overlays) < 2:  # recorded one by one, so close() deletes them even if the next one fails
+            image = (self.rootfs, self.disk)[len(self._overlays)]
+            self._overlays.append(create_overlay(image) if image else None)
+        rootfs, disk = self._overlays
+        c = self.qemu_config
+        if c.uefi and self._uefi_vars is None:  # like the overlays: kept across restarts, deleted by close()
+            self._uefi_vars = copy_uefi_vars(os.path.abspath(c.uefi.vars))
+        self._qemu = Qemu(
+            self.kernel,
+            c.qemu_ram_size,
+            c.qemu_num_cores,
+            machine=c.qemu_machine,
+            network_adapters=[n.name for n in c.networks],
+            port_forwarding=c.port_forwarding,
+            rootfs=rootfs,
+            kernel_cmdline=c.qemu_kernel_cmdline,
+            disk=disk,
+            binary_dir=self.binary_dir,
+            serial_backend=self.serial_backend,
+            uefi_vars=self._uefi_vars,
+            uefi_code=os.path.abspath(c.uefi.code) if c.uefi else None,
+        )
+        logger.info("Starting QEMU (kernel=%s, rootfs=%s, disk=%s)", self.kernel, self.rootfs, self.disk)
+        self._guest_panicked.clear()
+        watches = [(self.panic_marker, self._on_guest_panic)] if self.panic_marker else []
+        watches.extend(self._compat_console_callbacks)
+        self.console = self._qemu.start(console_callbacks=watches).console
+
+    def _on_guest_panic(self) -> None:
+        # The halted guest never recovers: stopping QEMU makes a pending SSH connection or ping fail at once instead
+        # of waiting for a banner that never arrives, and platform.up no longer holds.
+        logger.error("Guest kernel panic detected on the serial console (%r)", self.panic_marker)
+        self._guest_panicked.set()
+        if self._qemu is not None and self._qemu.is_running():
+            self._qemu.terminate()
+
+    @property
+    def guest_panicked(self) -> bool:
+        """True if the guest kernel reported a panic since the last (re)start."""
+        return self._guest_panicked.is_set()
+
+    def running(self) -> bool:
+        return self._qemu is not None and self._qemu.is_running()
+
+    def terminate(self) -> None:
+        if self._qemu is not None:
+            self._qemu.terminate()
+
+    def stop(self) -> None:
+        """Stop the QEMU process; the overlays, and what the guest wrote to them, stay for the next start."""
+        try:
+            if self._qemu is not None:
+                logger.info("Stopping QEMU")
+                self._qemu.stop()
+        finally:
+            self._qemu = None
+
+    def restart(self) -> None:
+        """Power-cycle the VM: a fresh QEMU process booting the same overlays, so the guest's disk survives."""
+        self.stop()
+        self.start()
+
+    def close(self) -> None:
+        """Stop QEMU and delete the overlays and the UEFI variable copy: the end of this machine. A new platform
+        boots fresh images."""
+        try:
+            self.stop()
+        finally:
+            for overlay in [*self._overlays, self._uefi_vars]:
+                if overlay and os.path.exists(overlay):
+                    os.unlink(overlay)
+            self._overlays = []
+            self._uefi_vars = None

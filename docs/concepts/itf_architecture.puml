@@ -4,58 +4,48 @@ skinparam componentStyle rectangle
 skinparam defaultFontName sans-serif
 skinparam linetype ortho
 
-' ── Test layer ────────────────────────────────────────────────────────────────
-package "Test Code" {
-    component "test_*.py\n(pytest test function)" as TestFn
-    component "@requires_capabilities\n(optional guard)" as RC
+package "Test code and frontends" {
+    component "pytest tests\ntarget.<role> / @itf.requires" as Tests
+    component "pytest adapter\nfixtures and selection" as Pytest
+    component "ITF CLI / Python API" as Frontends
+    component "Bazel\nitf_target / py_itf_test" as Bazel
 }
 
-' ── ITF Core ──────────────────────────────────────────────────────────────────
-package "ITF Core  (score.itf.plugins.core)" {
-    component "target fixture" as TargetFx
-    component "target_init fixture\n(plugin hook)" as TargetInit
+package "Declarations" {
+    artifact "Target file\nroles, settings, goals, relations" as TargetFile
+    component "Pack and project parts\nfactories, actions, probes\nconsumer Protocols" as Parts
 }
 
-' ── Target abstraction ────────────────────────────────────────────────────────
-package "Target Abstraction" {
-    component "Target (base class)\n──────────────────\nexecute(cmd)\nupload(src, dst)\ndownload(src, dst)\nrestart()\nhas_capability(cap)\nget_capabilities() : Set[str]" as Target
+package "ITF core" {
+    component "Session\nresolve, bring_up, reach, renew, close" as Session
+    component "Target handle\nrole access" as Handle
+    component "Realization and execution\nconstruct lazily, probe, act, unwind" as Runtime
 }
 
-' ── Plugin implementations ────────────────────────────────────────────────────
-package "Plugins" {
-    component "Docker Plugin\n──────────\ncapabilities:\nexec | file_transfer\nrestart" as DockerPlugin
-
-    component "QEMU Plugin\n──────────\ncapabilities:\nssh | sftp | exec\nfile_transfer | restart" as QemuPlugin
-
-    component "DLT Plugin\n──────────\nDltWindow\ndlt_config fixture" as DltPlugin
+package "OCTO (standard library only)" {
+    component "Planner\nbindings, shape checks, state ordering" as Planner
 }
 
-' ── Infrastructure ────────────────────────────────────────────────────────────
-package "Infrastructure" {
-    database "Docker Daemon" as DockerInfra
-    database "QEMU VM" as QemuInfra
+package "External resources" {
+    component "Containers / VMs / hardware\nSSH / serial / observability" as Resources
 }
 
-' ── Bazel build layer ─────────────────────────────────────────────────────────
-package "Bazel Build" {
-    component "py_itf_test\n(symbolic macro)" as PyItfTest
-    component "py_itf_plugin\n(rule)" as PyItfPlugin
-}
+Tests --> Pytest : runs through
+Tests --> Handle : uses roles
+Pytest --> Session : owns test-run lifecycle
+Frontends --> Session : uses the same lifecycle API
+Bazel --> TargetFile : compiles and supplies
+Bazel --> Pytest : launches tests
+TargetFile --> Session : selects parts and goals
+Parts --> Session : publishes declarations
+Session --> Planner : plans from metadata
+Session --> Runtime : executes the plan
+Handle --> Runtime : realizes requested roles
+Runtime --> Parts : invokes factories, actions, probes\nand finalizers
+Parts --> Resources : backend implementations\naccess resources at runtime
 
-' ── Relationships ─────────────────────────────────────────────────────────────
-TestFn       -down->  TargetFx     : receives
-TestFn       .right.> RC           : guarded by
-TargetFx     -down->  TargetInit   : delegates to
-TargetInit   -down->  Target       : yields instance of
-DockerPlugin -up--|>  Target       : implements
-QemuPlugin   -up--|>  Target       : implements
-
-DockerPlugin -down->  DockerInfra  : manages lifecycle
-QemuPlugin   -down->  QemuInfra   : manages lifecycle
-
-TestFn       ..>       DltPlugin   : optional\nDltWindow usage
-
-PyItfTest    -right->  PyItfPlugin : composes plugins
-PyItfPlugin  -up->     TargetInit  : provides\ntarget_init fixture
-
+note bottom of Planner
+  Offline planning constructs no resources
+  and runs no actions or hardware probes.
+end note
 @enduml

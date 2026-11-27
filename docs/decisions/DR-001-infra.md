@@ -125,7 +125,8 @@ types and compatibility with Bazel's `--combined_report`.
 
 ## Key Implications
 
-- Unit tests live in `test/unit/` and integration tests in `test/integration/`.
+- Unit tests live in `test/core/` and `test/packs/` (`test/unit/` before target composition) and integration
+  tests in `test/integration/`.
   The split is enforced by directory layout and BUILD files, not just naming.
 - Adding unit tests for a new module may require splitting its Bazel target if
   the current target has a large transitive dep set. This is intentional:

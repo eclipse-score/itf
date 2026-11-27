@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,18 +10,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
-load("@itf_pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 
+# The original label; the modules re-export from score.itf.compat.
 py_library(
     name = "target",
-    srcs = [
-        "__init__.py",
-        "target.py",
-    ],
+    srcs = glob(["*.py"]),
     visibility = ["//visibility:public"],
-    deps = [
-        requirement("typing-extensions"),
-    ],
+    deps = ["//score/itf/compat"],
 )
