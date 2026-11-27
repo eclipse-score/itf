@@ -1,0 +1,87 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+# A Raspberry Pi on a hardware bench: a bench power supply powers it, an SD-card multiplexer flashes it, it
+# answers ping and SSH (with a key), serves files over SFTP, and sends DLT to the bench host. Its own DLT daemon
+# is read on the board as well.
+#
+# An illustration, not a ready-made bench: the bench pack (bench_pack/bench) sketches the instruments, and its
+# classes raise NotImplementedError. Everything else comes from ITF's packs. Values come from the environment or a
+# .env file beside this file (see .env.example).
+packs:
+  bench: bench.plugin  # the bench pack is not installed: say where it lives
+  dlt: score.itf.packs.dlt.plugin
+  net: score.itf.packs.net.plugin
+  ping: score.itf.packs.ping.plugin
+  ssh: score.itf.packs.ssh.plugin
+capabilities:
+  # The bench
+  power:
+    factory: bench.power_supply
+    with:
+      address: ${PSU_ADDRESS}
+      channel: ${PSU_CHANNEL:-1}
+  flasher:
+    factory: bench.sd_flasher
+    with:
+      sd_mux: ${SD_MUX}
+      image: ${RPI_IMAGE}
+  # The board: up means powered and answering ping
+  platform: bench.raspberry_pi
+  endpoint:
+    factory: net.endpoint
+    with:
+      host: ${RPI_IP}
+      port: 22
+  ping:
+    factory: ping.pinger
+    with:
+      boot_timeout: 120
+  # SSH with a key, and SFTP
+  credentials:
+    factory: net.key
+    with:
+      user: ${RPI_USER:-pi}
+      key_path: ${RPI_SSH_KEY}
+  shell:
+    factory: ssh.shell
+    with:
+      n_retries: 30
+      retry_interval: 2.0
+  command: ssh.exec
+  process: ssh.process
+  files: ssh.files
+  # DLT the board sends to the bench host (UDP), and DLT read on the board from its own daemon
+  logs:
+    factory: dlt.receive
+    with:
+      host_ip: ${BENCH_DLT_HOST_IP}
+      multicast_ips: ${RPI_DLT_MULTICAST:-}
+  dlt_on_target:
+    factory: dlt.on_target
+    with:
+      binary_path: ${RPI_DLT_RECEIVE}  # dlt-receive built for the board (aarch64), uploaded over SFTP
+goals:
+  - image.flashed
+  - logs.active
+  - state: platform.up
+    by: bench.start  # ping.await_boot could make it true too, but only the bench powers the board
+  - shell.open
+relations:
+  # Flash first, and record DLT before power-on so the boot is in the logs.
+  - state: platform.up
+    after:
+      - image.flashed
+      - logs.active
+  - state: shell.open
+    after:
+      - platform.up

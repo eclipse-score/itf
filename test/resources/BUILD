@@ -21,7 +21,7 @@ filegroup(
         "dlt_config.json",
     ],
     visibility = [
-        "//test:__pkg__",
+        "//test:__subpackages__",
         # TODO: Should be only visibile to examples
         "//visibility:public",
         #"@score_itf_examples//:__subpackages__",
@@ -34,7 +34,7 @@ filegroup(
         "qemu_bridge_config.json",
     ],
     visibility = [
-        "//test:__pkg__",
+        "//test:__subpackages__",
         # TODO: Should be only visibile to examples
         "//visibility:public",
         #"@score_itf_examples//:__subpackages__",
@@ -47,7 +47,7 @@ filegroup(
         "qemu_port_forwarding_config.json",
     ],
     visibility = [
-        "//test:__pkg__",
+        "//test:__subpackages__",
         # TODO: Should be only visibile to examples
         "//visibility:public",
         #"@score_itf_examples//:__subpackages__",
@@ -95,7 +95,7 @@ oci_load(
     repo_tags = ["score_itf_examples:latest"],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = [
-        "//test:__pkg__",
+        "//test:__subpackages__",
         # TODO: Should be only visible to examples
         "//visibility:public",
         #"@score_itf_examples//:__subpackages__",

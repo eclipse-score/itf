@@ -1,0 +1,36 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+contracts:
+  - contract: logs.on_target
+    kind: capability
+    role: dlt_on_target
+    version: 1
+    summary: dlt-receive run on the target itself, started and stopped by the test.
+    description: >
+      Receives DLT where the target's own network sees it (multicast inside the target, a target-local TCP
+      daemon). The provider puts the receiver binary on the target on the first start, through the target's
+      files and process roles; each start runs one receiver that records to a file on the target.
+    members:
+      - name: start
+        signature: "(transport, host_ip='127.0.0.1', target_ip='127.0.0.1', multicast_ips=None, print_to_stdout=True, output_file=None) -> ContextManager[DltReceiver]"
+        semantics: Runs one receiver over transport ("tcp", "udp" or Protocol) and stops it when the block ends; the receiver has the process API plus dlt_file, the target path it records to.
+      - name: close
+        signature: "() -> None"
+        semantics: Stops every receiver still running; called when the role is torn down.
+    guarantees:
+      - Constructing the role touches nothing on the target.
+      - No receiver started through the role outlives it.
+    see_also:
+      - observe.logs
+      - files.transfer
+      - exec.process

@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,18 +10,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-class Bunch:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+"""The original Bunch, served by the compatibility layer."""
 
-    def __repr__(self):
-        return str(self.__dict__)
-
-    def __str__(self):
-        return str(self.__dict__)
-
-    def get(self, *args, **kwargs):
-        return self.__dict__.get(*args, **kwargs)
-
-    def update(self, **kwargs):
-        self.__dict__.update(kwargs)
+from score.itf.compat.utils import Bunch  # noqa: F401

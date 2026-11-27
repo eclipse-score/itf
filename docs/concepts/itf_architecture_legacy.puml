@@ -1,0 +1,61 @@
+@startuml ITF Architecture
+!pragma layout smetana
+skinparam componentStyle rectangle
+skinparam defaultFontName sans-serif
+skinparam linetype ortho
+
+' ── Test layer ────────────────────────────────────────────────────────────────
+package "Test Code" {
+    component "test_*.py\n(pytest test function)" as TestFn
+    component "@requires_capabilities\n(optional guard)" as RC
+}
+
+' ── ITF Core ──────────────────────────────────────────────────────────────────
+package "ITF Core  (score.itf.plugins.core)" {
+    component "target fixture" as TargetFx
+    component "target_init fixture\n(plugin hook)" as TargetInit
+}
+
+' ── Target abstraction ────────────────────────────────────────────────────────
+package "Target Abstraction" {
+    component "Target (base class)\n──────────────────\nexecute(cmd)\nupload(src, dst)\ndownload(src, dst)\nrestart()\nhas_capability(cap)\nget_capabilities() : Set[str]" as Target
+}
+
+' ── Plugin implementations ────────────────────────────────────────────────────
+package "Plugins" {
+    component "Docker Plugin\n──────────\ncapabilities:\nexec | file_transfer\nrestart" as DockerPlugin
+
+    component "QEMU Plugin\n──────────\ncapabilities:\nssh | sftp | exec\nfile_transfer | restart" as QemuPlugin
+
+    component "DLT Plugin\n──────────\nDltWindow\ndlt_config fixture" as DltPlugin
+}
+
+' ── Infrastructure ────────────────────────────────────────────────────────────
+package "Infrastructure" {
+    database "Docker Daemon" as DockerInfra
+    database "QEMU VM" as QemuInfra
+}
+
+' ── Bazel build layer ─────────────────────────────────────────────────────────
+package "Bazel Build" {
+    component "py_itf_test\n(symbolic macro)" as PyItfTest
+    component "py_itf_plugin\n(rule)" as PyItfPlugin
+}
+
+' ── Relationships ─────────────────────────────────────────────────────────────
+TestFn       -down->  TargetFx     : receives
+TestFn       .right.> RC           : guarded by
+TargetFx     -down->  TargetInit   : delegates to
+TargetInit   -down->  Target       : yields instance of
+DockerPlugin -up--|>  Target       : implements
+QemuPlugin   -up--|>  Target       : implements
+
+DockerPlugin -down->  DockerInfra  : manages lifecycle
+QemuPlugin   -down->  QemuInfra   : manages lifecycle
+
+TestFn       ..>       DltPlugin   : optional\nDltWindow usage
+
+PyItfTest    -right->  PyItfPlugin : composes plugins
+PyItfPlugin  -up->     TargetInit  : provides\ntarget_init fixture
+
+@enduml

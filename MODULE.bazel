@@ -188,12 +188,37 @@ http_archive(
 
 ################################################################################
 #
-# Load QNX dependencies
+# Packet capture: tcpdump and libpcap built from source (Bazel Central Registry)
+#
+################################################################################
+bazel_dep(name = "tcpdump", version = "4.99.6.bcr.1")
+
+################################################################################
+#
+# Load Linux and QNX dependencies
 #
 ################################################################################
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.1", dev_dependency = True)
 
 gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
+gcc.toolchain(
+    name = "score_gcc_x86_64_toolchain",
+    extra_compile_flags = ["-D_DEFAULT_SOURCE"],
+    target_cpu = "x86_64",
+    target_os = "linux",
+    use_base_constraints_only = True,
+    use_default_package = True,
+    version = "12.2.0",
+)
+gcc.toolchain(
+    name = "score_gcc_aarch64_toolchain",
+    extra_compile_flags = ["-D_DEFAULT_SOURCE"],
+    target_cpu = "aarch64",
+    target_os = "linux",
+    use_base_constraints_only = True,
+    use_default_package = True,
+    version = "12.2.0",
+)
 gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
     sdp_version = "8.0.3",
@@ -204,8 +229,16 @@ gcc.toolchain(
 )
 use_repo(
     gcc,
+    "score_gcc_aarch64_toolchain",
+    "score_gcc_x86_64_toolchain",
     "score_qcc_x86_64_toolchain",
     "score_qcc_x86_64_toolchain_pkg",
+)
+
+register_toolchains(
+    "@score_gcc_x86_64_toolchain//:x86_64-linux",
+    "@score_gcc_aarch64_toolchain//:aarch64-linux",
+    dev_dependency = True,
 )
 
 bazel_dep(name = "score_rules_imagefs", version = "0.1.0", dev_dependency = True)
