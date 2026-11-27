@@ -198,7 +198,7 @@ bazel_dep(name = "tcpdump", version = "4.99.6.bcr.1")
 # Load Linux and QNX dependencies
 #
 ################################################################################
-bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.1", dev_dependency = True)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.4", dev_dependency = True)
 
 gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 gcc.toolchain(
