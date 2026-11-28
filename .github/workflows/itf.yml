@@ -16,7 +16,7 @@ on:
   merge_group:
     types: [checks_requested]
 jobs:
-  # Every job runs on a pinned image: ubuntu-latest moves to a new release under a running pull request.
+  # Every job runs on a pinned image: ubuntu-24.04 moves to a new release under a running pull request.
   itf-targets:
     # Every target file compiles on its own, before and without any test: an itf_target runs both gates, the
     # strict shapes and the contract definitions in a build action and constructs nothing, so a wrong target
